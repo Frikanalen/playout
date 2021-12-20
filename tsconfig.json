@@ -1,0 +1,14 @@
+{
+  "compilerOptions": {
+    "resolveJsonModule": true,
+    "moduleResolution": "node",
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "ESNext",
+    "module": "commonjs",
+    "strict": true,
+    "outDir": "build"
+  },
+  "include": ["src", "typedefs"],
+  "exclude": ["node_modules"]
+}
