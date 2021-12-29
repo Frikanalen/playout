@@ -1,47 +1,70 @@
-import { CasparCG, Enum } from "casparcg-connection";
-import { connect } from "http2";
-import { OpenAPI, ScheduleEntry, SchedulingService, Video } from "./client";
-OpenAPI.BASE = "http://localhost:8000";
+import { CasparCG } from "casparcg-connection";
+import { OpenAPI, SchedulingService } from "./client";
+import { Schedulable } from "./Schedulable";
+import { CASPAR_HOST, FK_API } from "./config";
+import { Logger } from "tslog";
+import { InterstitialGraphics } from "./InterstitialGraphics";
+import { ScheduledVideo } from "./ScheduledVideo";
+import { endOfToday, startOfToday } from "date-fns";
 
-var connection = new CasparCG("192.168.135.111");
+export const log: Logger = new Logger();
 
-const playVideo = async (v: ScheduleEntry) => {
-  const asset = v.video!.assets!.find((x) => x.type === "broadcastable")!.url;
-  const base = `http://192.168.135.192:9000/ui`;
-  connection.mixerRotation(1, 50, 0, 0, Enum.Ease.EASEINOUTELASTIC);
+OpenAPI.BASE = FK_API;
 
-  await connection.play(1, v!.video!.id!, base + asset);
-
-  connection.mixerRotation(
-    1,
-    v!.video!.id!,
-    90,
-    v!.video!.duration! * 50,
-    Enum.Ease.EASEINOUTELASTIC
+export const connection = new CasparCG(CASPAR_HOST);
+const getSchedule = async () => {
+  const schedule = await SchedulingService.getSchedule(
+    startOfToday().toISOString(),
+    endOfToday().toISOString()
   );
+
+  if (!schedule.length) throw new Error(`Schedule loaded, contained 0 items!`);
+
+  log.info(`Schedule loaded ${schedule.length} items.`);
+
+  return schedule;
 };
 
 const get = async () => {
-  console.log("hiii");
+  const scheduledEntries: Schedulable[] = [];
+
+  const addToSchedule = async (entry: Schedulable) => {
+    await entry.arm();
+    scheduledEntries.push(entry);
+  };
+
   try {
     await connection.mixerClear(1);
     await connection.clear(1);
 
-    const schedule = await SchedulingService.getSchedule();
+    const schedule = await getSchedule();
+
+    let previousEntryEnded: Date | undefined;
+
     for (const entry of schedule) {
-      playVideo(entry);
-      await new Promise((r) => setTimeout(r, entry!.video!.duration! * 500));
+      const thisEntryStarts = new Date(entry.startsAt);
+
+      await addToSchedule(new ScheduledVideo(entry));
+
+      if (previousEntryEnded !== undefined) {
+        await addToSchedule(
+          new InterstitialGraphics(previousEntryEnded, thisEntryStarts)
+        );
+      }
+
+      previousEntryEnded = new Date(entry.endsAt);
     }
   } catch (e) {
-    console.log(e);
+    log.error("error", e);
   }
 };
 
 (async () => {
   try {
+    log.info(`Starting playout at ${new Date().toLocaleString()}`);
     var text = await get();
-    console.log(text);
   } catch (e) {
+    console.log(e);
     // Deal with the fact the chain failed
   }
 })();
