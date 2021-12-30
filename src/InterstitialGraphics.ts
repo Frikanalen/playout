@@ -1,5 +1,5 @@
 import nodeSchedule from "node-schedule";
-import { add, format, sub } from "date-fns";
+import { add, format, sub, subMilliseconds } from "date-fns";
 import { GRAPHICS_URL } from "./config";
 import { Schedulable } from "./Schedulable";
 import { connection, log } from ".";
@@ -45,6 +45,7 @@ export class InterstitialGraphics implements Schedulable {
     const now = new Date();
     const { startsAt, endsAt, load, play, stop, clear } = this;
     const loadAt = sub(startsAt, { seconds: 1 });
+    const playAt = subMilliseconds(startsAt, 500);
     const clearAt = add(endsAt, { seconds: 2 });
 
     if (endsAt <= now) {
@@ -69,7 +70,7 @@ export class InterstitialGraphics implements Schedulable {
 
       this.jobs = [
         nodeSchedule.scheduleJob(loadAt, load),
-        nodeSchedule.scheduleJob(startsAt, play),
+        nodeSchedule.scheduleJob(playAt, play),
         nodeSchedule.scheduleJob(endsAt, stop),
         nodeSchedule.scheduleJob(clearAt, clear),
       ];
