@@ -37,7 +37,10 @@ const getSchedule = async () => {
     endOfToday().toISOString()
   );
 
-  if (!schedule.length) throw new Error(`Schedule loaded, contained 0 items!`);
+  if (!schedule.length)
+    throw new Error(
+      `Schedule for ${startOfToday().toISOString()}-${endOfToday().toISOString()}, contained 0 items!`
+    );
 
   log.info(`Schedule loaded ${schedule.length} items.`);
 
@@ -45,6 +48,8 @@ const getSchedule = async () => {
 };
 
 const initCaspar = async (connection: CasparCG) => {
+  log.info(`Connecting to CasparCG host "${connection.host}"...`);
+  await connection.connect();
   await connection.mixerClear(1);
   await connection.clear(1);
 };
@@ -57,31 +62,24 @@ const runPlayout = async () => {
     scheduledEntries.push(entry);
   };
 
-  try {
-    log.info(`Connecting to CasparCG host "${connection.host}"...`);
-    await connection.connect();
+  await initCaspar(connection);
 
-    await initCaspar(connection);
+  const schedule = await getSchedule();
 
-    const schedule = await getSchedule();
+  let previousEntryEnded: Date | undefined;
 
-    let previousEntryEnded: Date | undefined;
+  for (const entry of schedule) {
+    const thisEntryStarts = new Date(entry.startsAt);
 
-    for (const entry of schedule) {
-      const thisEntryStarts = new Date(entry.startsAt);
+    await addToSchedule(new ScheduledVideo(entry));
 
-      await addToSchedule(new ScheduledVideo(entry));
-
-      if (typeof previousEntryEnded !== "undefined") {
-        await addToSchedule(
-          new InterstitialGraphics(previousEntryEnded!, thisEntryStarts)
-        );
-      }
-
-      previousEntryEnded = new Date(entry.endsAt);
+    if (typeof previousEntryEnded !== "undefined") {
+      await addToSchedule(
+        new InterstitialGraphics(previousEntryEnded!, thisEntryStarts)
+      );
     }
-  } catch (e) {
-    log.error("error", e);
+
+    previousEntryEnded = new Date(entry.endsAt);
   }
 };
 
