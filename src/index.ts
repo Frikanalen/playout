@@ -11,7 +11,16 @@ export const log: Logger = new Logger();
 
 OpenAPI.BASE = FK_API;
 
-export const connection = new CasparCG(CASPAR_HOST);
+export const connection = new CasparCG({
+  host: CASPAR_HOST,
+  autoConnect: false,
+  onConnected: () => log.info(`Connected to CasparCG "${CASPAR_HOST}"`),
+  onDisconnected: () => log.info(`Disconnected from CasparCG "${CASPAR_HOST}"`),
+  onError: (e) => log.warn(e),
+  onLog: (msg) => log.debug(msg),
+  autoReconnectAttempts: 1,
+});
+
 const getSchedule = async () => {
   const schedule = await SchedulingService.getSchedule(
     startOfToday().toISOString(),
@@ -25,7 +34,12 @@ const getSchedule = async () => {
   return schedule;
 };
 
-const get = async () => {
+const initCaspar = async (connection: CasparCG) => {
+  await connection.mixerClear(1);
+  await connection.clear(1);
+};
+
+const runPlayout = async () => {
   const scheduledEntries: Schedulable[] = [];
 
   const addToSchedule = async (entry: Schedulable) => {
@@ -34,8 +48,10 @@ const get = async () => {
   };
 
   try {
-    await connection.mixerClear(1);
-    await connection.clear(1);
+    log.info(`Connecting to CasparCG host "${connection.host}"...`);
+    await connection.connect();
+
+    await initCaspar(connection);
 
     const schedule = await getSchedule();
 
@@ -62,9 +78,8 @@ const get = async () => {
 (async () => {
   try {
     log.info(`Starting playout at ${new Date().toLocaleString()}`);
-    var text = await get();
+    await runPlayout();
   } catch (e) {
     console.log(e);
-    // Deal with the fact the chain failed
   }
 })();

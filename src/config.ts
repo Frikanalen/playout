@@ -1,14 +1,20 @@
-const configFromEnv = (envName: string, defaultValue?: string): string => {
-  if (envName in process.env) return process.env[envName]!;
+import { Logger } from "tslog";
 
-  if (defaultValue === undefined)
-    throw new Error(`Required environment ${envName} not set!`);
-
-  return defaultValue;
-};
+export const log: Logger = new Logger();
 
 import "dotenv/config";
 require("dotenv").config();
+
+const configFromEnv = (envName: string, defaultValue?: string): string => {
+  if (envName in process.env) return process.env[envName]!;
+
+  if (defaultValue === undefined) {
+    log.error(`Required environment ${envName} not set!`);
+    process.exit(1);
+  }
+
+  return defaultValue;
+};
 
 export const GRAPHICS_URL = configFromEnv("GRAPHICS_URL");
 export const FK_API = configFromEnv("FK_API");

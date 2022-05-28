@@ -4,7 +4,6 @@ import { ScheduleEntry } from "./client";
 import { CASPAR_MEDIA_URL_PREFIX } from "./config";
 import { Schedulable } from "./Schedulable";
 import nodeSchedule from "node-schedule";
-import { ConnectionOptions } from "casparcg-connection";
 
 export class ScheduledVideo implements Schedulable {
   private jobs: nodeSchedule.Job[];
@@ -74,7 +73,7 @@ export class ScheduledVideo implements Schedulable {
       log.warn(`timer was armed while program should be active`);
       const requiredSeek = differenceInSeconds(now, startsAt);
       log.info(`playing immediately and seeking ${requiredSeek} seconds!`);
-      this.play(new Date(), requiredSeek);
+      await this.play(new Date(), requiredSeek);
 
       this.jobs = [nodeSchedule.scheduleJob(endsAt, stop)];
     } else {
@@ -89,7 +88,7 @@ export class ScheduledVideo implements Schedulable {
   }
 
   async disarm() {
-    const { startsAt, endsAt, videoTitle } = this;
+    const { videoTitle } = this;
 
     log.debug(`Disarming: Video "${videoTitle}" at ${this.compactTimestamp()}`);
 
