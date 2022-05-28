@@ -1,7 +1,7 @@
 import { differenceInSeconds, format, sub } from "date-fns";
 import { connection, log } from ".";
 import { ScheduleEntry } from "./client";
-import { CASPAR_PREFIX } from "./config";
+import { CASPAR_MEDIA_URL_PREFIX } from "./config";
 import { Schedulable } from "./Schedulable";
 import nodeSchedule from "node-schedule";
 import { ConnectionOptions } from "casparcg-connection";
@@ -30,7 +30,7 @@ export class ScheduledVideo implements Schedulable {
       (x) => x.type === "broadcastable"
     )!.url;
 
-    return CASPAR_PREFIX + asset;
+    return CASPAR_MEDIA_URL_PREFIX + asset;
   }
 
   loadbg = async () => {
