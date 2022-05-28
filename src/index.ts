@@ -6,10 +6,20 @@ import { Logger } from "tslog";
 import { InterstitialGraphics } from "./InterstitialGraphics";
 import { ScheduledVideo } from "./ScheduledVideo";
 import { endOfToday, startOfToday } from "date-fns";
+import process from "node:process";
 
 export const log: Logger = new Logger();
 
 OpenAPI.BASE = FK_API;
+
+process
+  .on("unhandledRejection", (reason, p) => {
+    console.error(reason, "Unhandled Rejection at Promise", p);
+  })
+  .on("uncaughtException", (err) => {
+    console.error(err, "Uncaught Exception thrown");
+    process.exit(1);
+  });
 
 export const connection = new CasparCG({
   host: CASPAR_HOST,
@@ -62,9 +72,9 @@ const runPlayout = async () => {
 
       await addToSchedule(new ScheduledVideo(entry));
 
-      if (previousEntryEnded !== undefined) {
+      if (typeof previousEntryEnded !== "undefined") {
         await addToSchedule(
-          new InterstitialGraphics(previousEntryEnded, thisEntryStarts)
+          new InterstitialGraphics(previousEntryEnded!, thisEntryStarts)
         );
       }
 
