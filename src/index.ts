@@ -1,34 +1,26 @@
 import { CasparCG } from "casparcg-connection";
-import { OpenAPI, SchedulingService } from "./client";
+import { OpenAPI, SchedulingService } from "./generated";
 import { Schedulable } from "./Schedulable";
 import { CASPAR_HOST, FK_API } from "./config";
-import { Logger } from "tslog";
 import { InterstitialGraphics } from "./InterstitialGraphics";
 import { ScheduledVideo } from "./ScheduledVideo";
 import { endOfToday, startOfToday } from "date-fns";
 import process from "node:process";
-
-export const log: Logger = new Logger();
+import { log } from "./log.js";
 
 OpenAPI.BASE = FK_API;
 
 process
   .on("unhandledRejection", (reason, p) => {
-    console.error(reason, "Unhandled Rejection at Promise", p);
+    log.error(reason, "Unhandled Rejection at Promise", p);
   })
   .on("uncaughtException", (err) => {
-    console.error(err, "Uncaught Exception thrown");
+    log.error(err, "Uncaught Exception thrown");
     process.exit(1);
   });
 
 export const connection = new CasparCG({
   host: CASPAR_HOST,
-  autoConnect: false,
-  onConnected: () => log.info(`Connected to CasparCG "${CASPAR_HOST}"`),
-  onDisconnected: () => log.info(`Disconnected from CasparCG "${CASPAR_HOST}"`),
-  onError: (e) => log.warn(e),
-  onLog: (msg) => log.debug(msg),
-  autoReconnectAttempts: 1,
 });
 
 const getSchedule = async () => {
@@ -50,8 +42,11 @@ const getSchedule = async () => {
 const initCaspar = async (connection: CasparCG) => {
   log.info(`Connecting to CasparCG host "${connection.host}"...`);
   await connection.connect();
-  await connection.mixerClear(1);
-  await connection.clear(1);
+
+  await connection.mixerClear({ channel: 1, layer: 50 });
+  await connection.mixerClear({ channel: 1, layer: 60 });
+
+  await connection.clear({ channel: 1 });
 };
 
 const runPlayout = async () => {
@@ -88,6 +83,6 @@ const runPlayout = async () => {
     log.info(`Starting playout at ${new Date().toLocaleString()}`);
     await runPlayout();
   } catch (e) {
-    console.log(e);
+    log.error(e);
   }
 })();

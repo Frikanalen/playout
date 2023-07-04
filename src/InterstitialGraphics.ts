@@ -1,8 +1,9 @@
 import nodeSchedule from "node-schedule";
 import { add, format, sub, subMilliseconds } from "date-fns";
-import { GRAPHICS_URL } from "./config";
+import { CG_LAYER, GRAPHICS_URL } from "./config";
 import { Schedulable } from "./Schedulable";
-import { connection, log } from ".";
+import { connection } from ".";
+import { log } from "./log.js";
 
 export class InterstitialGraphics implements Schedulable {
   private jobs: nodeSchedule.Job[];
@@ -20,25 +21,29 @@ export class InterstitialGraphics implements Schedulable {
   async load() {
     log.info(`CG loading, URL: ${GRAPHICS_URL}`);
 
-    await connection.cgAdd(1, 100, 0, GRAPHICS_URL, false);
+    await connection.cgAdd({
+      ...CG_LAYER,
+      template: GRAPHICS_URL,
+      playOnLoad: false,
+    });
   }
 
   async play() {
     log.info(`Playing CG`);
 
-    await connection.cgPlay(1, 100, 0);
+    await connection.cgPlay(CG_LAYER);
   }
 
   async stop() {
     log.info(`Stopping CG`);
 
-    await connection.cgStop(1, 100, 0);
+    await connection.cgStop(CG_LAYER);
   }
 
   async clear() {
     log.info(`Clearing CG`);
 
-    await connection.cgClear(1, 100);
+    await connection.cgClear(CG_LAYER);
   }
 
   async arm() {

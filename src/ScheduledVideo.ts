@@ -1,9 +1,10 @@
 import { differenceInSeconds, format, sub } from "date-fns";
-import { connection, log } from ".";
-import { ScheduleEntry } from "./client";
-import { CASPAR_MEDIA_URL_PREFIX } from "./config";
+import { connection } from ".";
+import { ScheduleEntry } from "./generated";
+import { CASPAR_MEDIA_URL_PREFIX, VIDEO_LAYER } from "./config";
 import { Schedulable } from "./Schedulable";
 import nodeSchedule from "node-schedule";
+import { log } from "./log.js";
 
 export class ScheduledVideo implements Schedulable {
   private jobs: nodeSchedule.Job[];
@@ -35,28 +36,22 @@ export class ScheduledVideo implements Schedulable {
   loadbg = async () => {
     log.info(`Loading video "${this.entry.video.title}"`);
 
-    await connection.loadbg(1, 50, this.getFilename());
+    await connection.loadbg({ ...VIDEO_LAYER, clip: this.getFilename() });
   };
 
-  stop = async (firedAt: Date) => {
+  stop = async (_: Date) => {
     log.info(`Stopping video "${this.entry.video.title}"`);
 
-    await connection.stop(1, 50);
+    await connection.stop(VIDEO_LAYER);
   };
 
   play = async (firedAt: Date, seek: number = 0) => {
     log.info(`Playing video "${this.entry.video.title}"`);
-    await connection.play(
-      1,
-      50,
-      this.getFilename(),
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      undefined,
-      seek ? seek * 50 : undefined
-    );
+    await connection.play({
+      ...VIDEO_LAYER,
+      clip: this.getFilename(),
+      seek: seek ? seek * 50 : undefined,
+    });
   };
 
   async arm() {

@@ -1,8 +1,6 @@
-import { Logger } from "tslog";
-
-export const log: Logger = new Logger();
-
 import "dotenv/config";
+import { log } from "./log.js";
+
 require("dotenv").config();
 
 const configFromEnv = (envName: string, defaultValue?: string): string => {
@@ -20,3 +18,16 @@ export const GRAPHICS_URL = configFromEnv("GRAPHICS_URL");
 export const FK_API = configFromEnv("FK_API");
 export const CASPAR_MEDIA_URL_PREFIX = configFromEnv("CASPAR_MEDIA_URL_PREFIX");
 export const CASPAR_HOST = configFromEnv("CASPAR_HOST");
+
+export const LAYERS = {
+  graphics: 100,
+  logo: 60,
+  video: 50,
+} as const;
+
+export const VIDEO_LAYER = { channel: 1, layer: LAYERS.video } as const;
+export const CG_LAYER = {
+  channel: 1,
+  layer: LAYERS.graphics,
+  cgLayer: 0,
+} as const;
