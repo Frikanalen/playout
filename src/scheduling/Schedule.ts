@@ -51,7 +51,7 @@ export class Schedule {
   };
 
   start = () =>
-    new Promise(async (resolve, reject) => {
+    new Promise(async (_) => {
       const now = new Date();
       const schedule = await fetchSchedule(startOfDay(now), endOfDay(now));
       await this.load(schedule);

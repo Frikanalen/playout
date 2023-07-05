@@ -1,5 +1,5 @@
 import { fetchSchedule } from "./ScheduleFetcher.js";
-import { add, addMilliseconds, endOfDay, startOfDay } from "date-fns";
+import { addMilliseconds, endOfDay, startOfDay } from "date-fns";
 import { makeTestVideo } from "./ScheduledVideo.test.js";
 
 // Generate test schedule

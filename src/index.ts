@@ -1,6 +1,6 @@
 import { CasparCG } from "casparcg-connection";
 import { OpenAPI } from "./generated";
-import { FK_API, LAYERS, VIDEO_LAYER } from "./config";
+import { FK_API, LAYERS } from "./config";
 import process from "node:process";
 import { log } from "./log.js";
 import { Schedule } from "./scheduling/Schedule.js";

@@ -1,6 +1,5 @@
 import { InterstitialGraphics } from "./InterstitialGraphics.js";
 import { add, sub, subMilliseconds } from "date-fns";
-import { log } from "../log.js";
 
 // mock out connection to CasparCG
 jest.mock("../connection.js", () => {
