@@ -1,12 +1,10 @@
 import { CasparCG } from "casparcg-connection";
-import { OpenAPI, SchedulingService } from "./generated";
-import { Schedulable } from "./Schedulable";
-import { CASPAR_HOST, FK_API } from "./config";
-import { InterstitialGraphics } from "./InterstitialGraphics";
-import { ScheduledVideo } from "./ScheduledVideo";
-import { endOfToday, startOfToday } from "date-fns";
+import { OpenAPI } from "./generated";
+import { FK_API, LAYERS, VIDEO_LAYER } from "./config";
 import process from "node:process";
 import { log } from "./log.js";
+import { Schedule } from "./scheduling/Schedule.js";
+import { connection } from "./connection.js";
 
 OpenAPI.BASE = FK_API;
 
@@ -19,63 +17,29 @@ process
     process.exit(1);
   });
 
-export const connection = new CasparCG({
-  host: CASPAR_HOST,
-});
-
-const getSchedule = async () => {
-  const schedule = await SchedulingService.getSchedule(
-    startOfToday().toISOString(),
-    endOfToday().toISOString()
-  );
-
-  if (!schedule.length)
-    throw new Error(
-      `Schedule for ${startOfToday().toISOString()}-${endOfToday().toISOString()}, contained 0 items!`
-    );
-
-  log.info(`Schedule loaded ${schedule.length} items.`);
-
-  return schedule;
-};
-
 const initCaspar = async (connection: CasparCG) => {
   log.info(`Connecting to CasparCG host "${connection.host}"...`);
   await connection.connect();
 
-  await connection.mixerClear({ channel: 1, layer: 50 });
-  await connection.mixerClear({ channel: 1, layer: 60 });
+  log.info(`Clearing all layers...`);
+  // get layers with contents
+  const infoRequest = await connection.info({ channel: 1 });
+  const info = await infoRequest.request;
+  log.info(JSON.stringify(info?.data));
+
+  await connection.mixerClear({ channel: 1, layer: LAYERS.graphics });
+  await connection.mixerClear({ channel: 1, layer: LAYERS.video });
+  await connection.mixerClear({ channel: 1, layer: LAYERS.logo });
 
   await connection.clear({ channel: 1 });
 };
 
 const runPlayout = async () => {
-  const scheduledEntries: Schedulable[] = [];
-
-  const addToSchedule = async (entry: Schedulable) => {
-    await entry.arm();
-    scheduledEntries.push(entry);
-  };
-
   await initCaspar(connection);
 
-  const schedule = await getSchedule();
+  const schedule = new Schedule();
 
-  let previousEntryEnded: Date | undefined;
-
-  for (const entry of schedule) {
-    const thisEntryStarts = new Date(entry.startsAt);
-
-    await addToSchedule(new ScheduledVideo(entry));
-
-    if (typeof previousEntryEnded !== "undefined") {
-      await addToSchedule(
-        new InterstitialGraphics(previousEntryEnded!, thisEntryStarts)
-      );
-    }
-
-    previousEntryEnded = new Date(entry.endsAt);
-  }
+  await schedule.start();
 };
 
 (async () => {

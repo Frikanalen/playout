@@ -1,11 +1,9 @@
 # playout
 
-This is Frikanalen's third-generation CasparCG-based playout, in early development.
+Third generation CasparCG-based playout, in development.
 
 ## TODO
 
-* Observability
-* Play log generation
 * Management API
 
 ## Config

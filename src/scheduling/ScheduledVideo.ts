@@ -1,12 +1,16 @@
 import { differenceInSeconds, format, sub } from "date-fns";
-import { connection } from ".";
-import { ScheduleEntry } from "./generated";
-import { CASPAR_MEDIA_URL_PREFIX, VIDEO_LAYER } from "./config";
-import { Schedulable } from "./Schedulable";
+import { ScheduleEntry } from "../generated/index.js";
+import {
+  CASPAR_MEDIA_URL_PREFIX,
+  CHANNEL_FPS,
+  VIDEO_LAYER,
+} from "../config.js";
 import nodeSchedule from "node-schedule";
-import { log } from "./log.js";
+import { log } from "../log.js";
+import { connection } from "../connection.js";
+import { ScheduleItem } from "./Schedule.js";
 
-export class ScheduledVideo implements Schedulable {
+export class ScheduledVideo implements ScheduleItem {
   private jobs: nodeSchedule.Job[];
   startsAt: Date;
   endsAt: Date;
@@ -17,6 +21,10 @@ export class ScheduledVideo implements Schedulable {
     this.endsAt = new Date(entry.endsAt);
     this.videoTitle = entry.video.title!;
     this.jobs = [];
+  }
+
+  getJobs() {
+    return this.jobs;
   }
 
   compactTimestamp() {
@@ -45,12 +53,15 @@ export class ScheduledVideo implements Schedulable {
     await connection.stop(VIDEO_LAYER);
   };
 
-  play = async (firedAt: Date, seek: number = 0) => {
+  play = async (firedAt: Date, seekSeconds: number = 0) => {
+    const seek = seekSeconds ? seekSeconds * CHANNEL_FPS : undefined;
+
     log.info(`Playing video "${this.entry.video.title}"`);
+
     await connection.play({
       ...VIDEO_LAYER,
       clip: this.getFilename(),
-      seek: seek ? seek * 50 : undefined,
+      seek,
     });
   };
 
@@ -75,9 +86,13 @@ export class ScheduledVideo implements Schedulable {
       log.debug(`Arming timer for ${this.compactTimestamp()} "${videoTitle}"`);
 
       this.jobs = [
-        nodeSchedule.scheduleJob(sub(startsAt, { seconds: 10 }), loadbg),
-        nodeSchedule.scheduleJob(startsAt, play),
-        nodeSchedule.scheduleJob(endsAt, stop),
+        nodeSchedule.scheduleJob(
+          "load",
+          sub(startsAt, { seconds: 10 }),
+          loadbg
+        ),
+        nodeSchedule.scheduleJob("start", startsAt, play),
+        nodeSchedule.scheduleJob("stop", endsAt, stop),
       ];
     }
   }
@@ -91,5 +106,7 @@ export class ScheduledVideo implements Schedulable {
       log.debug(`Cancelling job ${job.name}`);
       job.cancel();
     }
+
+    this.jobs = [];
   }
 }

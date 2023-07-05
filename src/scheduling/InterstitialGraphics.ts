@@ -1,17 +1,27 @@
 import nodeSchedule from "node-schedule";
 import { add, format, sub, subMilliseconds } from "date-fns";
-import { CG_LAYER, GRAPHICS_URL } from "./config";
-import { Schedulable } from "./Schedulable";
-import { connection } from ".";
-import { log } from "./log.js";
+import { CG_LAYER, GRAPHICS_URL } from "../config.js";
+import { log } from "../log.js";
+import { connection } from "../connection.js";
+import { ScheduleItem } from "./Schedule.js";
 
-export class InterstitialGraphics implements Schedulable {
+const wait = async (ms: number) =>
+  new Promise((resolve) => setTimeout(resolve, ms));
+
+export class InterstitialGraphics implements ScheduleItem {
   private jobs: nodeSchedule.Job[];
+
+  getJobs() {
+    return this.jobs;
+  }
 
   compactTimestamp() {
     const { startsAt, endsAt } = this;
 
-    return format(startsAt, "HH:mm:ss.SSx - ") + format(endsAt, "HH:mm:ss.SSx");
+    return `${format(startsAt, "HH:mm:ss.SSx")} - ${format(
+      endsAt,
+      "HH:mm:ss.SSx"
+    )}`;
   }
 
   constructor(private startsAt: Date, private endsAt: Date) {
@@ -42,7 +52,6 @@ export class InterstitialGraphics implements Schedulable {
 
   async clear() {
     log.info(`Clearing CG`);
-
     await connection.cgClear(CG_LAYER);
   }
 
@@ -61,10 +70,13 @@ export class InterstitialGraphics implements Schedulable {
     if (startsAt <= now) {
       log.warn(`Graphics ${this.compactTimestamp()} should be running`);
 
+      log.info(`Arming graphics for ${this.compactTimestamp()}`);
       await load();
-      setTimeout(async () => {
-        await play();
-      }, 1000);
+      // Wait a second before playing to allow the CG to load
+      await wait(1000);
+
+      log.info(`Playing graphics for ${this.compactTimestamp()}`);
+      await play();
 
       this.jobs = [
         nodeSchedule.scheduleJob(endsAt, stop),
