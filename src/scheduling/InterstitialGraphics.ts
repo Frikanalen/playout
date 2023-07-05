@@ -1,31 +1,20 @@
-import nodeSchedule from "node-schedule";
-import { add, format, sub, subMilliseconds } from "date-fns";
+import { add, sub, subMilliseconds } from "date-fns";
 import { CG_LAYER, GRAPHICS_URL } from "../config.js";
 import { log } from "../log.js";
 import { connection } from "../connection.js";
-import { ScheduleItem } from "./Schedule.js";
+import { compactTimestamp, ScheduleItem } from "./Schedule.js";
+import { timeline } from "./Timeline.js";
 
 const wait = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
 
 export class InterstitialGraphics implements ScheduleItem {
-  private jobs: nodeSchedule.Job[];
+  startsAt: Date;
+  endsAt: Date;
 
-  getJobs() {
-    return this.jobs;
-  }
-
-  compactTimestamp() {
-    const { startsAt, endsAt } = this;
-
-    return `${format(startsAt, "HH:mm:ss.SSx")} - ${format(
-      endsAt,
-      "HH:mm:ss.SSx"
-    )}`;
-  }
-
-  constructor(private startsAt: Date, private endsAt: Date) {
-    this.jobs = [];
+  constructor(startsAt: Date, endsAt: Date) {
+    this.startsAt = startsAt;
+    this.endsAt = endsAt;
   }
 
   async load() {
@@ -68,35 +57,29 @@ export class InterstitialGraphics implements ScheduleItem {
     }
 
     if (startsAt <= now) {
-      log.warn(`Graphics ${this.compactTimestamp()} should be running`);
+      log.warn(`Graphics ${compactTimestamp(this)} should be running`);
 
-      log.info(`Arming graphics for ${this.compactTimestamp()}`);
+      log.info(`Arming graphics for ${compactTimestamp(this)}`);
       await load();
       // Wait a second before playing to allow the CG to load
       await wait(1000);
 
-      log.info(`Playing graphics for ${this.compactTimestamp()}`);
+      log.info(`Playing graphics for ${compactTimestamp(this)}`);
       await play();
 
-      this.jobs = [
-        nodeSchedule.scheduleJob(endsAt, stop),
-        nodeSchedule.scheduleJob(clearAt, clear),
-      ];
+      timeline.add(this, endsAt, "stop", stop);
+      timeline.add(this, clearAt, "clear", clear);
     } else {
-      log.debug(`Arming graphics for ${this.compactTimestamp()}`);
+      log.debug(`Arming graphics for ${compactTimestamp(this)}`);
 
-      this.jobs = [
-        nodeSchedule.scheduleJob(loadAt, load),
-        nodeSchedule.scheduleJob(playAt, play),
-        nodeSchedule.scheduleJob(endsAt, stop),
-        nodeSchedule.scheduleJob(clearAt, clear),
-      ];
+      timeline.add(this, loadAt, "load", load);
+      timeline.add(this, playAt, "start", play);
+      timeline.add(this, endsAt, "stop", stop);
+      timeline.add(this, clearAt, "clear", clear);
     }
   }
 
   async disarm() {
-    for (const job of this.jobs) {
-      job.cancel();
-    }
+    await timeline.remove(this);
   }
 }

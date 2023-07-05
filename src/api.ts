@@ -1,5 +1,6 @@
 import { WebSocketServer, WebSocket } from "ws";
 import { log } from "./log.js";
+import { timeline } from "./scheduling/Timeline.js";
 
 const wsServer = new WebSocketServer({ port: 8080 });
 
@@ -11,15 +12,16 @@ const sendUpdate = () => {
   const now = new Date();
   const message = JSON.stringify({
     time: now.toISOString(),
+    timeline: timeline.getTimeline(),
   });
 
   clients.forEach((sock) => sock.send(message));
 };
 
-// If any clients are connected, send an update every 250 ms.
+// If any clients are connected, send an update every 2 seconds
 const setOrClearInterval = () => {
   if (clients.length && !updateTimer) {
-    updateTimer = setInterval(sendUpdate, 250);
+    updateTimer = setInterval(sendUpdate, 2000);
   } else if (!clients.length && updateTimer) {
     clearInterval(updateTimer);
     updateTimer = null;

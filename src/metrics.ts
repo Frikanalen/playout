@@ -1,6 +1,6 @@
 import { createServer } from "http";
 import { Gauge, register } from "prom-client";
-import schedule from "node-schedule";
+import { timeline } from "./scheduling/Timeline.js";
 
 // Create a new Gauge metric
 const scheduledItems = new Gauge({
@@ -8,16 +8,11 @@ const scheduledItems = new Gauge({
   help: "Number of scheduled jobs",
 });
 
-// Function to update the metric
-function updateScheduledItemsMetric() {
-  const jobs = Object.keys(schedule.scheduledJobs).length;
-  scheduledItems.set(jobs);
-}
-
 // Create a server to serve the metrics
 createServer((req, res) => {
   if (req.url === "/metrics") {
-    updateScheduledItemsMetric();
+    scheduledItems.set(timeline.getTimeline().length);
+
     res.setHeader("Content-Type", "text/plain");
     res.end(register.metrics());
   } else {

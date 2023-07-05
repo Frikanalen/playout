@@ -1,5 +1,6 @@
 import { InterstitialGraphics } from "./InterstitialGraphics.js";
 import { add, sub, subMilliseconds } from "date-fns";
+import { timeline } from "./Timeline.js";
 
 // mock out connection to CasparCG
 jest.mock("../connection.js", () => {
@@ -9,6 +10,21 @@ jest.mock("../connection.js", () => {
       cgPlay: jest.fn(),
       cgStop: jest.fn(),
       cgClear: jest.fn(),
+    },
+  };
+});
+
+// Reset mock before every test
+beforeEach(() => {
+  jest.clearAllMocks();
+});
+
+// Mock out the timeline
+jest.mock("../scheduling/Timeline.js", () => {
+  return {
+    timeline: {
+      add: jest.fn(),
+      remove: jest.fn(),
     },
   };
 });
@@ -31,7 +47,8 @@ it("generates no jobs if the end time is in the past", () => {
 
   const graphics = new InterstitialGraphics(startsAt, endsAt);
 
-  expect(graphics.getJobs()).toHaveLength(0);
+  expect(graphics).toBeDefined();
+  expect(timeline.add).not.toHaveBeenCalled();
 });
 
 it("Generates correct load, play, stop and clear jobs if in future", async () => {
@@ -43,16 +60,38 @@ it("Generates correct load, play, stop and clear jobs if in future", async () =>
   const graphics = new InterstitialGraphics(startsAt, endsAt);
   await graphics.arm();
 
-  expect(graphics.getJobs()).toHaveLength(4);
+  // Check that the correct number of items are added to timeline
+  expect(timeline.add).toHaveBeenCalledTimes(4);
 
-  const [loadJob, startJob, stopJob, clearJob] = graphics.getJobs();
-
-  expect(loadJob.nextInvocation().getTime()).toBe(loadsAt.getTime());
-  expect(startJob.nextInvocation().getTime()).toBe(
-    subMilliseconds(startsAt, 500).getTime()
+  // Check that the correct items are added to timeline
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    1,
+    graphics,
+    loadsAt,
+    "load",
+    graphics.load
   );
-  expect(stopJob.nextInvocation().getTime()).toBe(endsAt.getTime());
-  expect(clearJob.nextInvocation().getTime()).toBe(clearsAt.getTime());
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    2,
+    graphics,
+    subMilliseconds(startsAt, 500),
+    "start",
+    graphics.play
+  );
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    3,
+    graphics,
+    endsAt,
+    "stop",
+    graphics.stop
+  );
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    4,
+    graphics,
+    clearsAt,
+    "clear",
+    graphics.clear
+  );
 });
 
 it("immediately plays if start time in past and end time in future", async () => {
@@ -63,10 +102,36 @@ it("immediately plays if start time in past and end time in future", async () =>
   const graphics = new InterstitialGraphics(startsAt, endsAt);
   await graphics.arm();
 
-  expect(graphics.getJobs()).toHaveLength(2);
+  // Check that the correct number of items are added to timeline
+  expect(timeline.add).toHaveBeenCalledTimes(2);
 
-  const [stopJob, clearJob] = graphics.getJobs();
+  // Check that the correct items are added to timeline
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    1,
+    graphics,
+    endsAt,
+    "stop",
+    graphics.stop
+  );
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    2,
+    graphics,
+    clearsAt,
+    "clear",
+    graphics.clear
+  );
+});
 
-  expect(stopJob.nextInvocation().getTime()).toBe(endsAt.getTime());
-  expect(clearJob.nextInvocation().getTime()).toBe(clearsAt.getTime());
+it("removes itself from timeline when disarmed", async () => {
+  const startsAt = add(new Date(), { days: 1 });
+  const endsAt = add(startsAt, { seconds: 10 });
+
+  const graphics = new InterstitialGraphics(startsAt, endsAt);
+  await graphics.arm();
+
+  expect(timeline.add).toHaveBeenCalledTimes(4);
+
+  await graphics.disarm();
+
+  expect(timeline.remove).toHaveBeenCalledWith(graphics);
 });

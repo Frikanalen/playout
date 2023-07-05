@@ -1,36 +1,25 @@
-import { differenceInSeconds, format, sub } from "date-fns";
+import { differenceInSeconds, sub } from "date-fns";
 import { ScheduleEntry } from "../generated/index.js";
 import {
   CASPAR_MEDIA_URL_PREFIX,
   CHANNEL_FPS,
   VIDEO_LAYER,
 } from "../config.js";
-import nodeSchedule from "node-schedule";
 import { log } from "../log.js";
 import { connection } from "../connection.js";
-import { ScheduleItem } from "./Schedule.js";
+import { compactTimestamp, ScheduleItem } from "./Schedule.js";
+import { timeline } from "./Timeline.js";
 
 export class ScheduledVideo implements ScheduleItem {
-  private jobs: nodeSchedule.Job[];
   startsAt: Date;
   endsAt: Date;
+
   videoTitle: string;
 
   constructor(private entry: ScheduleEntry) {
     this.startsAt = new Date(entry.startsAt);
     this.endsAt = new Date(entry.endsAt);
     this.videoTitle = entry.video.title!;
-    this.jobs = [];
-  }
-
-  getJobs() {
-    return this.jobs;
-  }
-
-  compactTimestamp() {
-    const { startsAt, endsAt } = this;
-
-    return format(startsAt, "HH:mm:ss.SSx - ") + format(endsAt, "HH:mm:ss.SSx");
   }
 
   getFilename() {
@@ -81,32 +70,22 @@ export class ScheduledVideo implements ScheduleItem {
       log.info(`playing immediately and seeking ${requiredSeek} seconds!`);
       await this.play(new Date(), requiredSeek);
 
-      this.jobs = [nodeSchedule.scheduleJob(endsAt, stop)];
+      timeline.add(this, endsAt, "stop", stop);
     } else {
-      log.debug(`Arming timer for ${this.compactTimestamp()} "${videoTitle}"`);
+      log.debug(`Arming timer for ${compactTimestamp(this)} "${videoTitle}"`);
+      const loadsAt = sub(startsAt, { seconds: 10 });
 
-      this.jobs = [
-        nodeSchedule.scheduleJob(
-          "load",
-          sub(startsAt, { seconds: 10 }),
-          loadbg
-        ),
-        nodeSchedule.scheduleJob("start", startsAt, play),
-        nodeSchedule.scheduleJob("stop", endsAt, stop),
-      ];
+      timeline.add(this, loadsAt, "load", loadbg);
+      timeline.add(this, startsAt, "start", play);
+      timeline.add(this, endsAt, "stop", stop);
     }
   }
 
   async disarm() {
     const { videoTitle } = this;
 
-    log.debug(`Disarming: Video "${videoTitle}" at ${this.compactTimestamp()}`);
+    log.debug(`Disarming: Video "${videoTitle}" at ${compactTimestamp(this)}`);
 
-    for (const job of this.jobs) {
-      log.debug(`Cancelling job ${job.name}`);
-      job.cancel();
-    }
-
-    this.jobs = [];
+    timeline.remove(this);
   }
 }

@@ -5,6 +5,9 @@ import process from "node:process";
 import { log } from "./log.js";
 import { Schedule } from "./scheduling/Schedule.js";
 import { connection } from "./connection.js";
+import { fetchSchedule } from "./scheduling/ScheduleFetcher.js";
+import { endOfDay, startOfDay } from "date-fns";
+import { timeline } from "./scheduling/Timeline.js";
 
 OpenAPI.BASE = FK_API;
 
@@ -39,7 +42,10 @@ const runPlayout = async () => {
 
   const schedule = new Schedule();
 
-  await schedule.start();
+  const now = new Date();
+  const scheduleEntries = await fetchSchedule(startOfDay(now), endOfDay(now));
+  await schedule.load(scheduleEntries);
+  await timeline.run();
 };
 
 (async () => {

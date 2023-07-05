@@ -4,6 +4,7 @@ import { add, sub } from "date-fns";
 import { CHANNEL_FPS, VIDEO_LAYER } from "../config.js";
 import { faker } from "@faker-js/faker";
 import { connection } from "../connection.js";
+import { timeline } from "./Timeline.js";
 
 // mock out connection to CasparCG
 jest.mock("../connection.js", () => {
@@ -14,6 +15,21 @@ jest.mock("../connection.js", () => {
       play: jest.fn(),
     },
   };
+});
+
+// Mock out the timeline
+jest.mock("../scheduling/Timeline.js", () => {
+  return {
+    timeline: {
+      add: jest.fn(),
+      remove: jest.fn(),
+    },
+  };
+});
+
+// Reset mock before every test
+beforeEach(() => {
+  jest.clearAllMocks();
 });
 
 export const makeTestVideo = (): Video => {
@@ -77,7 +93,7 @@ it("creates no jobs if in the past", async () => {
   const scheduledVideo = new ScheduledVideo(scheduleEntry);
   expect(scheduledVideo).toBeDefined();
   await scheduledVideo.arm();
-  expect(scheduledVideo.getJobs().length).toBe(0);
+  expect(timeline.add).not.toHaveBeenCalled();
 });
 it("creates three jobs at the right times if in the future", async () => {
   const startsAt = add(new Date(), { days: 1 });
@@ -88,13 +104,29 @@ it("creates three jobs at the right times if in the future", async () => {
 
   const scheduledVideo = new ScheduledVideo(scheduleEntry);
   await scheduledVideo.arm();
-  expect(scheduledVideo.getJobs().length).toBe(3);
-
-  const [loadbgJob, playJob, stopJob] = scheduledVideo.getJobs();
-
-  expect(loadbgJob.nextInvocation().getTime()).toBe(loadsAt.getTime());
-  expect(playJob.nextInvocation().getTime()).toBe(startsAt.getTime());
-  expect(stopJob.nextInvocation().getTime()).toBe(endsAt.getTime());
+  // Check that Timeline.add() is called with the right arguments
+  expect(timeline.add).toHaveBeenCalledTimes(3);
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    1,
+    scheduledVideo,
+    loadsAt,
+    "load",
+    scheduledVideo.loadbg
+  );
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    2,
+    scheduledVideo,
+    startsAt,
+    "start",
+    scheduledVideo.play
+  );
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    3,
+    scheduledVideo,
+    endsAt,
+    "stop",
+    scheduledVideo.stop
+  );
 });
 
 it("calls play immediately when armed if video is presently playing", async () => {
@@ -108,7 +140,14 @@ it("calls play immediately when armed if video is presently playing", async () =
 
   const scheduledVideo = new ScheduledVideo(scheduleEntry);
   await scheduledVideo.arm();
-  expect(scheduledVideo.getJobs().length).toBe(1);
+
+  // verify that timeline.add() is called with stopsAt
+  expect(timeline.add).toHaveBeenCalledWith(
+    scheduledVideo,
+    endsAt,
+    "stop",
+    scheduledVideo.stop
+  );
 
   // verify that connection.play() is called after arm()
   expect(connection.play).toHaveBeenCalledTimes(1);
@@ -119,21 +158,42 @@ it("calls play immediately when armed if video is presently playing", async () =
     clip: "test.mp4",
     seek: randomSeconds * CHANNEL_FPS,
   });
-
-  const [stopJob] = scheduledVideo.getJobs();
-
-  expect(stopJob.nextInvocation().getTime()).toBe(endsAt.getTime());
 });
 
 it("Has zero jobs after disarming", async () => {
   const startsAt = add(new Date(), { days: 1 });
   const endsAt = add(startsAt, { seconds: 10 });
-
+  const loadsAt = sub(startsAt, { seconds: 10 });
   const scheduleEntry = makeTestScheduleEntry(startsAt, endsAt);
 
   const scheduledVideo = new ScheduledVideo(scheduleEntry);
   await scheduledVideo.arm();
-  expect(scheduledVideo.getJobs().length).toBe(3);
+
+  // Check that Timeline.add() is called with the right arguments
+  expect(timeline.add).toHaveBeenCalledTimes(3);
+
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    1,
+    scheduledVideo,
+    loadsAt,
+    "load",
+    scheduledVideo.loadbg
+  );
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    2,
+    scheduledVideo,
+    startsAt,
+    "start",
+    scheduledVideo.play
+  );
+  expect(timeline.add).toHaveBeenNthCalledWith(
+    3,
+    scheduledVideo,
+    endsAt,
+    "stop",
+    scheduledVideo.stop
+  );
+
   await scheduledVideo.disarm();
-  expect(scheduledVideo.getJobs().length).toBe(0);
+  expect(timeline.remove).toHaveBeenCalledWith(scheduledVideo);
 });
