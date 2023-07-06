@@ -17,7 +17,7 @@ const requireEnv = (envName: string, defaultValue?: string): string => {
 export const GRAPHICS_URL = requireEnv("GRAPHICS_URL");
 export const FK_API = process.env["FK_API"];
 export const CASPAR_MEDIA_URL_PREFIX = requireEnv("CASPAR_MEDIA_URL_PREFIX");
-export const CASPAR_HOST = requireEnv("CASPAR_HOST");
+export const CASPAR_HOST = process.env["CASPAR_HOST"];
 
 export const CHANNEL_FPS = 50 as const;
 
