@@ -51,9 +51,9 @@ export class InterstitialGraphics implements ScheduleItem {
   async arm() {
     const now = new Date();
     const { startsAt, endsAt, load, play, stop, clear } = this;
-    const loadAt = sub(startsAt, { seconds: 1 });
+    const loadAt = sub(startsAt, { seconds: 10 });
     const playAt = subMilliseconds(startsAt, 500);
-    const clearAt = add(endsAt, { seconds: 2 });
+    const clearAt = add(endsAt, { seconds: 10 });
 
     if (endsAt <= now) {
       log.debug(
