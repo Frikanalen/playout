@@ -7,6 +7,7 @@ import { connection } from "./connection.js";
 import { endOfDay, startOfDay } from "date-fns";
 import { timeline } from "./scheduling/Timeline.js";
 import { makeTestSchedule } from "./scheduling/testUtils.js";
+import { startWebsocketServer } from "./api.js";
 
 OpenAPI.BASE = FK_API;
 
@@ -59,6 +60,7 @@ const runPlayout = async () => {
 (async () => {
   try {
     log.info(`Starting playout at ${new Date().toLocaleString()}`);
+    await startWebsocketServer();
     await runPlayout();
   } catch (e) {
     log.error(e);

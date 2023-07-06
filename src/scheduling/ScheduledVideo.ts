@@ -15,13 +15,13 @@ import { timeline } from "./Timeline.js";
 export class ScheduledVideo implements ScheduleItem {
   startsAt: Date;
   endsAt: Date;
-
-  videoTitle: string;
+  itemType = "scheduledVideo" as const;
+  label: string;
 
   constructor(private entry: ScheduleEntry) {
     this.startsAt = new Date(entry.startsAt);
     this.endsAt = new Date(entry.endsAt);
-    this.videoTitle = entry.video.title!;
+    this.label = entry.video.title!;
   }
 
   getFilename() {
@@ -57,13 +57,13 @@ export class ScheduledVideo implements ScheduleItem {
   };
 
   async arm() {
-    const { startsAt, endsAt, stop, play, loadbg, videoTitle } = this;
+    const { startsAt, endsAt, stop, play, loadbg, label } = this;
 
     const now = new Date();
 
     if (endsAt <= now) {
       log.debug(
-        `Not scheduling video "${videoTitle}" (end ${compactDate(
+        `Not scheduling video "${label}" (end ${compactDate(
           endsAt,
         )} is in the past)`,
       );
@@ -78,7 +78,7 @@ export class ScheduledVideo implements ScheduleItem {
 
       timeline.addEvent(this, endsAt, "stop", stop);
     } else {
-      log.debug(`Arming timer for ${compactTimestamp(this)} "${videoTitle}"`);
+      log.debug(`Arming timer for ${compactTimestamp(this)} "${label}"`);
       const loadsAt = sub(startsAt, { seconds: 10 });
 
       timeline.addEvent(this, loadsAt, "load", loadbg);
@@ -88,9 +88,9 @@ export class ScheduledVideo implements ScheduleItem {
   }
 
   async disarm() {
-    const { videoTitle } = this;
+    const { label } = this;
 
-    log.debug(`Disarming: Video "${videoTitle}" at ${compactTimestamp(this)}`);
+    log.debug(`Disarming: Video "${label}" at ${compactTimestamp(this)}`);
 
     timeline.remove(this);
   }

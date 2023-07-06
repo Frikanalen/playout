@@ -13,6 +13,8 @@ const wait = async (ms: number) =>
 export class InterstitialGraphics implements ScheduleItem {
   startsAt: Date;
   endsAt: Date;
+  itemType = "graphics" as const;
+  label = "Sendegrafikk";
 
   constructor(startsAt: Date, endsAt: Date) {
     this.startsAt = startsAt;

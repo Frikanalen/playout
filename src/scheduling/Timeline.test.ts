@@ -22,6 +22,8 @@ it("should addEvent a single item", () => {
     endsAt: new Date("2020-01-01T00:00:00.000Z"),
     arm: jest.fn(),
     disarm: jest.fn(),
+    itemType: "scheduledVideo" as const,
+    label: "test",
   };
 
   const item = {

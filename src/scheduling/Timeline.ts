@@ -17,13 +17,14 @@ export class Timeline {
   addItem = async (item: ScheduleItem) => {
     await item.arm();
     this.items.push(item);
+    this.items.sort((a, b) => a.startsAt.getTime() - b.startsAt.getTime());
   };
 
   addEvent = (
     item: ScheduleItem,
     fireAt: Date,
     eventLabel: string,
-    cb: (firedAt: Date, ...rest: any[]) => Promise<void>
+    cb: (firedAt: Date, ...rest: any[]) => Promise<void>,
   ) => {
     const invokeCallback = async (firedAt: Date, ...rest: any[]) => {
       log.info(`Firing ${eventLabel} at ${compactTimestamp(item)}`);

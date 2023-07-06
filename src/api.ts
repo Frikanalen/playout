@@ -1,48 +1,50 @@
-import { WebSocketServer, WebSocket } from "ws";
+import { WebSocket, WebSocketServer } from "ws";
 import { log } from "./log.js";
 import { timeline } from "./scheduling/Timeline.js";
+import { getRemoteAddress } from "./api/getRemoteAddress.js";
+import type { IncomingMessage } from "http";
 
-const wsServer = new WebSocketServer({ port: 8080 });
-
-const clients: WebSocket[] = [];
-
+const UPDATE_INTERVAL_MS = 200 as const;
 let updateTimer: NodeJS.Timer | null = null;
+let wsServer: WebSocketServer | null = null;
 
 const sendUpdate = () => {
+  if (!wsServer) {
+    log.warn(`Websocket server not initialized`);
+    return;
+  }
+
+  if (!wsServer.clients.size) {
+    if (updateTimer) clearInterval(updateTimer);
+    return;
+  }
+
   const now = new Date();
   const message = JSON.stringify({
     time: now.toISOString(),
-    timeline: timeline.getEvents(),
+    timeline: timeline.getItems(),
   });
 
-  clients.forEach((sock) => sock.send(message));
+  wsServer.clients.forEach((sock) => sock.send(message));
 };
+const handleConnection = (wsSocket: WebSocket, incoming: IncomingMessage) => {
+  log.info(`Websocket client connected from ${getRemoteAddress(incoming)}`);
 
-// If any clients are connected, send an update every 2 seconds
-const setOrClearInterval = () => {
-  if (clients.length && !updateTimer) {
-    updateTimer = setInterval(sendUpdate, 2000);
-  } else if (!clients.length && updateTimer) {
-    clearInterval(updateTimer);
-    updateTimer = null;
-  } else {
-    log.warn("unexpected state in setOrClearInterval");
-  }
-};
-
-wsServer.on("connection", (wsSocket) => {
-  clients.push(wsSocket);
-  setOrClearInterval();
+  sendUpdate();
+  if (!updateTimer) updateTimer = setInterval(sendUpdate, UPDATE_INTERVAL_MS);
 
   wsSocket.on("error", log.error);
 
   wsSocket.on("close", () => {
-    const index = clients.indexOf(wsSocket);
-    if (index > -1) clients.splice(index, 1);
-    setOrClearInterval();
+    log.info(`Websocket client disconnected`);
   });
 
-  wsSocket.on("message", (data) => {
+  wsSocket.on("message", (data: any) => {
     log.warn(`Received message ${data} on read-only socket`);
   });
-});
+};
+
+export const startWebsocketServer = () => {
+  wsServer = new WebSocketServer({ port: 8080 });
+  wsServer.on("connection", handleConnection);
+};

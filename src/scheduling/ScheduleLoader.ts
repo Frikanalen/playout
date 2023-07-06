@@ -10,6 +10,8 @@ export interface ScheduleItem {
   disarm: () => Promise<void>;
   startsAt: Date;
   endsAt: Date;
+  itemType: "scheduledVideo" | "graphics";
+  label: string;
 }
 
 export const compactTimestamp = (item: ScheduleItem) => {
