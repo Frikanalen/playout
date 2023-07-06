@@ -11,26 +11,32 @@ import type {
   StopParameters,
 } from "casparcg-connection/dist/parameters.js";
 import type { Response, SendResult } from "casparcg-connection";
+import { log } from "../log.js";
 
 const fakeSendResult = () => ({
   error: undefined,
   request: undefined as unknown as Promise<Response>,
 });
-const fakeCommand = async <T>(_: T): Promise<SendResult> => {
-  return fakeSendResult();
-};
+const fakeCommand =
+  <T>(command: string) =>
+  async (args: T): Promise<SendResult> => {
+    log.debug(`Fake CasparCG command: ${command} called with ${args}`);
+    return fakeSendResult();
+  };
 // Mock CasparCG connection which does nothing but log events
 export const fakeCaspar = {
   host: "DUMMY HOST",
-  cgAdd: fakeCommand<CgAddParameters>,
-  cgPlay: fakeCommand<CgPlayParameters>,
-  cgStop: fakeCommand<CgStopParameters>,
-  cgClear: fakeCommand<CgClearParameters>,
-  play: fakeCommand<PlayParameters>,
-  loadbg: fakeCommand<LoadParameters>,
-  stop: fakeCommand<StopParameters>,
-  clear: fakeCommand<ClearParameters>,
-  mixerClear: fakeCommand<MixerClearParameters>,
-  info: fakeCommand<InfoParameters>,
-  connect: () => {},
+  cgAdd: fakeCommand<CgAddParameters>("cgAdd"),
+  cgPlay: fakeCommand<CgPlayParameters>("cgPlay"),
+  cgStop: fakeCommand<CgStopParameters>("cgStop"),
+  cgClear: fakeCommand<CgClearParameters>("cgClear"),
+  play: fakeCommand<PlayParameters>("play"),
+  loadbg: fakeCommand<LoadParameters>("loadbg"),
+  stop: fakeCommand<StopParameters>("stop"),
+  clear: fakeCommand<ClearParameters>("clear"),
+  mixerClear: fakeCommand<MixerClearParameters>("mixerClear"),
+  info: fakeCommand<InfoParameters>("info"),
+  connect: async () => {
+    log.info("Fake CasparCG connection established");
+  },
 };
