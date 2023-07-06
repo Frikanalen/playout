@@ -2,9 +2,9 @@ import { ScheduledVideo } from "./ScheduledVideo.js";
 import type { ScheduleEntry } from "../generated/index.js";
 import { add, sub } from "date-fns";
 import { CHANNEL_FPS, VIDEO_LAYER } from "../config.js";
-import { connection } from "../connection.js";
 import { timeline } from "./Timeline.js";
 import { makeTestVideo } from "./testUtils.js";
+import { connection } from "../caspar/connection.js";
 
 // mock out connection to CasparCG
 jest.mock("../connection.js", () => {

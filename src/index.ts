@@ -3,13 +3,11 @@ import { FK_API, LAYERS } from "./config.js";
 import process from "node:process";
 import { log } from "./log.js";
 import { ScheduleLoader } from "./scheduling/ScheduleLoader.js";
-import { connection } from "./connection.js";
-import { endOfDay, startOfDay } from "date-fns";
 import { timeline } from "./scheduling/Timeline.js";
-import { makeTestSchedule } from "./scheduling/testUtils.js";
 import { startWebsocketServer } from "./api/server.js";
-
-OpenAPI.BASE = FK_API;
+import { getSchedule } from "./getSchedule.js";
+import { connection } from "./caspar/connection.js";
+OpenAPI.BASE = FK_API!;
 
 process
   .on("unhandledRejection", (reason, p) => {
@@ -43,16 +41,7 @@ const runPlayout = async () => {
   const schedule = new ScheduleLoader();
 
   while (true) {
-    const now = new Date();
-    /*const scheduleEntries = await SchedulingService.getSchedule(
-      startOfDay(now).toISOString(),
-      endOfDay(now).toISOString()
-    );*/
-    const scheduleEntries = makeTestSchedule(
-      startOfDay(now).toISOString(),
-      endOfDay(now).toISOString(),
-    );
-    await schedule.load(scheduleEntries);
+    await schedule.load(await getSchedule());
     await timeline.run();
   }
 };

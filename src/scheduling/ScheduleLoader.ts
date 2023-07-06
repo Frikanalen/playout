@@ -21,6 +21,7 @@ export const compactTimestamp = (item: ScheduleItem) => {
 
 export const compactDate = (date: Date) => format(date, "HH:mm:ss.SSx");
 
+// Feeds timeline with schedule items
 export class ScheduleLoader {
   // Load a schedule from an array of ScheduleEntry objects
   // Clears and disarms any existing schedule

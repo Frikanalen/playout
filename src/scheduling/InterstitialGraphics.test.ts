@@ -2,7 +2,7 @@ import { InterstitialGraphics } from "./InterstitialGraphics.js";
 import { add, sub, subMilliseconds } from "date-fns";
 import { timeline } from "./Timeline.js";
 
-// mock out connection to CasparCG
+// mock out CasparCG
 jest.mock("../connection.js", () => {
   return {
     connection: {
@@ -69,28 +69,28 @@ it("Generates correct load, play, stop and clear jobs if in future", async () =>
     graphics,
     loadsAt,
     "load",
-    graphics.load
+    graphics.load,
   );
   expect(timeline.addEvent).toHaveBeenNthCalledWith(
     2,
     graphics,
     subMilliseconds(startsAt, 500),
     "start",
-    graphics.play
+    graphics.play,
   );
   expect(timeline.addEvent).toHaveBeenNthCalledWith(
     3,
     graphics,
     endsAt,
     "stop",
-    graphics.stop
+    graphics.stop,
   );
   expect(timeline.addEvent).toHaveBeenNthCalledWith(
     4,
     graphics,
     clearsAt,
     "clear",
-    graphics.clear
+    graphics.clear,
   );
 });
 
@@ -111,14 +111,14 @@ it("immediately plays if start time in past and end time in future", async () =>
     graphics,
     endsAt,
     "stop",
-    graphics.stop
+    graphics.stop,
   );
   expect(timeline.addEvent).toHaveBeenNthCalledWith(
     2,
     graphics,
     clearsAt,
     "clear",
-    graphics.clear
+    graphics.clear,
   );
 });
 

@@ -1,34 +1,26 @@
-import type { SendResult, Response } from "casparcg-connection";
-// import { CASPAR_HOST } from "./config.js";
 import type {
   CgAddParameters,
   CgClearParameters,
   CgPlayParameters,
   CgStopParameters,
+  ClearParameters,
+  InfoParameters,
   LoadParameters,
+  MixerClearParameters,
   PlayParameters,
   StopParameters,
-  ClearParameters,
-  MixerClearParameters,
-  InfoParameters,
 } from "casparcg-connection/dist/parameters.js";
-
-/*export const connection = new CasparCG({
-  host: CASPAR_HOST,
-});
-*/
+import type { Response, SendResult } from "casparcg-connection";
 
 const fakeSendResult = () => ({
   error: undefined,
   request: undefined as unknown as Promise<Response>,
 });
-
 const fakeCommand = async <T>(_: T): Promise<SendResult> => {
   return fakeSendResult();
 };
-
 // Mock CasparCG connection which does nothing but log events
-export const connection = {
+export const fakeCaspar = {
   host: "DUMMY HOST",
   cgAdd: fakeCommand<CgAddParameters>,
   cgPlay: fakeCommand<CgPlayParameters>,

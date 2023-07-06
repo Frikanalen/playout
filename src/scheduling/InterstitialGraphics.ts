@@ -1,11 +1,10 @@
 import { add, sub, subMilliseconds } from "date-fns";
 import { CG_LAYER, GRAPHICS_URL } from "../config.js";
 import { log } from "../log.js";
-import { connection } from "../connection.js";
 import { compactDate, compactTimestamp } from "./ScheduleLoader.js";
 import type { ScheduleItem } from "./ScheduleLoader.js";
-
 import { timeline } from "./Timeline.js";
+import { connection } from "../caspar/connection.js";
 
 const wait = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));

@@ -1,7 +1,7 @@
 import {} from "dotenv/config";
 import { log } from "./log.js";
 
-const configFromEnv = (envName: string, defaultValue?: string): string => {
+const requireEnv = (envName: string, defaultValue?: string): string => {
   if (envName in process.env) return process.env[envName]!;
 
   if (process.env["NODE_ENV"] === "test") return "";
@@ -14,10 +14,10 @@ const configFromEnv = (envName: string, defaultValue?: string): string => {
   return defaultValue;
 };
 
-export const GRAPHICS_URL = configFromEnv("GRAPHICS_URL");
-export const FK_API = configFromEnv("FK_API");
-export const CASPAR_MEDIA_URL_PREFIX = configFromEnv("CASPAR_MEDIA_URL_PREFIX");
-export const CASPAR_HOST = configFromEnv("CASPAR_HOST");
+export const GRAPHICS_URL = requireEnv("GRAPHICS_URL");
+export const FK_API = process.env["FK_API"];
+export const CASPAR_MEDIA_URL_PREFIX = requireEnv("CASPAR_MEDIA_URL_PREFIX");
+export const CASPAR_HOST = requireEnv("CASPAR_HOST");
 
 export const CHANNEL_FPS = 50 as const;
 

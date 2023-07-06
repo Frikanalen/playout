@@ -6,11 +6,10 @@ import {
   VIDEO_LAYER,
 } from "../config.js";
 import { log } from "../log.js";
-import { connection } from "../connection.js";
 import { compactDate, compactTimestamp } from "./ScheduleLoader.js";
 import type { ScheduleItem } from "./ScheduleLoader.js";
-
 import { timeline } from "./Timeline.js";
+import { connection } from "../caspar/connection.js";
 
 export class ScheduledVideo implements ScheduleItem {
   startsAt: Date;
