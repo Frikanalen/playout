@@ -13,10 +13,10 @@ beforeEach(() => {
 });
 
 it("should be empty when first created", () => {
-  expect(timeline.getTimeline()).toEqual([]);
+  expect(timeline.getEvents()).toEqual([]);
 });
 
-it("should add a single item", () => {
+it("should addEvent a single item", () => {
   const scheduleItem = {
     startsAt: new Date("2020-01-01T00:00:00.000Z"),
     endsAt: new Date("2020-01-01T00:00:00.000Z"),
@@ -31,9 +31,9 @@ it("should add a single item", () => {
     cb: jest.fn(),
   };
 
-  timeline.add(item.item, item.fireAt, item.eventLabel, item.cb);
+  timeline.addEvent(item.item, item.fireAt, item.eventLabel, item.cb);
 
-  expect(timeline.getTimeline()).toEqual([
+  expect(timeline.getEvents()).toEqual([
     {
       item: item.item,
       fireAt: item.fireAt,

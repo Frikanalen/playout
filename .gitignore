@@ -109,3 +109,4 @@ build
 
 open-api-spec.json
 .idea/
+.idea/sonarlint*

@@ -23,14 +23,14 @@ beforeEach(() => {
 jest.mock("../scheduling/Timeline.js", () => {
   return {
     timeline: {
-      add: jest.fn(),
+      addEvent: jest.fn(),
       remove: jest.fn(),
     },
   };
 });
 
 // Set mock CG URL environment variable
-process.env.GRAPHICS_URL = "http://localhost:3000/graphics";
+process.env["GRAPHICS_URL"] = "http://localhost:3000/graphics";
 
 it("can be created", () => {
   const startsAt = new Date();
@@ -48,7 +48,7 @@ it("generates no jobs if the end time is in the past", () => {
   const graphics = new InterstitialGraphics(startsAt, endsAt);
 
   expect(graphics).toBeDefined();
-  expect(timeline.add).not.toHaveBeenCalled();
+  expect(timeline.addEvent).not.toHaveBeenCalled();
 });
 
 it("Generates correct load, play, stop and clear jobs if in future", async () => {
@@ -61,31 +61,31 @@ it("Generates correct load, play, stop and clear jobs if in future", async () =>
   await graphics.arm();
 
   // Check that the correct number of items are added to timeline
-  expect(timeline.add).toHaveBeenCalledTimes(4);
+  expect(timeline.addEvent).toHaveBeenCalledTimes(4);
 
   // Check that the correct items are added to timeline
-  expect(timeline.add).toHaveBeenNthCalledWith(
+  expect(timeline.addEvent).toHaveBeenNthCalledWith(
     1,
     graphics,
     loadsAt,
     "load",
     graphics.load
   );
-  expect(timeline.add).toHaveBeenNthCalledWith(
+  expect(timeline.addEvent).toHaveBeenNthCalledWith(
     2,
     graphics,
     subMilliseconds(startsAt, 500),
     "start",
     graphics.play
   );
-  expect(timeline.add).toHaveBeenNthCalledWith(
+  expect(timeline.addEvent).toHaveBeenNthCalledWith(
     3,
     graphics,
     endsAt,
     "stop",
     graphics.stop
   );
-  expect(timeline.add).toHaveBeenNthCalledWith(
+  expect(timeline.addEvent).toHaveBeenNthCalledWith(
     4,
     graphics,
     clearsAt,
@@ -103,17 +103,17 @@ it("immediately plays if start time in past and end time in future", async () =>
   await graphics.arm();
 
   // Check that the correct number of items are added to timeline
-  expect(timeline.add).toHaveBeenCalledTimes(2);
+  expect(timeline.addEvent).toHaveBeenCalledTimes(2);
 
   // Check that the correct items are added to timeline
-  expect(timeline.add).toHaveBeenNthCalledWith(
+  expect(timeline.addEvent).toHaveBeenNthCalledWith(
     1,
     graphics,
     endsAt,
     "stop",
     graphics.stop
   );
-  expect(timeline.add).toHaveBeenNthCalledWith(
+  expect(timeline.addEvent).toHaveBeenNthCalledWith(
     2,
     graphics,
     clearsAt,
@@ -129,7 +129,7 @@ it("removes itself from timeline when disarmed", async () => {
   const graphics = new InterstitialGraphics(startsAt, endsAt);
   await graphics.arm();
 
-  expect(timeline.add).toHaveBeenCalledTimes(4);
+  expect(timeline.addEvent).toHaveBeenCalledTimes(4);
 
   await graphics.disarm();
 

@@ -1,13 +1,12 @@
-import { CasparCG } from "casparcg-connection";
-import { OpenAPI } from "./generated";
-import { FK_API, LAYERS } from "./config";
+import { OpenAPI } from "./generated/index.js";
+import { FK_API, LAYERS } from "./config.js";
 import process from "node:process";
 import { log } from "./log.js";
-import { Schedule } from "./scheduling/Schedule.js";
+import { ScheduleLoader } from "./scheduling/ScheduleLoader.js";
 import { connection } from "./connection.js";
-import { fetchSchedule } from "./scheduling/ScheduleFetcher.js";
 import { endOfDay, startOfDay } from "date-fns";
 import { timeline } from "./scheduling/Timeline.js";
+import { makeTestSchedule } from "./scheduling/testUtils.js";
 
 OpenAPI.BASE = FK_API;
 
@@ -20,7 +19,7 @@ process
     process.exit(1);
   });
 
-const initCaspar = async (connection: CasparCG) => {
+const initCaspar = async () => {
   log.info(`Connecting to CasparCG host "${connection.host}"...`);
   await connection.connect();
 
@@ -38,14 +37,23 @@ const initCaspar = async (connection: CasparCG) => {
 };
 
 const runPlayout = async () => {
-  await initCaspar(connection);
+  await initCaspar();
 
-  const schedule = new Schedule();
+  const schedule = new ScheduleLoader();
 
-  const now = new Date();
-  const scheduleEntries = await fetchSchedule(startOfDay(now), endOfDay(now));
-  await schedule.load(scheduleEntries);
-  await timeline.run();
+  while (true) {
+    const now = new Date();
+    /*const scheduleEntries = await SchedulingService.getSchedule(
+      startOfDay(now).toISOString(),
+      endOfDay(now).toISOString()
+    );*/
+    const scheduleEntries = makeTestSchedule(
+      startOfDay(now).toISOString(),
+      endOfDay(now).toISOString(),
+    );
+    await schedule.load(scheduleEntries);
+    await timeline.run();
+  }
 };
 
 (async () => {

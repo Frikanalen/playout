@@ -1,14 +1,23 @@
 {
+  "extends": "@tsconfig/node18-strictest-esm/tsconfig.json",
   "compilerOptions": {
+    // Just to get it to stop complaining about importsNotUsedAsValues
+    "ignoreDeprecations": "5.0",
+    "exactOptionalPropertyTypes": false,
     "resolveJsonModule": true,
     "moduleResolution": "node",
     "esModuleInterop": true,
+    "module": "ESNext",
     "skipLibCheck": true,
     "target": "ESNext",
-    "module": "commonjs",
     "strict": true,
     "outDir": "build"
   },
+  "ts-node": {
+    "transpileOnly": true,
+    "esm": true,
+    "experimentalSpecifierResolution": "node"
+  },
   "include": ["src", "typedefs"],
-  "exclude": ["node_modules"]
+  "exclude": ["node_modules", "build"]
 }

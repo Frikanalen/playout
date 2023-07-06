@@ -1,4 +1,4 @@
-import { ScheduleEntry } from "../generated/index.js";
+import type { ScheduleEntry } from "../generated/index.js";
 import { ScheduledVideo } from "./ScheduledVideo.js";
 import { InterstitialGraphics } from "./InterstitialGraphics.js";
 import { format } from "date-fns";
@@ -17,28 +17,27 @@ export const compactTimestamp = (item: ScheduleItem) => {
   return format(startsAt, "HH:mm:ss.SSx - ") + format(endsAt, "HH:mm:ss.SSx");
 };
 
-export class Schedule {
+export const compactDate = (date: Date) => format(date, "HH:mm:ss.SSx");
+
+export class ScheduleLoader {
   // Load a schedule from an array of ScheduleEntry objects
   // Clears and disarms any existing schedule
-  load = async (entries: Array<ScheduleEntry>) => {
-    if (timeline.getTimeline().length) await timeline.clear();
-
+  load = async (entries: ScheduleEntry[]) => {
     log.info("Loading schedule");
-    let previousEntryEnded: Date | undefined;
+
+    if (timeline.getEvents().length) await timeline.clear();
+
+    let prevEnds: Date | undefined;
 
     for (const entry of entries) {
-      const thisEntryStarts = new Date(entry.startsAt);
+      const entryStarts = new Date(entry.startsAt);
 
-      await new ScheduledVideo(entry).arm();
+      await timeline.addItem(new ScheduledVideo(entry));
 
-      if (previousEntryEnded) {
-        await new InterstitialGraphics(
-          previousEntryEnded,
-          thisEntryStarts
-        ).arm();
-      }
+      if (prevEnds)
+        await timeline.addItem(new InterstitialGraphics(prevEnds, entryStarts));
 
-      previousEntryEnded = new Date(entry.endsAt);
+      prevEnds = new Date(entry.endsAt);
     }
   };
 }

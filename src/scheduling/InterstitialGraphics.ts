@@ -2,7 +2,9 @@ import { add, sub, subMilliseconds } from "date-fns";
 import { CG_LAYER, GRAPHICS_URL } from "../config.js";
 import { log } from "../log.js";
 import { connection } from "../connection.js";
-import { compactTimestamp, ScheduleItem } from "./Schedule.js";
+import { compactDate, compactTimestamp } from "./ScheduleLoader.js";
+import type { ScheduleItem } from "./ScheduleLoader.js";
+
 import { timeline } from "./Timeline.js";
 
 const wait = async (ms: number) =>
@@ -52,7 +54,9 @@ export class InterstitialGraphics implements ScheduleItem {
     const clearAt = add(endsAt, { seconds: 2 });
 
     if (endsAt <= now) {
-      log.debug(`Not scheduling graphics {${endsAt} is in the past)`);
+      log.debug(
+        `Not scheduling graphics (${compactDate(endsAt)} is in the past)`,
+      );
       return;
     }
 
@@ -67,15 +71,15 @@ export class InterstitialGraphics implements ScheduleItem {
       log.info(`Playing graphics for ${compactTimestamp(this)}`);
       await play();
 
-      timeline.add(this, endsAt, "stop", stop);
-      timeline.add(this, clearAt, "clear", clear);
+      timeline.addEvent(this, endsAt, "stop", stop);
+      timeline.addEvent(this, clearAt, "clear", clear);
     } else {
       log.debug(`Arming graphics for ${compactTimestamp(this)}`);
 
-      timeline.add(this, loadAt, "load", load);
-      timeline.add(this, playAt, "start", play);
-      timeline.add(this, endsAt, "stop", stop);
-      timeline.add(this, clearAt, "clear", clear);
+      timeline.addEvent(this, loadAt, "load", load);
+      timeline.addEvent(this, playAt, "start", play);
+      timeline.addEvent(this, endsAt, "stop", stop);
+      timeline.addEvent(this, clearAt, "clear", clear);
     }
   }
 

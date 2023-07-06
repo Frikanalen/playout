@@ -11,7 +11,7 @@ const scheduledItems = new Gauge({
 // Create a server to serve the metrics
 createServer((req, res) => {
   if (req.url === "/metrics") {
-    scheduledItems.set(timeline.getTimeline().length);
+    scheduledItems.set(timeline.getEvents().length);
 
     res.setHeader("Content-Type", "text/plain");
     res.end(register.metrics());

@@ -1,5 +1,6 @@
 import schedule, { Job } from "node-schedule";
-import { compactTimestamp, ScheduleItem } from "./Schedule.js";
+import { compactTimestamp } from "./ScheduleLoader.js";
+import type { ScheduleItem } from "./ScheduleLoader.js";
 import { log } from "../log.js";
 
 export type JobDescriptor = {
@@ -10,47 +11,54 @@ export type JobDescriptor = {
 };
 
 export class Timeline {
-  private timelineItems: JobDescriptor[] = [];
+  private events: JobDescriptor[] = [];
+  private items: ScheduleItem[] = [];
 
-  add = (
+  addItem = async (item: ScheduleItem) => {
+    await item.arm();
+    this.items.push(item);
+  };
+
+  addEvent = (
     item: ScheduleItem,
     fireAt: Date,
     eventLabel: string,
     cb: (firedAt: Date, ...rest: any[]) => Promise<void>
   ) => {
-    const job = schedule.scheduleJob(
-      fireAt,
-      async (firedAt, ...rest: any[]) => {
-        log.info(`Firing ${eventLabel} at ${compactTimestamp(item)}`);
-        await cb(firedAt, { ...rest });
-      }
-    );
-    this.timelineItems.push({ item, fireAt, eventLabel, job });
-    this.timelineItems.sort((a, b) => a.fireAt.getTime() - b.fireAt.getTime());
+    const invokeCallback = async (firedAt: Date, ...rest: any[]) => {
+      log.info(`Firing ${eventLabel} at ${compactTimestamp(item)}`);
+      await cb(firedAt, { ...rest });
+    };
+
+    const job = schedule.scheduleJob(fireAt, invokeCallback);
+    this.events.push({ item, fireAt, eventLabel, job });
+    this.events.sort((a, b) => a.fireAt.getTime() - b.fireAt.getTime());
   };
 
   clear = async () => {
     log.info("Clearing timeline jobs");
-    await Promise.all(this.timelineItems.map(({ job }) => job.cancel()));
-    this.timelineItems = [];
+    await Promise.all(this.events.map(({ job }) => job.cancel()));
+    this.events = [];
   };
 
   // Remove all jobs belonging to given ScheduleItem
   remove = async (item: ScheduleItem) => {
     log.info(`Removing jobs for ${compactTimestamp(item)}`);
-    const jobsToRemove = this.timelineItems.filter((job) => job.item === item);
+    const jobsToRemove = this.events.filter((job) => job.item === item);
     await Promise.all(jobsToRemove.map(({ job }) => job.cancel()));
-    this.timelineItems = this.timelineItems.filter((job) => job.item !== item);
+    this.events = this.events.filter((job) => job.item !== item);
   };
 
   // Return a list of all timeline entries
-  getTimeline = () => this.timelineItems;
+  getEvents = () => this.events;
+
+  getItems = () => this.items;
 
   // Run until the last job is finished
   run = () => {
     log.info("Running timeline");
     return new Promise<void>((resolve) => {
-      const lastJob = this.timelineItems[this.timelineItems.length - 1];
+      const lastJob = this.events[this.events.length - 1];
 
       if (!lastJob) {
         log.info("No jobs in timeline");

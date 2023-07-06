@@ -12,7 +12,7 @@ const sendUpdate = () => {
   const now = new Date();
   const message = JSON.stringify({
     time: now.toISOString(),
-    timeline: timeline.getTimeline(),
+    timeline: timeline.getEvents(),
   });
 
   clients.forEach((sock) => sock.send(message));

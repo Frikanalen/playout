@@ -1,12 +1,10 @@
-import "dotenv/config";
+import {} from "dotenv/config";
 import { log } from "./log.js";
-
-require("dotenv").config();
 
 const configFromEnv = (envName: string, defaultValue?: string): string => {
   if (envName in process.env) return process.env[envName]!;
 
-  if (process.env.NODE_ENV === "test") return "";
+  if (process.env["NODE_ENV"] === "test") return "";
 
   if (defaultValue === undefined) {
     log.error(`Required environment ${envName} not set!`);
