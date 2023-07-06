@@ -1,4 +1,4 @@
-FROM node:16-alpine as deps
+FROM node:16-alpine AS deps
 
 WORKDIR /home/node/app
 
@@ -7,7 +7,7 @@ COPY package.json .
 
 RUN yarn install --quiet --dev
 
-FROM node:16-alpine as builder
+FROM node:16-alpine AS builder
 
 WORKDIR /home/node/app
 COPY --from=deps /home/node/app/node_modules node_modules
@@ -15,12 +15,12 @@ COPY . .
 RUN yarn generate
 RUN yarn build
 
-FROM node:16-alpine as runner
+FROM node:16-alpine AS runner
 
 COPY . .
 COPY --from=deps /home/node/app/node_modules node_modules
 COPY --from=builder /home/node/app/build build
-COPY --from=builder /home/node/app/src/client src/client
+COPY --from=builder /home/node/app/src/generated src/generated
 ENV PORT 80
 ENV NODE_ENV production
 EXPOSE 80
