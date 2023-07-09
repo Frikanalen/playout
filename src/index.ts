@@ -23,10 +23,6 @@ const initCaspar = async () => {
   await caspar.connect();
 
   log.info(`Clearing all layers...`);
-  // get layers with contents
-  const infoRequest = await caspar.info({ channel: 1 });
-  const info = await infoRequest.request;
-  log.info(JSON.stringify(info?.data));
 
   await caspar.mixerClear({ channel: 1, layer: LAYERS.graphics });
   await caspar.mixerClear({ channel: 1, layer: LAYERS.video });
