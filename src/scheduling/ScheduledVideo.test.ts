@@ -4,10 +4,10 @@ import { add, sub } from "date-fns";
 import { CHANNEL_FPS, VIDEO_LAYER } from "../config.js";
 import { timeline } from "./Timeline.js";
 import { makeTestVideo } from "./testUtils.js";
-import { connection } from "../caspar/connection.js";
+import { caspar } from "../caspar/connection.js";
 
 // mock out connection to CasparCG
-jest.mock("../connection.js", () => {
+jest.mock("../caspar.js", () => {
   return {
     connection: {
       loadbg: jest.fn(),
@@ -114,11 +114,11 @@ it("calls play immediately when armed if video is presently playing", async () =
     scheduledVideo.stop,
   );
 
-  // verify that connection.play() is called after arm()
-  expect(connection.play).toHaveBeenCalledTimes(1);
+  // verify that caspar.play() is called after arm()
+  expect(caspar.play).toHaveBeenCalledTimes(1);
 
-  // verify that connection.play() is called with the right arguments
-  expect(connection.play).toHaveBeenCalledWith({
+  // verify that caspar.play() is called with the right arguments
+  expect(caspar.play).toHaveBeenCalledWith({
     ...VIDEO_LAYER,
     clip: "test.mp4",
     seek: randomSeconds * CHANNEL_FPS,

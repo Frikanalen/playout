@@ -9,7 +9,7 @@ import { log } from "../log.js";
 import { compactDate, compactTimestamp } from "./ScheduleLoader.js";
 import type { ScheduleItem } from "./ScheduleLoader.js";
 import { timeline } from "./Timeline.js";
-import { connection } from "../caspar/connection.js";
+import { caspar } from "../caspar/connection.js";
 
 export class ScheduledVideo implements ScheduleItem {
   startsAt: Date;
@@ -25,8 +25,14 @@ export class ScheduledVideo implements ScheduleItem {
 
   getFilename() {
     const asset = this.entry.video.media!.assets!.find(
-      (x) => x.type === "broadcastable",
+      ({ type }) => type === "broadcastable",
     )!.url;
+
+    if (!asset) {
+      log.error(
+        `No broadcastable asset found for video #${this.entry.video.id} "${this.label}"!`,
+      );
+    }
 
     return CASPAR_MEDIA_URL_PREFIX + asset;
   }
@@ -34,21 +40,22 @@ export class ScheduledVideo implements ScheduleItem {
   loadbg = async () => {
     log.info(`Loading video "${this.entry.video.title}"`);
 
-    await connection.loadbg({ ...VIDEO_LAYER, clip: this.getFilename() });
+    await caspar.loadbg({ ...VIDEO_LAYER, clip: this.getFilename() });
   };
 
   stop = async (_: Date) => {
     log.info(`Stopping video "${this.entry.video.title}"`);
 
-    await connection.stop(VIDEO_LAYER);
+    await caspar.stop(VIDEO_LAYER);
   };
 
   play = async (_: Date, seekSeconds: number = 0) => {
     const seek = seekSeconds ? seekSeconds * CHANNEL_FPS : undefined;
 
     log.info(`Playing video "${this.entry.video.title}"`);
+    if (seek) log.info(`Seeking ${seekSeconds} seconds`);
 
-    await connection.play({
+    await caspar.play({
       ...VIDEO_LAYER,
       clip: this.getFilename(),
       seek,
@@ -57,33 +64,26 @@ export class ScheduledVideo implements ScheduleItem {
 
   async arm() {
     const { startsAt, endsAt, stop, play, loadbg, label } = this;
-
+    const loadsAt = sub(startsAt, { seconds: 10 });
     const now = new Date();
 
     if (endsAt <= now) {
-      log.debug(
-        `Not scheduling video "${label}" (end ${compactDate(
-          endsAt,
-        )} is in the past)`,
-      );
+      const endTime = compactDate(endsAt);
+      log.debug(`Not scheduling "${label}" (end ${endTime} is in the past)`);
       return;
     }
 
     if (startsAt <= now) {
-      log.warn(`timer was armed while program should be active`);
-      const requiredSeek = differenceInSeconds(now, startsAt);
-      log.info(`playing immediately and seeking ${requiredSeek} seconds!`);
-      await this.play(new Date(), requiredSeek);
-
+      log.warn(`Video "${label}" should already be playing, seeking...`);
+      await this.play(new Date(), differenceInSeconds(now, startsAt));
       timeline.addEvent(this, endsAt, "stop", stop);
-    } else {
-      log.debug(`Arming timer for ${compactTimestamp(this)} "${label}"`);
-      const loadsAt = sub(startsAt, { seconds: 10 });
-
-      timeline.addEvent(this, loadsAt, "load", loadbg);
-      timeline.addEvent(this, startsAt, "start", play);
-      timeline.addEvent(this, endsAt, "stop", stop);
+      return;
     }
+
+    log.debug(`Arming timer for ${compactTimestamp(this)} "${label}"`);
+    timeline.addEvent(this, loadsAt, "load", loadbg);
+    timeline.addEvent(this, startsAt, "start", play);
+    timeline.addEvent(this, endsAt, "stop", stop);
   }
 
   async disarm() {
@@ -91,6 +91,6 @@ export class ScheduledVideo implements ScheduleItem {
 
     log.debug(`Disarming: Video "${label}" at ${compactTimestamp(this)}`);
 
-    timeline.remove(this);
+    await timeline.remove(this);
   }
 }

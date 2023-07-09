@@ -15,4 +15,4 @@ const getConnection = () => {
   return new CasparCG({ host: CASPAR_HOST });
 };
 
-export const connection = getConnection();
+export const caspar = getConnection();

@@ -3,7 +3,7 @@ import { add, sub, subMilliseconds } from "date-fns";
 import { timeline } from "./Timeline.js";
 
 // mock out CasparCG
-jest.mock("../connection.js", () => {
+jest.mock("../caspar.js", () => {
   return {
     connection: {
       cgAdd: jest.fn(async () => {}),

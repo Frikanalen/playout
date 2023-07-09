@@ -4,7 +4,7 @@ import { log } from "../log.js";
 import { compactDate, compactTimestamp } from "./ScheduleLoader.js";
 import type { ScheduleItem } from "./ScheduleLoader.js";
 import { timeline } from "./Timeline.js";
-import { connection } from "../caspar/connection.js";
+import { caspar } from "../caspar/connection.js";
 
 const wait = async (ms: number) =>
   new Promise((resolve) => setTimeout(resolve, ms));
@@ -13,7 +13,7 @@ export class InterstitialGraphics implements ScheduleItem {
   startsAt: Date;
   endsAt: Date;
   itemType = "graphics" as const;
-  label = "Sendegrafikk";
+  label = "Sendegrafikk" as const;
 
   constructor(startsAt: Date, endsAt: Date) {
     this.startsAt = startsAt;
@@ -23,7 +23,7 @@ export class InterstitialGraphics implements ScheduleItem {
   async load() {
     log.info(`CG loading, URL: ${GRAPHICS_URL}`);
 
-    await connection.cgAdd({
+    await caspar.cgAdd({
       ...CG_LAYER,
       template: GRAPHICS_URL,
       playOnLoad: false,
@@ -33,18 +33,18 @@ export class InterstitialGraphics implements ScheduleItem {
   async play() {
     log.info(`Playing CG`);
 
-    await connection.cgPlay(CG_LAYER);
+    await caspar.cgPlay(CG_LAYER);
   }
 
   async stop() {
     log.info(`Stopping CG`);
 
-    await connection.cgStop(CG_LAYER);
+    await caspar.cgStop(CG_LAYER);
   }
 
   async clear() {
     log.info(`Clearing CG`);
-    await connection.cgClear(CG_LAYER);
+    await caspar.cgClear(CG_LAYER);
   }
 
   async arm() {

@@ -6,7 +6,7 @@ import { ScheduleLoader } from "./scheduling/ScheduleLoader.js";
 import { timeline } from "./scheduling/Timeline.js";
 import { startWebsocketServer } from "./api/server.js";
 import { getSchedule } from "./getSchedule.js";
-import { connection } from "./caspar/connection.js";
+import { caspar } from "./caspar/connection.js";
 OpenAPI.BASE = FK_API!;
 
 process
@@ -19,20 +19,20 @@ process
   });
 
 const initCaspar = async () => {
-  log.info(`Connecting to CasparCG host "${connection.host}"...`);
-  await connection.connect();
+  log.info(`Connecting to CasparCG host "${caspar.host}"...`);
+  await caspar.connect();
 
   log.info(`Clearing all layers...`);
   // get layers with contents
-  const infoRequest = await connection.info({ channel: 1 });
+  const infoRequest = await caspar.info({ channel: 1 });
   const info = await infoRequest.request;
   log.info(JSON.stringify(info?.data));
 
-  await connection.mixerClear({ channel: 1, layer: LAYERS.graphics });
-  await connection.mixerClear({ channel: 1, layer: LAYERS.video });
-  await connection.mixerClear({ channel: 1, layer: LAYERS.logo });
+  await caspar.mixerClear({ channel: 1, layer: LAYERS.graphics });
+  await caspar.mixerClear({ channel: 1, layer: LAYERS.video });
+  await caspar.mixerClear({ channel: 1, layer: LAYERS.logo });
 
-  await connection.clear({ channel: 1 });
+  await caspar.clear({ channel: 1 });
 };
 
 const runPlayout = async () => {
@@ -40,6 +40,7 @@ const runPlayout = async () => {
 
   const schedule = new ScheduleLoader();
 
+  // noinspection InfiniteLoopJS
   while (true) {
     await schedule.load(await getSchedule());
     await timeline.run();
@@ -49,7 +50,7 @@ const runPlayout = async () => {
 (async () => {
   try {
     log.info(`Starting playout at ${new Date().toLocaleString()}`);
-    await startWebsocketServer(8080);
+    startWebsocketServer(8080);
     await runPlayout();
   } catch (e) {
     log.error(e);
