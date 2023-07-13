@@ -1,10 +1,6 @@
 import { differenceInSeconds, sub } from "date-fns";
 import type { ScheduleEntry } from "../generated/index.js";
-import {
-  CASPAR_MEDIA_URL_PREFIX,
-  CHANNEL_FPS,
-  VIDEO_LAYER,
-} from "../config.js";
+import { CHANNEL_FPS, VIDEO_LAYER } from "../config.js";
 import { log } from "../log.js";
 import { compactDate, compactTimestamp } from "./ScheduleLoader.js";
 import type { ScheduleItem } from "./ScheduleLoader.js";
