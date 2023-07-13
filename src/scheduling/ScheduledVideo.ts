@@ -25,24 +25,24 @@ export class ScheduledVideo implements ScheduleItem {
 
   getFilename() {
     const asset = this.entry.video.media!.assets!.find(
-      ({ type }) => type === "broadcastable",
+      ({ type }) => type === "broadcastable"
     )?.url;
 
     if (typeof asset === "undefined") {
       const fallback = this.entry.video.media!.assets!.find(
-        ({ type }) => type === "webm",
+        ({ type }) => type === "webm"
       )?.url;
 
       if (typeof fallback === "undefined") {
         throw new Error(`No broadcastable or webm asset for "${this.label}"`);
       }
 
-      log.error(`No broadcastable asset for "${this.label}", using webm`)
+      log.error(`No broadcastable asset for "${this.label}", using webm`);
 
-      return CASPAR_MEDIA_URL_PREFIX + fallback;
+      return fallback;
     }
 
-    return CASPAR_MEDIA_URL_PREFIX + asset;
+    return asset;
   }
 
   loadbg = async () => {
