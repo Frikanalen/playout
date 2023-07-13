@@ -12,7 +12,7 @@ FROM node:16-alpine AS builder
 WORKDIR /home/node/app
 COPY --from=deps /home/node/app/node_modules node_modules
 COPY . .
-RUN yarn generate
+#RUN yarn generate
 RUN yarn build
 
 FROM node:16-alpine AS runner

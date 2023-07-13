@@ -1,4 +1,6 @@
 node_modules
 build
 .idea
-src/generated
+# Commented out until generated sources no longer need hand-
+# patching to include .js extension
+#src/generated
