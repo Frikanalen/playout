@@ -20,13 +20,11 @@ export class ScheduledVideo implements ScheduleItem {
   }
 
   getFilename() {
-    const asset = this.entry.video.media!.assets!.find(
-      ({ type }) => type === "broadcastable"
-    )?.url;
+    const original = this.entry.video.original;
 
-    if (typeof asset === "undefined") {
+    if (!original?.length) {
       const fallback = this.entry.video.media!.assets!.find(
-        ({ type }) => type === "webm"
+        ({ type }) => type === "webm",
       )?.url;
 
       if (typeof fallback === "undefined") {
@@ -38,7 +36,7 @@ export class ScheduledVideo implements ScheduleItem {
       return fallback;
     }
 
-    return asset;
+    return original;
   }
 
   loadbg = async () => {

@@ -12,6 +12,7 @@ export const makeTestVideo = (): Video => {
     categories: [],
     createdAt: faker.date.past().toISOString(),
     updatedAt: faker.date.recent().toISOString(),
+    original: faker.internet.url({ appendSlash: false, protocol: "https" }),
     organization: {
       id: 1,
       name: faker.company.name(),
