@@ -13,7 +13,7 @@
     "build": "tsc",
     "start": "node build/index.js",
     "dev": "nodemon src/index.ts",
-    "generate": "wget -O open-api-spec.json https://beta.frikanalen.no/api/v2/open-api-spec.json && openapi --input ./open-api-spec.json -c axios --output src/generated",
+    "generate": "wget -O open-api-spec.json https://beta.frikanalen.no/api/v2/open-api-spec.json && openapi --input ./open-api-spec.json -c axios --output src/generated && fix-esm-import-path src/generated && prettier -w src/generated",
     "prettier": "prettier -w src"
   },
   "devDependencies": {
@@ -24,6 +24,7 @@
     "@types/node-schedule": "^2.1.0",
     "@types/ws": "^8.5.5",
     "esm": "^3.2.25",
+    "fix-esm-import-path": "^1.4.0",
     "jest": "^29.6.1",
     "nodemon": "^2.0.22",
     "openapi-typescript-codegen": "^0.25.0",
