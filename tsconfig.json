@@ -11,7 +11,8 @@
     "skipLibCheck": true,
     "target": "ESNext",
     "strict": true,
-    "outDir": "build"
+    "outDir": "build",
+    "sourceMap": true
   },
   "ts-node": {
     "transpileOnly": true,
