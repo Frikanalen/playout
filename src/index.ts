@@ -19,7 +19,7 @@ process
   });
 
 const initCaspar = async () => {
-  log.info(`Connecting to CasparCG host "${caspar.host}"...`);
+  log.info(`Connecting to CasparCG host [${caspar.host}]...`);
   await caspar.connect();
 
   log.info(`Clearing all layers...`);

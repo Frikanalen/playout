@@ -28,10 +28,10 @@ export class ScheduledVideo implements ScheduleItem {
       )?.url;
 
       if (typeof fallback === "undefined") {
-        throw new Error(`No broadcastable or webm asset for "${this.label}"`);
+        throw new Error(`No broadcastable or webm asset for [${this.label}]`);
       }
 
-      log.error(`No broadcastable asset for "${this.label}", using webm`);
+      log.error(`No broadcastable asset for [${this.label}], using webm`);
 
       return fallback;
     }
@@ -40,13 +40,13 @@ export class ScheduledVideo implements ScheduleItem {
   }
 
   loadbg = async () => {
-    log.info(`Loading video "${this.entry.video.title}"`);
+    log.info(`Loading video [${this.entry.video.title}]`);
 
     await caspar.loadbg({ ...VIDEO_LAYER, clip: this.getFilename() });
   };
 
   stop = async (_: Date) => {
-    log.info(`Stopping video "${this.entry.video.title}"`);
+    log.info(`Stopping video [${this.entry.video.title}]`);
 
     await caspar.stop(VIDEO_LAYER);
   };
@@ -54,7 +54,7 @@ export class ScheduledVideo implements ScheduleItem {
   play = async (_: Date, seekSeconds: number = 0) => {
     const seek = seekSeconds ? seekSeconds * CHANNEL_FPS : undefined;
 
-    log.info(`Playing video "${this.entry.video.title}"`);
+    log.info(`Playing video [${this.entry.video.title}]`);
     if (seek) log.info(`Seeking ${seekSeconds} seconds`);
 
     await caspar.play({
@@ -71,18 +71,18 @@ export class ScheduledVideo implements ScheduleItem {
 
     if (endsAt <= now) {
       const endTime = compactDate(endsAt);
-      log.debug(`Not scheduling "${label}" (end ${endTime} is in the past)`);
+      log.debug(`Not scheduling [${label}] (end ${endTime} is in the past)`);
       return;
     }
 
     if (startsAt <= now) {
-      log.warn(`Video "${label}" should already be playing, seeking...`);
+      log.warn(`Video [${label}] should already be playing, seeking...`);
       await this.play(new Date(), differenceInSeconds(now, startsAt));
       timeline.addEvent(this, endsAt, "stop", stop);
       return;
     }
 
-    log.debug(`Arming timer for ${compactTimestamp(this)} "${label}"`);
+    log.debug(`Arming timer for ${compactTimestamp(this)} [${label}]`);
     timeline.addEvent(this, loadsAt, "load", loadbg);
     timeline.addEvent(this, startsAt, "start", play);
     timeline.addEvent(this, endsAt, "stop", stop);
@@ -91,7 +91,7 @@ export class ScheduledVideo implements ScheduleItem {
   async disarm() {
     const { label } = this;
 
-    log.debug(`Disarming: Video "${label}" at ${compactTimestamp(this)}`);
+    log.debug(`Disarming: Video [${label}] at ${compactTimestamp(this)}`);
 
     await timeline.remove(this);
   }
