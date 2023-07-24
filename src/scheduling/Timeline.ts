@@ -36,9 +36,33 @@ export class Timeline {
     this.events.sort((a, b) => a.fireAt.getTime() - b.fireAt.getTime());
   };
 
-  clear = async () => {
+  clear = () => {
     log.info("Clearing timeline jobs");
-    await Promise.all(this.events.map(({ job }) => job.cancel()));
+    this.events.forEach(({ job }, index) => {
+      // Here a race condition-like problem was encountered which crashed the playout.
+      // One failed assumption was that the job.cancel() method would be asynchronous,
+      // so I iterated over them with Promise.all().
+      //
+      // However, an exception arose that job == null, which was unexpected.
+      //
+      // The logic has been changed to iterate over the jobs synchronously, and
+      // both the unexpected and expected cases are logged for more context
+      // should the issue arise again.
+      if (!job?.cancel) {
+        log.warn(
+          `Job ${index + 1}/${this.events.length} ` +
+            `(${job?.name}) has no cancel method`,
+        );
+        return;
+      }
+
+      log.info(
+        `Cancelling job ${index + 1}/${this.events.length} (${job?.name})`,
+      );
+
+      job.cancel();
+    });
+
     this.events = [];
   };
 

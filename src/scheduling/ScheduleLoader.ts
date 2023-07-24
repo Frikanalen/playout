@@ -28,7 +28,7 @@ export class ScheduleLoader {
   load = async (entries: ScheduleEntry[]) => {
     log.info("Loading schedule");
 
-    if (timeline.getEvents().length) await timeline.clear();
+    if (timeline.getEvents().length) timeline.clear();
 
     let prevEnds: Date | undefined;
 
