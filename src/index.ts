@@ -43,12 +43,7 @@ const runPlayout = async () => {
   }
 };
 
-(async () => {
-  try {
-    log.info(`Starting playout at ${new Date().toLocaleString()}`);
-    startWebsocketServer(8080);
-    await runPlayout();
-  } catch (e) {
-    log.error(e);
-  }
-})();
+log.info(`playout starting`);
+
+startWebsocketServer(8080);
+await runPlayout();
