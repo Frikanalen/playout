@@ -24,7 +24,7 @@ export class Timeline {
     item: ScheduleItem,
     fireAt: Date,
     eventLabel: string,
-    cb: (firedAt: Date, ...rest: any[]) => Promise<void>,
+    cb: (firedAt: Date, ...rest: any[]) => Promise<void>
   ) => {
     const invokeCallback = async (firedAt: Date, ...rest: any[]) => {
       log.info(`Firing ${eventLabel} at ${compactTimestamp(item)}`);
@@ -51,13 +51,13 @@ export class Timeline {
       if (!job?.cancel) {
         log.warn(
           `Job ${index + 1}/${this.events.length} ` +
-            `(${job?.name}) has no cancel method`,
+            `(${job?.name}) has no cancel method`
         );
         return;
       }
 
       log.info(
-        `Cancelling job ${index + 1}/${this.events.length} (${job?.name})`,
+        `Cancelling job ${index + 1}/${this.events.length} (${job?.name})`
       );
 
       job.cancel();
@@ -82,12 +82,13 @@ export class Timeline {
   // Run until the last job is finished
   run = () => {
     log.info("Running timeline");
-    return new Promise<void>((resolve) => {
+
+    return new Promise<void>((resolve, reject) => {
       const lastJob = this.events[this.events.length - 1];
 
       if (!lastJob) {
         log.info("No jobs in timeline");
-        resolve();
+        reject();
         return;
       }
 
