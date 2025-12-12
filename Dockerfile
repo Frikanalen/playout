@@ -1,14 +1,20 @@
-# This used to be a staged build, but it was more trouble than it was worth,
-# with builds missing requirements seemingly at random. Since this is such
-# a mission-critical component, and updates are relatively infrequent, I've
-# decided to incur the penalty of building from scratch every time.
-FROM python:3-buster
+# Use modern Python base image
+FROM python:3.11-slim
 
-COPY requirements.txt .
+# Install uv
+COPY --from=ghcr.io/astral-sh/uv:latest /uv /uvx /bin/
 
-RUN pip install -r ./requirements.txt
+# Set working directory
+WORKDIR /app
 
-# copy in the rest of the app
-COPY ./ ./
+# Copy dependency files
+COPY pyproject.toml .python-version ./
 
-CMD ["./playout"]
+# Install dependencies using uv
+RUN uv sync --frozen --no-dev
+
+# Copy the application code
+COPY . .
+
+# Run the application
+CMD ["uv", "run", "playout"]
