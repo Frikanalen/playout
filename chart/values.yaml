@@ -1,7 +1,7 @@
 replicaCount: 1
 
 image:
-  repository: frikanalen/playout
+  repository: ghcr.io/frikanalen/playout
   pullPolicy: Always
   tag: "latest"
 
