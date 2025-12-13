@@ -13,6 +13,10 @@ env:
     value: "true"
   - name: CASPAR_HOST
     value: "192.168.3.35"
+  - name: API_URL
+    value: "http://schedule-service/playout"
+  - name: LEGACY_URL
+    value: "https://frikanalen.no/api/"
 
 timezone:
   enabled: true

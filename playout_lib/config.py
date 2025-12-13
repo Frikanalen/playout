@@ -9,8 +9,8 @@ GRAPHICS_LAYER = "1-60"
 CHANNELBUG_LAYER = "1-100"
 
 # API endpoints
-API_URL = "http://schedule-service/playout"
-LEGACY_URL = "https://frikanalen.no/api/"
+API_URL = os.environ.get("API_URL", "http://schedule-service/playout")
+LEGACY_URL = os.environ.get("LEGACY_URL", "https://frikanalen.no/api/")
 
 # File and media settings
 FILE_BASE = ""
