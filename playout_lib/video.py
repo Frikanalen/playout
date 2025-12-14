@@ -53,7 +53,7 @@ class PrerecordedVideo(PlannedItem):
             return self._filename
 
         if self._video_files is None:
-            logger.warning(f"Video files not yet fetched for video {self.video_id}, using fallback")
+            logger.error(f"Video files not yet fetched for video {self.video_id}, using fallback")
             return FILE_BASE + "filler/FrikanalenLoop.avi"
 
         try:

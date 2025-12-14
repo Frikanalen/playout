@@ -46,13 +46,13 @@ class PlannedItem(Item):
     async def sleep_until_time_to_prepare(self):
         """Sleep until 5 seconds before scheduled start time."""
         seconds_until_start = (self.start_time - localtime()).total_seconds()
-        logger.debug(f"{seconds_until_start} seconds until start.")
+        logger.debug(f"{seconds_until_start:.2f} seconds until start.")
         await asyncio.sleep(seconds_until_start - 5)
 
     async def sleep_until_time_to_play(self):
         """Sleep until scheduled start time."""
         seconds_until_start = (self.start_time - localtime()).total_seconds()
-        logger.debug(f"{seconds_until_start} seconds until play. {repr(self)}")
+        logger.debug(f"{seconds_until_start:.2f} seconds until play. {repr(self)}")
         await asyncio.sleep(seconds_until_start)
 
     def already_done(self):
@@ -65,7 +65,7 @@ class PlannedItem(Item):
 
     async def _completion(self):
         """Block until the scheduled end time or until cancelled."""
-        logger.info(f"waiting for completion {self._seconds_left()} seconds left {repr(self)}")
+        logger.info(f"waiting for completion {self._seconds_left():.2f} seconds left {repr(self)}")
         await asyncio.sleep(self._seconds_left())
         logger.info(f"Finished waiting {repr(self)}")
 
