@@ -10,7 +10,6 @@ CHANNELBUG_LAYER = "1-100"
 
 # API endpoints
 API_URL = os.environ.get("API_URL", "https://frikanalen.no/")
-LEGACY_URL = os.environ.get("LEGACY_URL", "https://frikanalen.no/api/")
 
 # File and media settings
 FILE_BASE = ""
