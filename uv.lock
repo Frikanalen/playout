@@ -270,12 +270,23 @@ wheels = [
 ]
 
 [[package]]
+name = "frikanalen-django-api-client"
+version = "1.1.0"
+source = { git = "https://github.com/frikanalen/frikanalen-python-client.git?rev=main#cb2bb27b2712319cc6f47a40d1ad9862c1779bbc" }
+dependencies = [
+    { name = "attrs" },
+    { name = "httpx" },
+    { name = "python-dateutil" },
+]
+
+[[package]]
 name = "frikanalen-playout"
 version = "0.1.0"
 source = { editable = "." }
 dependencies = [
     { name = "aiohttp" },
     { name = "asyncio" },
+    { name = "frikanalen-django-api-client" },
     { name = "loguru" },
     { name = "python-dateutil" },
     { name = "pytz" },
@@ -295,6 +306,7 @@ dev = [
 requires-dist = [
     { name = "aiohttp", specifier = ">=3.13.2" },
     { name = "asyncio", specifier = ">=4.0.0" },
+    { name = "frikanalen-django-api-client", git = "https://github.com/frikanalen/frikanalen-python-client.git?rev=main" },
     { name = "loguru", specifier = ">=0.7.0" },
     { name = "python-dateutil", specifier = ">=2.9.0.post0" },
     { name = "pytz", specifier = ">=2025.2" },

@@ -11,8 +11,6 @@ from rich.text import Text
 
 from playout_lib.video import PrerecordedVideo
 
-from .video import PrerecordedVideo
-
 # Add parent directory to path for module imports when run as script
 if __name__ == "__main__":
     sys.path.insert(0, str(Path(__file__).parent.parent))

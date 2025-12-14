@@ -3,12 +3,13 @@
 from itertools import pairwise
 
 from frikanalen_django_api_client import Client
-from frikanalen_django_api_client.api.videos import videos_retrieve
 from loguru import logger
 
+from playout_lib.get_video_files import get_video_details
+
 from .config import GRAPHICS_LAYER, VIDEO_LAYER
-from .video import PrerecordedVideo
 from .schedule_api import ScheduleFetcher
+from .video import PrerecordedVideo
 
 # Graphics URL for generating graphics between videos
 GRAPHICS_URL = "https://frikanalen.no/graphics/"
@@ -37,28 +38,41 @@ async def load_schedule(api_url="https://frikanalen.no/"):
         # Get unique video IDs
         video_ids = list({item.video.id for item in schedule_items})
 
-        # Fetch full video details (including files) for all videos in parallel
-        logger.info(f"Fetching video files for {len(video_ids)} videos")
-        video_details_tasks = [get_video_files(vid, client) for vid in video_ids]
-        video_files_results = await asyncio.gather(*video_details_tasks)
+        # Fetch full video details (including files and framerate) for all videos in parallel
+        logger.info(f"Fetching video details for {len(video_ids)} videos")
+        video_details_tasks = [get_video_details(vid, client) for vid in video_ids]
+        video_details_results = await asyncio.gather(*video_details_tasks)
 
-        # Create mapping of video_id -> files dict
-        video_files_map = dict(zip(video_ids, video_files_results))
+        # Create mapping of video_id -> Video object
+        video_details_map = dict(zip(video_ids, video_details_results, strict=True))
 
     schedule = []
 
-    # Convert API items to PrerecordedVideo instances with pre-fetched files
+    # Convert API items to PrerecordedVideo instances with pre-fetched details
     for item in schedule_items:
-        video = item.video
-        framerate = video.framerate  # Use actual framerate from API
+        video_id = item.video.id
+        video_details = video_details_map.get(video_id)
+
+        # Use framerate from detailed video object if available
+        # Detailed video object should always be available since we just fetched it
+        if video_details:
+            framerate = video_details.framerate
+            video_files = video_details.files.additional_properties
+        else:
+            # Fallback: this shouldn't happen but handle gracefully
+            framerate = 25000  # Default to 25fps if we can't determine
+            video_files = None
+            logger.warning(f"No detailed video info for video {video_id}, using default framerate")
+
         schedule.append(
             PrerecordedVideo(
-                video.id,
+                video_id,
                 VIDEO_LAYER,
                 framerate,
                 item.starttime,
                 item.endtime,
-                video_files=video_files_map.get(video.id),
+                video_details=video_details,
+                video_files=video_files,
             )
         )
 
@@ -75,43 +89,3 @@ async def load_schedule(api_url="https://frikanalen.no/"):
 
     logger.info(f"Loaded {len(schedule)} videos and generated {len(graphics)} graphics")
     return all_items
-
-
-async def get_video_files(video_id: int, client: Client | None = None) -> dict[str, str]:
-    """Fetch video files dict from a video's details.
-
-    Args:
-        video_id: The video ID to fetch files for
-        client: Optional Client instance. If not provided, creates a new one.
-
-    Returns:
-        Dictionary mapping format names (e.g., 'broadcast', 'original') to file URLs/paths.
-    """
-    if client is None:
-        client = Client("https://frikanalen.no/")
-        async with client:
-            return await _fetch_video_files(video_id, client)
-    else:
-        return await _fetch_video_files(video_id, client)
-
-
-async def _fetch_video_files(video_id: int, client: Client) -> dict[str, str]:
-    """Internal function to fetch video details and extract files dict."""
-    response = await videos_retrieve.asyncio_detailed(
-        id=str(video_id),
-        client=client,  # type: ignore
-    )
-
-    if response.parsed is None:
-        logger.error(f"Could not get video details from API, HTTP {response.status_code}")
-        return {}
-
-    video = response.parsed
-
-    # The files field is a VideoFiles model with additional_properties dict
-    files_dict = video.files.additional_properties
-
-    logger.debug(
-        f"Found {len(files_dict)} video files for video {video_id}: {list(files_dict.keys())}"
-    )
-    return files_dict

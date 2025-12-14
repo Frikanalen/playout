@@ -11,6 +11,7 @@ dependencies = [
     "pytz>=2025.2",
     "loguru>=0.7.0",
     "asyncio>=4.0.0",
+    "frikanalen-django-api-client @ git+https://github.com/frikanalen/frikanalen-python-client.git@main",
 ]
 
 [project.scripts]
@@ -19,6 +20,9 @@ playout = "main:main"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["playout_lib"]

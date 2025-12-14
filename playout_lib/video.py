@@ -2,8 +2,8 @@ import asyncio
 
 from loguru import logger
 
-from playout_lib.api import get_video_files
 from playout_lib.config import FILE_BASE, USE_ORIGINAL
+from playout_lib.get_video_files import get_video_details
 from playout_lib.items import PlannedItem, localtime
 
 
@@ -17,6 +17,7 @@ class PrerecordedVideo(PlannedItem):
         framerate,
         start_time,
         end_time,
+        video_details=None,
         video_files: dict[str, str] | None = None,
     ):
         """Initialize a PrerecordedVideo item.
@@ -27,11 +28,14 @@ class PrerecordedVideo(PlannedItem):
             framerate: Video framerate (will be divided by 1000)
             start_time: Scheduled start time
             end_time: Scheduled end time
+            video_details: Optional pre-fetched Video object with complete details.
+                          If not provided, will be lazily fetched on first access.
             video_files: Optional pre-fetched dict of format->filename mappings.
-                        If not provided, will be lazily fetched on first access.
+                        If not provided but video_details is, will be extracted from there.
         """
         super().__init__(layer, start_time, end_time)
         self.video_id = video_id
+        self._video_details = video_details
         self._video_files = video_files
         self.framerate = float(framerate / 1000)
         self.metadata = None
@@ -71,9 +75,13 @@ class PrerecordedVideo(PlannedItem):
             return self._filename
 
     async def ensure_files_loaded(self):
-        """Ensure video files are fetched from the API."""
-        if self._video_files is None:
-            self._video_files = await get_video_files(self.video_id)
+        """Ensure video details and files are fetched from the API."""
+        if self._video_details is None and self._video_files is None:
+            self._video_details = await get_video_details(self.video_id)
+            if self._video_details:
+                # Update framerate from fetched details
+                self.framerate = float(self._video_details.framerate / 1000)
+                self._video_files = self._video_details.files.additional_properties
             # Reset cached filename so property will recalculate
             self._filename = None
 
