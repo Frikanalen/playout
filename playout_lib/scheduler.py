@@ -1,7 +1,8 @@
 """Schedule management and item playback coordination."""
 
 import asyncio
-from datetime import timedelta
+from collections.abc import Callable
+from datetime import datetime, timedelta
 
 from loguru import logger
 
@@ -23,7 +24,7 @@ class Scheduler:
 
     def __init__(self):
         self.schedule = []
-        self.schedule_age = None
+        self.last_refreshed = datetime.min
 
     async def _play_item(self, item):
         """Execute a scheduled item with preparation and timing.
@@ -43,17 +44,19 @@ class Scheduler:
         logger.info("Playing item")
         await item.cue()
 
-        if self.schedule_age + self.schedule_refresh_rate > localtime():
+        if self.last_refreshed + self.schedule_refresh_rate > localtime():
             raise ScheduleExpiryException
 
     async def _prepare_item(self, item):
         """Perform preparatory work for an item before playback."""
-        prepare_op = getattr(item, "prepare", None)
-        if callable(prepare_op):
-            logger.info("Preparing next item")
-            await prepare_op()
-        else:
+        prepare_op: Callable | None = getattr(item, "prepare", None)
+
+        if not callable(prepare_op):
             logger.info(f"Next item {item} does not have a prepare() method")
+            return
+
+        logger.info("Preparing next item")
+        await prepare_op()
 
     async def _validate(self):
         """Validate the loaded schedule (placeholder for future validation)."""
@@ -65,7 +68,7 @@ class Scheduler:
             tasks = ()
             try:
                 self.schedule = await load_schedule(API_URL)
-                self.schedule_age = localtime()
+                self.last_refreshed = localtime()
             except Exception:
                 logger.error("Failed to load a schedule!")
                 raise

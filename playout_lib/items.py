@@ -6,9 +6,6 @@ from datetime import datetime
 import pytz
 from loguru import logger
 
-from .api import VideoFiles
-from .config import FILE_BASE, USE_ORIGINAL
-
 
 def localtime():
     """Get current time in Oslo timezone."""
@@ -34,7 +31,7 @@ class Item:
 
         await current_player.issue(f"CLEAR {self.layer}")
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         return "[Item]"
 
 
@@ -71,83 +68,6 @@ class PlannedItem(Item):
         logger.info(f"waiting for completion {self._seconds_left()} seconds left")
         await asyncio.sleep(self._seconds_left())
         logger.info("Finished waiting")
-
-
-class PrerecordedVideo(PlannedItem):
-    """A scheduled video file to be played."""
-
-    def __init__(self, video_id, layer, framerate, start_time, end_time):
-        super().__init__(layer, start_time, end_time)
-        self.video_id = video_id
-        self.files = VideoFiles(video_id)
-        self.framerate = float(framerate / 1000)
-        self.metadata = None
-        self.has_been_prepared = False
-
-        # Determine which file to use
-        try:
-            if USE_ORIGINAL:
-                if self.files["original"] is not None:
-                    self.filename = FILE_BASE + self.files["original"]
-                else:
-                    self.filename = FILE_BASE + self.files["broadcast"]
-            else:
-                if self.files["broadcast"] is not None:
-                    self.filename = FILE_BASE + self.files["broadcast"]
-                else:
-                    self.filename = FILE_BASE + self.files["original"]
-        except Exception:
-            logger.error(f"video {self.video_id} has no associated file!")
-            self.filename = FILE_BASE + "filler/FrikanalenLoop.avi"
-
-    async def prepare(self):
-        """Preload the video file into CasparCG."""
-        from .caspar_player import current_player
-
-        try:
-            seconds_since_start = (localtime() - self.start_time).total_seconds()
-            if seconds_since_start > 2.0:
-                self.has_been_prepared = False
-                return
-
-            cmd_string = (
-                f'LOADBG {self.layer} "{self.filename}" "-filter:a aformat=sample_rates=48000"'
-            )
-            self.has_been_prepared = True
-            await current_player.issue(cmd_string)
-        except asyncio.CancelledError:
-            pass
-
-    async def cue(self):
-        """Start playing the video."""
-        from .caspar_player import current_player
-
-        try:
-            if self.has_been_prepared:
-                cmd_string = f"PLAY {self.layer}"
-            else:
-                cmd_string = f'PLAY {self.layer} "{self.filename}"'
-                cmd_string += ' "-filter:a aformat=sample_rates=48000"'
-                cmd_string += " MIX 50 1 LINEAR RIGHT"
-
-                seconds_since_start = (localtime() - self.start_time).total_seconds()
-                if seconds_since_start > 2.0:
-                    cmd_string += f" SEEK {int(current_player.frame_rate * seconds_since_start)}"
-
-            await current_player.issue(cmd_string)
-            await self._completion()
-            print("I would have cleared here if it weren't for debugging")
-            await current_player.issue(f"STOP {self.layer}")
-            # await self.clear()
-        except asyncio.CancelledError:
-            logger.warning("asyncio.CancelledError, clearing layer...")
-            print("I would have cleared here if it weren't for debugging")
-            # await self.clear()
-
-    def __repr__(self):
-        return "[ScheduledVideo [{}-{}]: Video {}]".format(
-            self.start_time.strftime("%d %H:%M"), self.end_time.strftime("%H:%M"), self.video_id
-        )
 
 
 class Graphic(PlannedItem):
