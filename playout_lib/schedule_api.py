@@ -79,5 +79,8 @@ class ScheduleFetcher:
 
             offset += limit
 
+        if len(all_items) == 0:
+            logger.error("No schedule items retrieved from API!")
+            raise RuntimeError("No schedule items retrieved from API!")
         logger.info(f"Successfully fetched {len(all_items)} schedule items for {date_str}")
         return all_items
