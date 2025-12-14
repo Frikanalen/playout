@@ -4,10 +4,10 @@ import asyncio
 from datetime import datetime
 
 import pytz
+from loguru import logger
 
 from .api import VideoFiles
 from .config import FILE_BASE, USE_ORIGINAL
-from .logging_setup import logger
 
 
 def localtime():
@@ -36,13 +36,6 @@ class Item:
 
     def __repr__(self):
         return "[Item]"
-
-
-class ImpromptuItem(Item):
-    """Item that can be played without prior scheduling."""
-
-    def __init__(self, layer, start_time, end_time):
-        super().__init__(layer)
 
 
 class PlannedItem(Item):
@@ -135,7 +128,7 @@ class PrerecordedVideo(PlannedItem):
             else:
                 cmd_string = f'PLAY {self.layer} "{self.filename}"'
                 cmd_string += ' "-filter:a aformat=sample_rates=48000"'
-                cmd_string += ' MIX 50 1 LINEAR RIGHT'
+                cmd_string += " MIX 50 1 LINEAR RIGHT"
 
                 seconds_since_start = (localtime() - self.start_time).total_seconds()
                 if seconds_since_start > 2.0:

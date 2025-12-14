@@ -3,12 +3,21 @@
 
 import asyncio
 import signal
+import sys
+
+from loguru import logger
 
 from playout_lib.caspar_player import current_player
-
 from playout_lib.config import CASPAR_HOST
-from playout_lib.logging_setup import logger
 from playout_lib.scheduler import Scheduler
+
+# Configure loguru for the playout system
+logger.remove()  # Remove default handler
+logger.add(
+    sys.stderr,
+    colorize=True,
+    level="DEBUG",
+)
 
 
 class Playout:

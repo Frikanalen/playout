@@ -3,9 +3,9 @@
 import aiohttp
 import requests
 from dateutil.parser import parse
+from loguru import logger
 
 from .config import API_URL, GRAPHICS_LAYER, LEGACY_URL, VIDEO_LAYER
-from .logging_setup import logger
 
 
 async def fetch(url):

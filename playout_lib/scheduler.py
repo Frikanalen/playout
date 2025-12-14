@@ -3,10 +3,11 @@
 import asyncio
 from datetime import timedelta
 
+from loguru import logger
+
 from .api import load_schedule
 from .config import API_URL
 from .items import localtime
-from .logging_setup import logger
 
 
 class ScheduleExpiryException(Exception):
