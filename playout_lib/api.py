@@ -29,7 +29,7 @@ async def load_schedule(api_url="https://frikanalen.no/"):
     from .items import Graphic  # Import here to avoid circular dependency
 
     # Fetch schedule items from the API
-    client = Client(api_url)
+    client = Client(api_url, raise_on_unexpected_status=True)
     fetcher = ScheduleFetcher(client)
 
     async with client:

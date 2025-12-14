@@ -52,10 +52,14 @@ class ScheduleFetcher:
 
             logger.debug(f"Response status: {response.status_code}")
 
+            # Extract the URL from the response
+
+            if response.status_code != 200:
+                logger.error(f"HTTP {response.status_code} fetching schedule at offset {offset}. ")
+                break
+
             if response.parsed is None:
-                logger.error(
-                    f"No response parsed at offset {offset}. Status: {response.status_code}"
-                )
+                logger.error(f"Failed to parse response at offset {offset}.")
                 logger.debug(
                     f"Response content: {response.content[:500] if response.content else 'None'}"
                 )
