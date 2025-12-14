@@ -14,13 +14,13 @@ RUN apt update && apt install -y git && apt clean && rm -rf /var/lib/apt/lists/*
 # Copy dependency files
 COPY pyproject.toml .python-version uv.lock README.md ./
 
-# Copy application code first
-COPY . .
-
 # Install project and dependencies with cache mounting
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --frozen --no-dev --no-editable && \
     uv pip install --system --no-cache "git+https://github.com/frikanalen/frikanalen-python-client.git@main"
+
+# Copy application code after dependencies are installed
+COPY . .
 
 # Runtime stage
 FROM python:3.11-slim
