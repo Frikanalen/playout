@@ -52,7 +52,7 @@ class PlannedItem(Item):
     async def sleep_until_time_to_play(self):
         """Sleep until scheduled start time."""
         seconds_until_start = (self.start_time - localtime()).total_seconds()
-        logger.debug(f"{seconds_until_start} seconds until play.")
+        logger.debug(f"{seconds_until_start} seconds until play. {repr(self)}")
         await asyncio.sleep(seconds_until_start)
 
     def already_done(self):
@@ -65,9 +65,9 @@ class PlannedItem(Item):
 
     async def _completion(self):
         """Block until the scheduled end time or until cancelled."""
-        logger.info(f"waiting for completion {self._seconds_left()} seconds left")
+        logger.info(f"waiting for completion {self._seconds_left()} seconds left {repr(self)}")
         await asyncio.sleep(self._seconds_left())
-        logger.info("Finished waiting")
+        logger.info(f"Finished waiting {repr(self)}")
 
 
 class Graphic(PlannedItem):
@@ -125,3 +125,8 @@ class Graphic(PlannedItem):
             self.has_been_prepared = True
         except asyncio.CancelledError:
             pass
+
+    def __repr__(self):
+        time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+        duration = (self.end_time - self.start_time).total_seconds()
+        return f"[{time_range} Graphic: {duration:.1f}s]"

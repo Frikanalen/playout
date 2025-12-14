@@ -41,9 +41,8 @@ class Scheduler:
             await self._prepare_item(item)
 
         await item.sleep_until_time_to_play()
-        logger.info("Playing item")
+        logger.info(f"Playing item {repr(item)}")
         await item.cue()
-
         if self.last_refreshed + self.schedule_refresh_rate > localtime():
             raise ScheduleExpiryException
 

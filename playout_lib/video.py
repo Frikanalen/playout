@@ -130,6 +130,8 @@ class PrerecordedVideo(PlannedItem):
             # await self.clear()
 
     def __repr__(self):
-        return "[ScheduledVideo [{}-{}]: Video {}]".format(
-            self.start_time.strftime("%d %H:%M"), self.end_time.strftime("%H:%M"), self.video_id
-        )
+        time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+        title = "Video"
+        if self._video_details and hasattr(self._video_details, "name"):
+            title = f"Video: {self._video_details.name[:15]}..."
+        return f"[{time_range} {title}]"
