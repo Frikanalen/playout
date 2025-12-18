@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.0.1](https://github.com/Frikanalen/playout/compare/v1.0.0...v1.0.1) (2025-12-18)
+
+
+### Bug Fixes
+
+* GHA: remove redundant "ref" specifier ([742b149](https://github.com/Frikanalen/playout/commit/742b149bba4d9ec5ec3a8806c77348cb40094a44))
+
 ## 1.0.0 (2025-12-18)
 
 
