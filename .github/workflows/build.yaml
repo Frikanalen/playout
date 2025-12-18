@@ -7,7 +7,7 @@ on:
 permissions:
   pull-requests: write
   issues: write
-  contents: read
+  contents: write
   packages: write  # Needed to push to ghcr.io
 
 jobs:
