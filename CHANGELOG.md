@@ -1,5 +1,16 @@
 # Changelog
 
+## [2.0.0](https://github.com/Frikanalen/playout/compare/v1.0.2...v2.0.0) (2026-01-02)
+
+
+### ⚠ BREAKING CHANGES
+
+* Remove schedule-service dependency, improve logging ([#4](https://github.com/Frikanalen/playout/issues/4))
+
+### Features
+
+* Remove schedule-service dependency, improve logging ([#4](https://github.com/Frikanalen/playout/issues/4)) ([49807fe](https://github.com/Frikanalen/playout/commit/49807fe5e65cab3951bc5bff94a153ab57996cc2))
+
 ## [1.0.2](https://github.com/Frikanalen/playout/compare/v1.0.1...v1.0.2) (2025-12-18)
 
 
