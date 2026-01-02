@@ -1,0 +1,43 @@
+replicaCount: 1
+
+image:
+  repository: ghcr.io/frikanalen/playout
+  pullPolicy: Always
+  tag: "latest"
+
+nameOverride: ""
+fullnameOverride: ""
+
+env:
+- name: USE_ORIGINAL
+  value: "true"
+- name: CASPAR_HOST
+  value: "192.168.3.35"
+- name: API_URL
+  value: "https://frikanalen.no/"
+
+timezone:
+  enabled: true
+  path: /usr/share/zoneinfo/Europe/Oslo
+
+podAnnotations:
+  co.elastic.logs/json.add_error_key: "true"
+  co.elastic.logs/json.keys_under_root: "true"
+  co.elastic.logs/json.overwrite_keys: "true"
+
+resources: {}
+  # limits:
+  #   cpu: 100m
+  #   memory: 128Mi
+  # requests:
+  #   cpu: 100m
+  #   memory: 128Mi
+
+terminationGracePeriodSeconds: 30
+
+podManagementPolicy: OrderedReady
+
+updateStrategy:
+  type: RollingUpdate
+  rollingUpdate:
+    partition: 0
