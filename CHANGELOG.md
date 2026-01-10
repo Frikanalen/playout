@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.0.1](https://github.com/Frikanalen/playout/compare/v2.0.0...v2.0.1) (2026-01-10)
+
+
+### Miscellaneous Chores
+
+* release 2.0.1 ([bced9f2](https://github.com/Frikanalen/playout/commit/bced9f229790a9b9adfc3e12dd15795921f5acda))
+
 ## [2.0.0](https://github.com/Frikanalen/playout/compare/v1.0.2...v2.0.0) (2026-01-02)
 
 
