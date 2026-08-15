@@ -3,7 +3,7 @@ from zoneinfo import ZoneInfo
 
 import pytest
 
-from playout_lib import items
+from playout_lib import caspar_player, items
 
 TZ = ZoneInfo("Europe/Oslo")
 NOW = datetime(2026, 1, 1, 12, 0, tzinfo=TZ)
@@ -44,3 +44,25 @@ class TestGraphic:
         graphic = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=30))
 
         assert "30.0s" in repr(graphic)
+
+
+class TestFillerLoop:
+    def test_repr_includes_time_range_and_duration(self):
+        filler = items.FillerLoop("1-60", NOW, NOW + timedelta(seconds=20))
+
+        assert "20.0s" in repr(filler)
+        assert "FillerLoop" in repr(filler)
+
+    async def test_cue_plays_and_clears_the_filler_reel(self, monkeypatch):
+        issued = []
+
+        async def fake_issue(cmd):
+            issued.append(cmd)
+
+        monkeypatch.setattr(caspar_player.current_player, "issue", fake_issue)
+
+        filler = items.FillerLoop("1-60", NOW, NOW)  # zero-length: no waiting needed
+        await filler.cue()
+
+        assert issued[0] == "PLAY 1-60 filler/FrikanalenLoop loop 0"
+        assert issued[-1] == "CLEAR 1-60"

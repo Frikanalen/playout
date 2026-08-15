@@ -130,3 +130,27 @@ class Graphic(PlannedItem):
         time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
         duration = (self.end_time - self.start_time).total_seconds()
         return f"[{time_range} Graphic: {duration:.1f}s]"
+
+
+class FillerLoop(PlannedItem):
+    """A gap between videos too short to justify a full graphics overlay.
+
+    Just loops the filler reel on the graphics layer instead of paying for
+    a CG add/fade.
+    """
+
+    async def cue(self):
+        """Loop the filler reel for the duration of the gap."""
+        from .caspar_player import current_player
+
+        try:
+            await current_player.issue(f"PLAY {self.layer} filler/FrikanalenLoop loop 0")
+            await self._completion()
+            await self.clear()
+        except asyncio.CancelledError:
+            await self.clear()
+
+    def __repr__(self):
+        time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+        duration = (self.end_time - self.start_time).total_seconds()
+        return f"[{time_range} FillerLoop: {duration:.1f}s]"

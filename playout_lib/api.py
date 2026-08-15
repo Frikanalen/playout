@@ -1,5 +1,6 @@
 """API and data fetching functionality for schedule and video files."""
 
+from datetime import timedelta
 from itertools import pairwise
 
 from frikanalen_django_api_client import Client
@@ -14,6 +15,10 @@ from .video import PrerecordedVideo
 # Graphics URL for generating graphics between videos
 GRAPHICS_URL = "https://frikanalen.no/graphics/"
 
+# Gaps shorter than this just loop the filler reel instead of showing a
+# proper graphics overlay.
+MINIMUM_GRAPHIC_DURATION = timedelta(seconds=30)
+
 
 async def load_schedule(api_url="https://frikanalen.no/"):
     """Load and parse schedule from the API with automatic graphics insertion.
@@ -26,7 +31,7 @@ async def load_schedule(api_url="https://frikanalen.no/"):
     """
     import asyncio
 
-    from .items import Graphic  # Import here to avoid circular dependency
+    from .items import FillerLoop, Graphic  # Import here to avoid circular dependency
 
     # Fetch schedule items from the API
     client = Client(api_url, raise_on_unexpected_status=True)
@@ -76,12 +81,21 @@ async def load_schedule(api_url="https://frikanalen.no/"):
             )
         )
 
-    # Generate and insert graphics between consecutive videos
+    # Generate and insert graphics (or, for short gaps, a plain filler loop)
+    # between consecutive videos
     graphics = []
     for video_before, video_after in pairwise(schedule):
-        duration_ms = int((video_after.start_time - video_before.end_time).total_seconds() * 1000)
-        url = f"{GRAPHICS_URL}?duration={duration_ms}"
-        graphics.append(Graphic(url, GRAPHICS_LAYER, video_before.end_time, video_after.start_time))
+        gap = video_after.start_time - video_before.end_time
+        if gap >= MINIMUM_GRAPHIC_DURATION:
+            duration_ms = int(gap.total_seconds() * 1000)
+            url = f"{GRAPHICS_URL}?duration={duration_ms}"
+            graphics.append(
+                Graphic(url, GRAPHICS_LAYER, video_before.end_time, video_after.start_time)
+            )
+        else:
+            graphics.append(
+                FillerLoop(GRAPHICS_LAYER, video_before.end_time, video_after.start_time)
+            )
 
     # Combine videos and graphics, sorted by start time
     all_items = schedule + graphics
