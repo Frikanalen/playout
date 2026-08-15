@@ -11,6 +11,10 @@ dependencies = [
     "pytz>=2025.2",
     "loguru>=0.7.0",
     "asyncio>=4.0.0",
+    # Runtime dependencies of the generated frikanalen_django_api_client
+    # package, which ships as vendored source without its own metadata.
+    "httpx>=0.23.0,<0.29.0",
+    "attrs>=22.2.0",
 ]
 
 [project.scripts]
@@ -25,6 +29,10 @@ allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["playout_lib", "frikanalen_django_api_client"]
+# The generated client is gitignored, and hatchling's file selection defaults to
+# honouring VCS ignore rules, which silently drops it from the wheel. Listing it
+# as an artifact includes it regardless.
+artifacts = ["frikanalen_django_api_client/**"]
 
 [dependency-groups]
 dev = [
