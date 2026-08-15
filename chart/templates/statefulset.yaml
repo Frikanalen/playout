@@ -28,7 +28,7 @@ spec:
       terminationGracePeriodSeconds: {{ .Values.terminationGracePeriodSeconds }}
       containers:
       - name: {{ .Chart.Name }}
-        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default .Chart.AppVersion }}"
+        image: "{{ .Values.image.repository }}:{{ .Values.image.tag | default (printf "v%s" .Chart.Version) }}"
         imagePullPolicy: {{ .Values.image.pullPolicy }}
         {{- if .Values.env }}
         env:

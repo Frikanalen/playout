@@ -2,5 +2,4 @@ apiVersion: v2
 name: playout
 description: A Helm chart for Frikanalen Playout service
 type: application
-version: 0.1.0
-appVersion: "latest"
+version: 2.0.1 # x-release-please-version
