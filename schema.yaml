@@ -54,6 +54,20 @@ paths:
                       detail: You do not have permission to perform this action.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -115,18 +129,7 @@ paths:
   /api/asrun/:
     get:
       operationId: asrun_list
-      description: |-
-        AsRun model is a historic log over what was sent through playout.
-
-        Query parameters
-        ----------------
-
-        `page_size` - How many items per page. If set to 0 it will list
-                      all items.  Default is 50 items.
-
-        `ordering` - You can order the results by any visible field.
-                     Prepend a minus to order in descending order.  I.e.
-                     `?ordering=-played_at` to show newest items first.
+      description: A historic log over what was sent through playout.
       parameters:
       - name: limit
         required: false
@@ -193,6 +196,20 @@ paths:
                       detail: You do not have permission to perform this action.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -257,18 +274,7 @@ paths:
           description: ''
     post:
       operationId: asrun_create
-      description: |-
-        AsRun model is a historic log over what was sent through playout.
-
-        Query parameters
-        ----------------
-
-        `page_size` - How many items per page. If set to 0 it will list
-                      all items.  Default is 50 items.
-
-        `ordering` - You can order the results by any visible field.
-                     Prepend a minus to order in descending order.  I.e.
-                     `?ordering=-played_at` to show newest items first.
+      description: A historic log over what was sent through playout.
       tags:
       - asrun
       requestBody:
@@ -319,6 +325,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -386,18 +406,7 @@ paths:
   /api/asrun/{id}/:
     get:
       operationId: asrun_retrieve
-      description: |-
-        AsRun model is a historic log over what was sent through playout.
-
-        Query parameters
-        ----------------
-
-        `page_size` - How many items per page. If set to 0 it will list
-                      all items.  Default is 50 items.
-
-        `ordering` - You can order the results by any visible field.
-                     Prepend a minus to order in descending order.  I.e.
-                     `?ordering=-played_at` to show newest items first.
+      description: A historic log over what was sent through playout.
       parameters:
       - in: path
         name: id
@@ -530,18 +539,7 @@ paths:
           description: ''
     put:
       operationId: asrun_update
-      description: |-
-        AsRun model is a historic log over what was sent through playout.
-
-        Query parameters
-        ----------------
-
-        `page_size` - How many items per page. If set to 0 it will list
-                      all items.  Default is 50 items.
-
-        `ordering` - You can order the results by any visible field.
-                     Prepend a minus to order in descending order.  I.e.
-                     `?ordering=-played_at` to show newest items first.
+      description: A historic log over what was sent through playout.
       parameters:
       - in: path
         name: id
@@ -679,18 +677,7 @@ paths:
           description: ''
     patch:
       operationId: asrun_partial_update
-      description: |-
-        AsRun model is a historic log over what was sent through playout.
-
-        Query parameters
-        ----------------
-
-        `page_size` - How many items per page. If set to 0 it will list
-                      all items.  Default is 50 items.
-
-        `ordering` - You can order the results by any visible field.
-                     Prepend a minus to order in descending order.  I.e.
-                     `?ordering=-played_at` to show newest items first.
+      description: A historic log over what was sent through playout.
       parameters:
       - in: path
         name: id
@@ -828,18 +815,7 @@ paths:
           description: ''
     delete:
       operationId: asrun_destroy
-      description: |-
-        AsRun model is a historic log over what was sent through playout.
-
-        Query parameters
-        ----------------
-
-        `page_size` - How many items per page. If set to 0 it will list
-                      all items.  Default is 50 items.
-
-        `ordering` - You can order the results by any visible field.
-                     Prepend a minus to order in descending order.  I.e.
-                     `?ordering=-played_at` to show newest items first.
+      description: A historic log over what was sent through playout.
       parameters:
       - in: path
         name: id
@@ -1035,6 +1011,20 @@ paths:
                       detail: You do not have permission to perform this action.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -1150,6 +1140,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -1772,6 +1776,20 @@ paths:
               schema:
                 $ref: '#/components/schemas/CsrfRetrieveErrorResponse400'
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -1879,6 +1897,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -1994,6 +2026,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -2113,6 +2159,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -2758,6 +2818,20 @@ paths:
                       detail: Authentication credentials were not provided.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -2889,6 +2963,20 @@ paths:
                       detail: You do not have permission to perform this action.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -3004,6 +3092,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -3629,6 +3731,7 @@ paths:
         name: date
         schema:
           type: string
+          format: date
       - in: query
         name: days
         schema:
@@ -3700,6 +3803,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -3830,6 +3947,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -4482,6 +4613,124 @@ paths:
           description: ''
         '204':
           description: No response body
+  /api/scheduling/policy:
+    get:
+      operationId: scheduling_policy_retrieve
+      description: |-
+        The instants that divide the broadcast schedule into its three states. Every broadcast week runs Monday 00:00 to Monday 00:00, Europe/Oslo, and is drafted two Mondays before it airs, open for member changes for one week, then frozen from the Monday before airing.
+
+        Derive per-item state by comparing `starttime` against these boundaries: before `freezeBoundary` the item is frozen; from `freezeBoundary` up to `schedulingHorizon` it is in the open week, where an item marked `displaceable` can be replaced by a member organization's own pick; beyond `schedulingHorizon` nothing is drafted yet. The values only change on Mondays at midnight Europe/Oslo. Staff accounts are exempt from the freeze.
+      summary: Broadcast-week scheduling policy
+      tags:
+      - scheduling
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      - {}
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchedulingPolicyRetrieveErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/SchedulingPolicy'
+          description: ''
   /api/schema/:
     get:
       operationId: schema_retrieve
@@ -4697,6 +4946,53 @@ paths:
                     errors:
                     - code: not_authenticated
                       detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/vnd.oai.openapi:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+            application/yaml:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+            application/vnd.oai.openapi+json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -4943,6 +5239,20 @@ paths:
                       detail: Authentication credentials were not provided.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -5044,6 +5354,20 @@ paths:
                     errors:
                     - code: not_authenticated
                       detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -5149,6 +5473,20 @@ paths:
                       detail: Authentication credentials were not provided.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -5245,6 +5583,20 @@ paths:
                     errors:
                     - code: not_authenticated
                       detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -5347,6 +5699,20 @@ paths:
                     errors:
                     - code: not_authenticated
                       detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -5461,6 +5827,20 @@ paths:
                       detail: You do not have permission to perform this action.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -5560,6 +5940,20 @@ paths:
                     errors:
                     - code: not_authenticated
                       detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -5750,6 +6144,20 @@ paths:
                       detail: You do not have permission to perform this action.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -5866,6 +6274,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -6481,9 +6903,6 @@ paths:
 
         `q` - Free search query.
 
-        `page_size` - How many items per page. If set to 0 it will list
-                      all items.  Default is 50 items.
-
         `ordering` - Order results by specified field.  Prepend a minus for
                      descending order.  I.e. `?ordering=-id`.
 
@@ -6718,6 +7137,20 @@ paths:
                       detail: You do not have permission to perform this action.
                       attr: null
           description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
         '405':
           content:
             application/json:
@@ -6789,9 +7222,6 @@ paths:
         ----------------
 
         `q` - Free search query.
-
-        `page_size` - How many items per page. If set to 0 it will list
-                      all items.  Default is 50 items.
 
         `ordering` - Order results by specified field.  Prepend a minus for
                      descending order.  I.e. `?ordering=-id`.
@@ -6880,6 +7310,20 @@ paths:
                     errors:
                     - code: permission_denied
                       detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
                       attr: null
           description: ''
         '405':
@@ -7630,6 +8074,9 @@ components:
   schemas:
     AsRun:
       type: object
+      description: |-
+        One entry in the playout log: a video or a named programme, and
+        when it went to air.
       properties:
         id:
           type: integer
@@ -7673,6 +8120,9 @@ components:
       - id
     AsRunRequest:
       type: object
+      description: |-
+        One entry in the playout log: a video or a named programme, and
+        when it went to air.
       properties:
         video:
           type: integer
@@ -8433,6 +8883,8 @@ components:
           type: string
           format: date-time
           readOnly: true
+        isPublished:
+          type: boolean
       required:
       - created
       - heading
@@ -8448,6 +8900,8 @@ components:
         text:
           type: string
           minLength: 1
+        isPublished:
+          type: boolean
       required:
       - heading
       - text
@@ -9262,10 +9716,6 @@ components:
           type: string
         lastName:
           type: string
-        dateOfBirth:
-          type: string
-          format: date
-          nullable: true
       required:
       - email
       - firstName
@@ -9286,10 +9736,6 @@ components:
         lastName:
           type: string
           minLength: 1
-        dateOfBirth:
-          type: string
-          format: date
-          nullable: true
         password:
           type: string
           writeOnly: true
@@ -9304,12 +9750,14 @@ components:
       - $ref: '#/components/schemas/NewsBulletinsCreateNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/NewsBulletinsCreateHeadingErrorComponent'
       - $ref: '#/components/schemas/NewsBulletinsCreateTextErrorComponent'
+      - $ref: '#/components/schemas/NewsBulletinsCreateIsPublishedErrorComponent'
       discriminator:
         propertyName: attr
         mapping:
           non_field_errors: '#/components/schemas/NewsBulletinsCreateNonFieldErrorsErrorComponent'
           heading: '#/components/schemas/NewsBulletinsCreateHeadingErrorComponent'
           text: '#/components/schemas/NewsBulletinsCreateTextErrorComponent'
+          is_published: '#/components/schemas/NewsBulletinsCreateIsPublishedErrorComponent'
     NewsBulletinsCreateErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/NewsBulletinsCreateValidationError'
@@ -9345,6 +9793,28 @@ components:
             * `null_characters_not_allowed` - null_characters_not_allowed
             * `required` - required
             * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    NewsBulletinsCreateIsPublishedErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - is_published
+          type: string
+          description: '* `is_published` - is_published'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
         detail:
           type: string
       required:
@@ -9434,12 +9904,14 @@ components:
       - $ref: '#/components/schemas/NewsBulletinsPartialUpdateNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/NewsBulletinsPartialUpdateHeadingErrorComponent'
       - $ref: '#/components/schemas/NewsBulletinsPartialUpdateTextErrorComponent'
+      - $ref: '#/components/schemas/NewsBulletinsPartialUpdateIsPublishedErrorComponent'
       discriminator:
         propertyName: attr
         mapping:
           non_field_errors: '#/components/schemas/NewsBulletinsPartialUpdateNonFieldErrorsErrorComponent'
           heading: '#/components/schemas/NewsBulletinsPartialUpdateHeadingErrorComponent'
           text: '#/components/schemas/NewsBulletinsPartialUpdateTextErrorComponent'
+          is_published: '#/components/schemas/NewsBulletinsPartialUpdateIsPublishedErrorComponent'
     NewsBulletinsPartialUpdateErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/NewsBulletinsPartialUpdateValidationError'
@@ -9475,6 +9947,28 @@ components:
             * `null_characters_not_allowed` - null_characters_not_allowed
             * `required` - required
             * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    NewsBulletinsPartialUpdateIsPublishedErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - is_published
+          type: string
+          description: '* `is_published` - is_published'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
         detail:
           type: string
       required:
@@ -9557,12 +10051,14 @@ components:
       - $ref: '#/components/schemas/NewsBulletinsUpdateNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/NewsBulletinsUpdateHeadingErrorComponent'
       - $ref: '#/components/schemas/NewsBulletinsUpdateTextErrorComponent'
+      - $ref: '#/components/schemas/NewsBulletinsUpdateIsPublishedErrorComponent'
       discriminator:
         propertyName: attr
         mapping:
           non_field_errors: '#/components/schemas/NewsBulletinsUpdateNonFieldErrorsErrorComponent'
           heading: '#/components/schemas/NewsBulletinsUpdateHeadingErrorComponent'
           text: '#/components/schemas/NewsBulletinsUpdateTextErrorComponent'
+          is_published: '#/components/schemas/NewsBulletinsUpdateIsPublishedErrorComponent'
     NewsBulletinsUpdateErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/NewsBulletinsUpdateValidationError'
@@ -9598,6 +10094,28 @@ components:
             * `null_characters_not_allowed` - null_characters_not_allowed
             * `required` - required
             * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    NewsBulletinsUpdateIsPublishedErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - is_published
+          type: string
+          description: '* `is_published` - is_published'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
         detail:
           type: string
       required:
@@ -9818,9 +10336,13 @@ components:
           readOnly: true
         editorEmail:
           type: string
+          nullable: true
           readOnly: true
         editorMsisdn:
           type: string
+          nullable: true
+          description: The editor's number in international format, or None if there
+            isn't one.
           readOnly: true
         fkmember:
           type: boolean
@@ -10646,6 +11168,9 @@ components:
       - type
     PatchedAsRunRequest:
       type: object
+      description: |-
+        One entry in the playout log: a video or a named programme, and
+        when it went to air.
       properties:
         video:
           type: integer
@@ -10692,6 +11217,8 @@ components:
         text:
           type: string
           minLength: 1
+        isPublished:
+          type: boolean
     PatchedCategoryRequest:
       type: object
       properties:
@@ -10791,6 +11318,7 @@ components:
           title: True peak LUFS of file defined in ITU R.128
     PatchedVideoRequest:
       type: object
+      description: 'The read serializer: the organization arrives whole.'
       properties:
         name:
           type: string
@@ -10804,11 +11332,6 @@ components:
           type: string
           nullable: true
           maxLength: 2048
-        creator:
-          type: string
-          format: email
-          minLength: 1
-          title: Email address
         duration:
           type: string
         categories:
@@ -10922,7 +11445,16 @@ components:
           type: string
           format: date-time
           readOnly: true
+        displaceable:
+          type: boolean
+          description: Whether this item is automatic jukebox filler, which a member
+            organization's own pick replaces when scheduled over it. Deliberate programming
+            is never displaceable. Only meaningful for items starting at or after
+            the freezeBoundary of /api/scheduling/policy; frozen airtime cannot be
+            changed regardless.
+          readOnly: true
       required:
+      - displaceable
       - endtime
       - id
       - starttime
@@ -10952,11 +11484,33 @@ components:
           type: array
           items:
             type: string
+        files:
+          type: array
+          items:
+            $ref: '#/components/schemas/ScheduleitemVideoFile'
+          readOnly: true
       required:
       - categories
+      - files
       - id
       - name
       - organization
+    ScheduleitemVideoFile:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        fsname:
+          type: string
+          readOnly: true
+        filename:
+          type: string
+          readOnly: true
+      required:
+      - filename
+      - fsname
+      - id
     ScheduleitemsCreateDurationErrorComponent:
       type: object
       properties:
@@ -10968,11 +11522,13 @@ components:
         code:
           enum:
           - invalid
+          - min_value
           - 'null'
           - required
           type: string
           description: |-
             * `invalid` - invalid
+            * `min_value` - min_value
             * `null` - null
             * `required` - required
         detail:
@@ -11134,9 +11690,9 @@ components:
           description: '* `date` - date'
         code:
           enum:
-          - null_characters_not_allowed
+          - invalid
           type: string
-          description: '* `null_characters_not_allowed` - null_characters_not_allowed'
+          description: '* `invalid` - invalid'
         detail:
           type: string
       required:
@@ -11155,10 +11711,12 @@ components:
           enum:
           - invalid
           - max_value
+          - min_value
           type: string
           description: |-
             * `invalid` - invalid
             * `max_value` - max_value
+            * `min_value` - min_value
         detail:
           type: string
       required:
@@ -11206,11 +11764,13 @@ components:
         code:
           enum:
           - invalid
+          - min_value
           - 'null'
           - required
           type: string
           description: |-
             * `invalid` - invalid
+            * `min_value` - min_value
             * `null` - null
             * `required` - required
         detail:
@@ -11373,11 +11933,13 @@ components:
         code:
           enum:
           - invalid
+          - min_value
           - 'null'
           - required
           type: string
           description: |-
             * `invalid` - invalid
+            * `min_value` - min_value
             * `null` - null
             * `required` - required
         detail:
@@ -11536,6 +12098,49 @@ components:
         * `3` - User
         * `4` - Automatic
         * `5` - Jukebox
+    SchedulingPolicy:
+      type: object
+      description: |-
+        The broadcast-week policy, as instants to compare schedule items
+        against. Clients should derive per-item state from these rather than
+        re-implement the week arithmetic (see agenda.scheduling.policy):
+        items before freezeBoundary are frozen, items between freezeBoundary
+        and schedulingHorizon are in the open week, and airtime beyond
+        schedulingHorizon has not been drafted yet.
+      properties:
+        freezeBoundary:
+          type: string
+          format: date-time
+          readOnly: true
+          description: 'Schedule items starting before this instant are frozen: member
+            organizations can no longer create, move, edit, or delete them. It is
+            the Monday midnight (Europe/Oslo) before the open broadcast week, and
+            advances one week every Monday at midnight.'
+        schedulingHorizon:
+          type: string
+          format: date-time
+          readOnly: true
+          description: 'The end of the drafted schedule: the open week runs from freezeBoundary
+            to here. The nightly jobs do not schedule beyond this instant, and neither
+            should clients present later airtime as available.'
+        serverTime:
+          type: string
+          format: date-time
+          readOnly: true
+          description: The server's clock when this response was produced. Compare
+            against it, not the local clock, when deciding which side of a boundary
+            the present moment falls on.
+      required:
+      - freezeBoundary
+      - schedulingHorizon
+      - serverTime
+    SchedulingPolicyRetrieveErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
     SchemaRetrieveErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/ParseErrorResponse'
@@ -11940,28 +12545,6 @@ components:
       required:
       - errors
       - type
-    UserRegisterCreateDateOfBirthErrorComponent:
-      type: object
-      properties:
-        attr:
-          enum:
-          - date_of_birth
-          type: string
-          description: '* `date_of_birth` - date_of_birth'
-        code:
-          enum:
-          - datetime
-          - invalid
-          type: string
-          description: |-
-            * `datetime` - datetime
-            * `invalid` - invalid
-        detail:
-          type: string
-      required:
-      - attr
-      - code
-      - detail
     UserRegisterCreateEmailErrorComponent:
       type: object
       properties:
@@ -12002,7 +12585,6 @@ components:
       - $ref: '#/components/schemas/UserRegisterCreateEmailErrorComponent'
       - $ref: '#/components/schemas/UserRegisterCreateFirstNameErrorComponent'
       - $ref: '#/components/schemas/UserRegisterCreateLastNameErrorComponent'
-      - $ref: '#/components/schemas/UserRegisterCreateDateOfBirthErrorComponent'
       - $ref: '#/components/schemas/UserRegisterCreatePasswordErrorComponent'
       discriminator:
         propertyName: attr
@@ -12011,7 +12593,6 @@ components:
           email: '#/components/schemas/UserRegisterCreateEmailErrorComponent'
           first_name: '#/components/schemas/UserRegisterCreateFirstNameErrorComponent'
           last_name: '#/components/schemas/UserRegisterCreateLastNameErrorComponent'
-          date_of_birth: '#/components/schemas/UserRegisterCreateDateOfBirthErrorComponent'
           password: '#/components/schemas/UserRegisterCreatePasswordErrorComponent'
     UserRegisterCreateErrorResponse400:
       oneOf:
@@ -12375,6 +12956,7 @@ components:
       description: '* `validation_error` - Validation Error'
     Video:
       type: object
+      description: 'The read serializer: the organization arrives whole.'
       properties:
         id:
           type: integer
@@ -12399,6 +12981,7 @@ components:
           type: string
           format: email
           title: Email address
+          readOnly: true
         organization:
           allOf:
           - $ref: '#/components/schemas/Organization'
@@ -12438,13 +13021,11 @@ components:
           type: string
           format: date-time
           readOnly: true
-          nullable: true
           description: Time the program record was created
         updatedTime:
           type: string
           format: date-time
           readOnly: true
-          nullable: true
           description: Time the program record has been updated
         uploadedTime:
           type: string
@@ -12453,6 +13034,7 @@ components:
           description: Time the original video for the program was uploaded
         ogvUrl:
           type: string
+          nullable: true
           readOnly: true
         largeThumbnailUrl:
           type: string
@@ -12460,6 +13042,7 @@ components:
       required:
       - categories
       - createdTime
+      - creator
       - durationSec
       - files
       - framerate
@@ -12471,6 +13054,9 @@ components:
       - updatedTime
     VideoCreate:
       type: object
+      description: |-
+        The write serializer: the organization is named by primary key,
+        or left out entirely for validate() to infer from the creator.
       properties:
         id:
           type: integer
@@ -12495,6 +13081,7 @@ components:
           type: string
           format: email
           title: Email address
+          readOnly: true
         organization:
           type: integer
         duration:
@@ -12532,13 +13119,11 @@ components:
           type: string
           format: date-time
           readOnly: true
-          nullable: true
           description: Time the program record was created
         updatedTime:
           type: string
           format: date-time
           readOnly: true
-          nullable: true
           description: Time the program record has been updated
         uploadedTime:
           type: string
@@ -12547,6 +13132,7 @@ components:
           description: Time the original video for the program was uploaded
         ogvUrl:
           type: string
+          nullable: true
           readOnly: true
         largeThumbnailUrl:
           type: string
@@ -12554,6 +13140,7 @@ components:
       required:
       - categories
       - createdTime
+      - creator
       - durationSec
       - files
       - framerate
@@ -12564,6 +13151,9 @@ components:
       - updatedTime
     VideoCreateRequest:
       type: object
+      description: |-
+        The write serializer: the organization is named by primary key,
+        or left out entirely for validate() to infer from the creator.
       properties:
         name:
           type: string
@@ -12577,11 +13167,6 @@ components:
           type: string
           nullable: true
           maxLength: 2048
-        creator:
-          type: string
-          format: email
-          minLength: 1
-          title: Email address
         organization:
           type: integer
         duration:
@@ -12625,7 +13210,6 @@ components:
           type: string
           format: date-time
           readOnly: true
-          nullable: true
           description: Time the video file was created
         video:
           type: integer
@@ -12677,6 +13261,7 @@ components:
       - video
     VideoRequest:
       type: object
+      description: 'The read serializer: the organization arrives whole.'
       properties:
         name:
           type: string
@@ -12690,11 +13275,6 @@ components:
           type: string
           nullable: true
           maxLength: 2048
-        creator:
-          type: string
-          format: email
-          minLength: 1
-          title: Email address
         duration:
           type: string
         categories:
@@ -12736,7 +13316,7 @@ components:
         uploadUrl:
           type: string
           readOnly: true
-          default: https://upload.frikanalen.no/upload
+          default: http://localhost:1080/files/
       required:
       - uploadUrl
     VideofilesCreateError:
@@ -12857,10 +13437,12 @@ components:
           enum:
           - invalid
           - 'null'
+          - unique
           type: string
           description: |-
             * `invalid` - invalid
             * `null` - null
+            * `unique` - unique
         detail:
           type: string
       required:
@@ -13141,10 +13723,12 @@ components:
           enum:
           - invalid
           - 'null'
+          - unique
           type: string
           description: |-
             * `invalid` - invalid
             * `null` - null
+            * `unique` - unique
         detail:
           type: string
       required:
@@ -13336,10 +13920,12 @@ components:
           enum:
           - invalid
           - 'null'
+          - unique
           type: string
           description: |-
             * `invalid` - invalid
             * `null` - null
+            * `unique` - unique
         detail:
           type: string
       required:
@@ -13434,30 +14020,6 @@ components:
       - attr
       - code
       - detail
-    VideosCreateCreatorErrorComponent:
-      type: object
-      properties:
-        attr:
-          enum:
-          - creator
-          type: string
-          description: '* `creator` - creator'
-        code:
-          enum:
-          - does_not_exist
-          - invalid
-          - 'null'
-          type: string
-          description: |-
-            * `does_not_exist` - does_not_exist
-            * `invalid` - invalid
-            * `null` - null
-        detail:
-          type: string
-      required:
-      - attr
-      - code
-      - detail
     VideosCreateDescriptionErrorComponent:
       type: object
       properties:
@@ -13495,10 +14057,12 @@ components:
         code:
           enum:
           - invalid
+          - min_value
           - 'null'
           type: string
           description: |-
             * `invalid` - invalid
+            * `min_value` - min_value
             * `null` - null
         detail:
           type: string
@@ -13512,7 +14076,6 @@ components:
       - $ref: '#/components/schemas/VideosCreateNameErrorComponent'
       - $ref: '#/components/schemas/VideosCreateHeaderErrorComponent'
       - $ref: '#/components/schemas/VideosCreateDescriptionErrorComponent'
-      - $ref: '#/components/schemas/VideosCreateCreatorErrorComponent'
       - $ref: '#/components/schemas/VideosCreateOrganizationErrorComponent'
       - $ref: '#/components/schemas/VideosCreateDurationErrorComponent'
       - $ref: '#/components/schemas/VideosCreateCategoriesErrorComponent'
@@ -13529,7 +14092,6 @@ components:
           name: '#/components/schemas/VideosCreateNameErrorComponent'
           header: '#/components/schemas/VideosCreateHeaderErrorComponent'
           description: '#/components/schemas/VideosCreateDescriptionErrorComponent'
-          creator: '#/components/schemas/VideosCreateCreatorErrorComponent'
           organization: '#/components/schemas/VideosCreateOrganizationErrorComponent'
           duration: '#/components/schemas/VideosCreateDurationErrorComponent'
           categories: '#/components/schemas/VideosCreateCategoriesErrorComponent'
@@ -14388,30 +14950,6 @@ components:
       - attr
       - code
       - detail
-    VideosPartialUpdateCreatorErrorComponent:
-      type: object
-      properties:
-        attr:
-          enum:
-          - creator
-          type: string
-          description: '* `creator` - creator'
-        code:
-          enum:
-          - does_not_exist
-          - invalid
-          - 'null'
-          type: string
-          description: |-
-            * `does_not_exist` - does_not_exist
-            * `invalid` - invalid
-            * `null` - null
-        detail:
-          type: string
-      required:
-      - attr
-      - code
-      - detail
     VideosPartialUpdateDescriptionErrorComponent:
       type: object
       properties:
@@ -14449,10 +14987,12 @@ components:
         code:
           enum:
           - invalid
+          - min_value
           - 'null'
           type: string
           description: |-
             * `invalid` - invalid
+            * `min_value` - min_value
             * `null` - null
         detail:
           type: string
@@ -14466,7 +15006,6 @@ components:
       - $ref: '#/components/schemas/VideosPartialUpdateNameErrorComponent'
       - $ref: '#/components/schemas/VideosPartialUpdateHeaderErrorComponent'
       - $ref: '#/components/schemas/VideosPartialUpdateDescriptionErrorComponent'
-      - $ref: '#/components/schemas/VideosPartialUpdateCreatorErrorComponent'
       - $ref: '#/components/schemas/VideosPartialUpdateDurationErrorComponent'
       - $ref: '#/components/schemas/VideosPartialUpdateCategoriesErrorComponent'
       - $ref: '#/components/schemas/VideosPartialUpdateProperImportErrorComponent'
@@ -14482,7 +15021,6 @@ components:
           name: '#/components/schemas/VideosPartialUpdateNameErrorComponent'
           header: '#/components/schemas/VideosPartialUpdateHeaderErrorComponent'
           description: '#/components/schemas/VideosPartialUpdateDescriptionErrorComponent'
-          creator: '#/components/schemas/VideosPartialUpdateCreatorErrorComponent'
           duration: '#/components/schemas/VideosPartialUpdateDurationErrorComponent'
           categories: '#/components/schemas/VideosPartialUpdateCategoriesErrorComponent'
           proper_import: '#/components/schemas/VideosPartialUpdateProperImportErrorComponent'
@@ -14769,30 +15307,6 @@ components:
       - attr
       - code
       - detail
-    VideosUpdateCreatorErrorComponent:
-      type: object
-      properties:
-        attr:
-          enum:
-          - creator
-          type: string
-          description: '* `creator` - creator'
-        code:
-          enum:
-          - does_not_exist
-          - invalid
-          - 'null'
-          type: string
-          description: |-
-            * `does_not_exist` - does_not_exist
-            * `invalid` - invalid
-            * `null` - null
-        detail:
-          type: string
-      required:
-      - attr
-      - code
-      - detail
     VideosUpdateDescriptionErrorComponent:
       type: object
       properties:
@@ -14830,10 +15344,12 @@ components:
         code:
           enum:
           - invalid
+          - min_value
           - 'null'
           type: string
           description: |-
             * `invalid` - invalid
+            * `min_value` - min_value
             * `null` - null
         detail:
           type: string
@@ -14847,7 +15363,6 @@ components:
       - $ref: '#/components/schemas/VideosUpdateNameErrorComponent'
       - $ref: '#/components/schemas/VideosUpdateHeaderErrorComponent'
       - $ref: '#/components/schemas/VideosUpdateDescriptionErrorComponent'
-      - $ref: '#/components/schemas/VideosUpdateCreatorErrorComponent'
       - $ref: '#/components/schemas/VideosUpdateDurationErrorComponent'
       - $ref: '#/components/schemas/VideosUpdateCategoriesErrorComponent'
       - $ref: '#/components/schemas/VideosUpdateProperImportErrorComponent'
@@ -14863,7 +15378,6 @@ components:
           name: '#/components/schemas/VideosUpdateNameErrorComponent'
           header: '#/components/schemas/VideosUpdateHeaderErrorComponent'
           description: '#/components/schemas/VideosUpdateDescriptionErrorComponent'
-          creator: '#/components/schemas/VideosUpdateCreatorErrorComponent'
           duration: '#/components/schemas/VideosUpdateDurationErrorComponent'
           categories: '#/components/schemas/VideosUpdateCategoriesErrorComponent'
           proper_import: '#/components/schemas/VideosUpdateProperImportErrorComponent'
