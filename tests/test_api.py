@@ -2,7 +2,7 @@ from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
 from playout_lib import api
-from playout_lib.items import Graphic
+from playout_lib.items import FillerLoop, Graphic
 
 from .factories import make_scheduleitem, make_video
 
@@ -75,6 +75,43 @@ class TestLoadSchedule:
         assert graphics[0].start_time == at(30)
         assert graphics[0].end_time == at(35)
         assert "duration=300000" in graphics[0].url  # 5 minutes in ms
+
+    async def test_uses_filler_loop_for_gaps_under_30_seconds(self, monkeypatch):
+        items = [
+            make_scheduleitem(1, 1, at(0), at(30)),
+            make_scheduleitem(2, 2, at(30) + timedelta(seconds=20), at(65)),
+        ]
+        videos = {
+            1: make_video(1, broadcast="video1.mp4"),
+            2: make_video(2, broadcast="video2.mp4"),
+        }
+        install_fetcher(monkeypatch, items)
+        install_video_details(monkeypatch, videos)
+
+        schedule = await api.load_schedule()
+
+        fillers = [i for i in schedule if isinstance(i, FillerLoop)]
+        assert len(fillers) == 1
+        assert fillers[0].start_time == at(30)
+        assert fillers[0].end_time == at(30) + timedelta(seconds=20)
+        assert not any(isinstance(i, Graphic) for i in schedule)
+
+    async def test_uses_graphic_for_gap_of_exactly_30_seconds(self, monkeypatch):
+        items = [
+            make_scheduleitem(1, 1, at(0), at(30)),
+            make_scheduleitem(2, 2, at(30) + timedelta(seconds=30), at(65)),
+        ]
+        videos = {
+            1: make_video(1, broadcast="video1.mp4"),
+            2: make_video(2, broadcast="video2.mp4"),
+        }
+        install_fetcher(monkeypatch, items)
+        install_video_details(monkeypatch, videos)
+
+        schedule = await api.load_schedule()
+
+        assert any(isinstance(i, Graphic) for i in schedule)
+        assert not any(isinstance(i, FillerLoop) for i in schedule)
 
     async def test_result_is_sorted_by_start_time(self, monkeypatch):
         items = [
