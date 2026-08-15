@@ -16,16 +16,23 @@ def make_org(id_=1, name="Test Org"):
     return ScheduleitemOrganization(id=id_, name=name, description="")
 
 
-def make_scheduleitem_video(video_id, name="Test Video"):
-    return ScheduleitemVideo(id=video_id, name=name, organization=make_org(), categories=[])
+def make_scheduleitem_video(video_id, name="Test Video", files=None):
+    return ScheduleitemVideo(
+        id=video_id,
+        name=name,
+        organization=make_org(),
+        categories=[],
+        files=files if files is not None else [],
+    )
 
 
-def make_scheduleitem(item_id, video_id, start_time, end_time):
+def make_scheduleitem(item_id, video_id, start_time, end_time, displaceable=False):
     return ScheduleitemRead(
         id=item_id,
         video=make_scheduleitem_video(video_id),
         starttime=start_time,
         endtime=end_time,
+        displaceable=displaceable,
     )
 
 
@@ -40,7 +47,9 @@ def make_video(video_id, framerate=25000, name="Test Video", **files):
         id=video_id,
         name=name,
         files=make_video_files(**files),
+        creator="test@example.com",
         organization=make_org(),
+        duration_sec=None,
         categories=[],
         framerate=framerate,
         created_time=None,
