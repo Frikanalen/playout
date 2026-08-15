@@ -48,4 +48,5 @@ Thumbs.db
 
 # Project specific
 cache/
-
+# Generated API client
+frikanalen_django_api_client/
