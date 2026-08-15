@@ -1,7 +1,11 @@
+import datetime
+
+from loguru import logger
+
 from frikanalen_django_api_client import Client
 from frikanalen_django_api_client.api.scheduleitems import scheduleitems_list
 from frikanalen_django_api_client.models import ScheduleitemRead
-from loguru import logger
+from frikanalen_django_api_client.types import UNSET
 
 
 class ScheduleFetcher:
@@ -35,6 +39,11 @@ class ScheduleFetcher:
         """
         date_str = date or "today"
         logger.info(f"Fetching schedule for {date_str} (days={days}, surrounding={surrounding})")
+        # The endpoint accepts the literal 'today', but the schema types the
+        # parameter as a date, so the generated client calls .isoformat() on
+        # whatever it is handed. Omitting it entirely selects today (in
+        # Europe/Oslo, per the API) without smuggling a string past the type.
+        date_param = UNSET if date_str == "today" else datetime.date.fromisoformat(date_str)
         all_items: list[ScheduleitemRead] = []
         offset = 0
         limit = 100
@@ -43,7 +52,7 @@ class ScheduleFetcher:
             logger.debug(f"Fetching batch: offset={offset}, limit={limit}")
             response = await scheduleitems_list.asyncio_detailed(
                 client=self.client,  # type: ignore
-                date=date_str,
+                date=date_param,
                 days=days,
                 limit=limit,
                 offset=offset,

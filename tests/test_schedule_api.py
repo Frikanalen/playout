@@ -1,8 +1,10 @@
+import datetime
 from http import HTTPStatus
 
 import pytest
-from frikanalen_django_api_client.models import PaginatedScheduleitemReadList
 
+from frikanalen_django_api_client.models import PaginatedScheduleitemReadList
+from frikanalen_django_api_client.types import UNSET
 from playout_lib import schedule_api
 from playout_lib.schedule_api import ScheduleFetcher
 
@@ -106,6 +108,38 @@ class TestGetSchedule:
 
         await ScheduleFetcher(client=None).get_schedule(date="2026-01-01", days=2, surrounding=True)
 
-        assert captured["date"] == "2026-01-01"
+        assert captured["date"] == datetime.date(2026, 1, 1)
         assert captured["days"] == 2
         assert captured["surrounding"] is True
+
+    async def test_omits_date_when_asking_for_today(self, monkeypatch):
+        # The schema types `date` as a date, so the 'today' the API documents
+        # cannot be sent as a string. Leaving it unset selects today instead.
+        captured = {}
+
+        item = make_scheduleitem(1, 1, "2026-01-01T10:00:00+01:00", "2026-01-01T10:30:00+01:00")
+
+        async def fake_call(**kwargs):
+            captured.update(kwargs)
+            return make_response(page([item]))
+
+        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
+
+        await ScheduleFetcher(client=None).get_schedule(date="today")
+
+        assert captured["date"] is UNSET
+
+    async def test_omits_date_when_none_given(self, monkeypatch):
+        captured = {}
+
+        item = make_scheduleitem(1, 1, "2026-01-01T10:00:00+01:00", "2026-01-01T10:30:00+01:00")
+
+        async def fake_call(**kwargs):
+            captured.update(kwargs)
+            return make_response(page([item]))
+
+        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
+
+        await ScheduleFetcher(client=None).get_schedule()
+
+        assert captured["date"] is UNSET
