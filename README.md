@@ -23,6 +23,26 @@ uv sync
 uv run playout
 ```
 
+### Refreshing the API schema and regenerating the client
+
+The repo keeps a checked-in OpenAPI snapshot in `schema.yaml`. Two scripts manage schema updates and client generation:
+
+**Fetch the latest schema from the backend:**
+```bash
+./update-schema.sh
+```
+
+This fetches the current schema from `http://localhost:8000/api/schema` and overwrites `schema.yaml`. The backend must be running locally.
+
+**Regenerate the Python client from the schema:**
+```bash
+./generate-client.sh
+```
+
+This runs `openapi-python-client` to generate the Python client code from `schema.yaml` into `frikanalen_django_api_client/`.
+
+For local development, run both scripts in sequence. CI only runs `generate-client.sh` to ensure the client matches the committed schema.
+
 ### Running tests
 
 ```bash
