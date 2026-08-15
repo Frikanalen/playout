@@ -21,6 +21,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
 # Copy application code after dependencies are installed
 COPY . .
 
+# Reinstall to pick up local packages (frikanalen_django_api_client)
+RUN --mount=type=cache,target=/root/.cache/uv \
+    uv sync --frozen --no-dev --no-editable
+
 # Runtime stage
 FROM python:3.11-slim
 
