@@ -65,6 +65,11 @@ jobs:
       - name: Build and push
         uses: docker/build-push-action@v7
         with:
+          # Without this the action defaults to a Git context, so buildx clones
+          # the repo itself instead of using the checkout. The API client
+          # generated above is gitignored, so it would not exist in that clone
+          # and COPY . . would produce an image with no client in it.
+          context: .
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
