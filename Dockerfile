@@ -16,8 +16,7 @@ COPY pyproject.toml .python-version uv.lock README.md ./
 
 # Install project and dependencies with cache mounting
 RUN --mount=type=cache,target=/root/.cache/uv \
-    uv sync --frozen --no-dev --no-editable && \
-    uv pip install --system --no-cache "git+https://github.com/frikanalen/frikanalen-python-client.git@main"
+    uv sync --frozen --no-dev --no-editable
 
 # Copy application code after dependencies are installed
 COPY . .
