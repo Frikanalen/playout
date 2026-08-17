@@ -91,5 +91,4 @@ docker run frikanalen-playout
   - `caspar_player.py` - CasparCG player interface
   - `config.py` - Configuration management
   - `items.py` - Playout items
-  - `logging_setup.py` - Logging configuration
   - `scheduler.py` - Scheduling logic

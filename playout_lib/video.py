@@ -3,7 +3,6 @@ import asyncio
 from loguru import logger
 
 from playout_lib.config import FILE_BASE, USE_ORIGINAL
-from playout_lib.get_video_files import get_video_details
 from playout_lib.items import PlannedItem, localtime
 
 
@@ -38,7 +37,6 @@ class PrerecordedVideo(PlannedItem):
         self._video_details = video_details
         self._video_files = video_files
         self.framerate = float(framerate / 1000)
-        self.metadata = None
         self.has_been_prepared = False
         self._filename: str | None = None
 
@@ -73,17 +71,6 @@ class PrerecordedVideo(PlannedItem):
             logger.error(f"Error determining filename for video {self.video_id}")
             self._filename = FILE_BASE + "filler/FrikanalenLoop.avi"
             return self._filename
-
-    async def ensure_files_loaded(self):
-        """Ensure video details and files are fetched from the API."""
-        if self._video_details is None and self._video_files is None:
-            self._video_details = await get_video_details(self.video_id)
-            if self._video_details:
-                # Update framerate from fetched details
-                self.framerate = float(self._video_details.framerate / 1000)
-                self._video_files = self._video_details.files.additional_properties
-            # Reset cached filename so property will recalculate
-            self._filename = None
 
     async def prepare(self):
         """Preload the video file into CasparCG."""

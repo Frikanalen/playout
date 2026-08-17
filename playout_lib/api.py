@@ -3,9 +3,9 @@
 from datetime import timedelta
 from itertools import pairwise
 
-from frikanalen_django_api_client import Client
 from loguru import logger
 
+from frikanalen_django_api_client import Client
 from playout_lib.get_video_files import get_video_details
 
 from .config import GRAPHICS_LAYER, VIDEO_LAYER

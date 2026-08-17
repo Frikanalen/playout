@@ -52,27 +52,3 @@ class TestGetVideoDetails:
 
         assert result.id == 7
         assert len(created_clients) == 1
-
-
-class TestGetVideoFiles:
-    async def test_returns_files_dict_when_video_found(self, monkeypatch):
-        video = make_video(42, broadcast="broadcast.mp4", original="original.mp4")
-
-        async def fake_get_video_details(video_id, client=None):
-            return video
-
-        monkeypatch.setattr(get_video_files, "get_video_details", fake_get_video_details)
-
-        result = await get_video_files.get_video_files(42)
-
-        assert result == {"broadcast": "broadcast.mp4", "original": "original.mp4"}
-
-    async def test_returns_empty_dict_when_video_not_found(self, monkeypatch):
-        async def fake_get_video_details(video_id, client=None):
-            return None
-
-        monkeypatch.setattr(get_video_files, "get_video_details", fake_get_video_details)
-
-        result = await get_video_files.get_video_files(42)
-
-        assert result == {}

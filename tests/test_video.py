@@ -5,8 +5,6 @@ import pytest
 
 from playout_lib import video
 
-from .factories import make_video
-
 TZ = ZoneInfo("Europe/Oslo")
 NOW = datetime(2026, 1, 1, 12, 0, tzinfo=TZ)
 
@@ -81,32 +79,3 @@ class TestFramerate:
         pv = make_prerecorded({"broadcast": "broadcast.mp4"})
 
         assert pv.framerate == 25.0
-
-
-class TestEnsureFilesLoaded:
-    async def test_fetches_details_when_not_pre_supplied(self, monkeypatch):
-        fetched_video = make_video(1, framerate=30000, broadcast="fetched.mp4")
-
-        async def fake_get_video_details(video_id):
-            return fetched_video
-
-        monkeypatch.setattr(video, "get_video_details", fake_get_video_details)
-
-        pv = make_prerecorded(video_files=None, video_details=None)
-        await pv.ensure_files_loaded()
-
-        assert pv.framerate == 30.0
-        assert pv.filename == "fetched.mp4"
-
-    async def test_does_not_refetch_when_already_supplied(self, monkeypatch):
-        async def boom(video_id):
-            raise AssertionError("should not be called")
-
-        monkeypatch.setattr(video, "get_video_details", boom)
-
-        pv = make_prerecorded(
-            video_files={"broadcast": "broadcast.mp4"}, video_details="already-set"
-        )
-        await pv.ensure_files_loaded()
-
-        assert pv.filename == "broadcast.mp4"
