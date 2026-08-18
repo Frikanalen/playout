@@ -5974,6 +5974,7 @@ paths:
           - srt
           - theora
           - vc1
+          - webm_med
         description: |-
           * `large_thumb` - Large thumbnail
           * `broadcast` - Broadcast master
@@ -5985,6 +5986,7 @@ paths:
           * `srt` - SubRip subtitles
           * `cloudflare_id` - Cloudflare Stream identifier
           * `dash` - MPEG-DASH manifest
+          * `webm_med` - Medium-quality WebM
       - in: query
         name: video_id
         schema:
@@ -13717,6 +13719,7 @@ components:
       - srt
       - cloudflare_id
       - dash
+      - webm_med
       type: string
       description: |-
         * `large_thumb` - Large thumbnail
@@ -13729,6 +13732,7 @@ components:
         * `srt` - SubRip subtitles
         * `cloudflare_id` - Cloudflare Stream identifier
         * `dash` - MPEG-DASH manifest
+        * `webm_med` - Medium-quality WebM
     VideoRequest:
       type: object
       description: 'The read serializer: the organization arrives whole.'
@@ -13786,7 +13790,7 @@ components:
         uploadUrl:
           type: string
           readOnly: true
-          default: http://localhost:1080/files/
+          default: https://staging.frikanalen.no/upload
       required:
       - uploadUrl
     VideofilesCreateError:
