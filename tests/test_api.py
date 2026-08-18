@@ -1,10 +1,12 @@
 from datetime import datetime, timedelta
 from zoneinfo import ZoneInfo
 
+import pytest
+
 from playout_lib import api
 from playout_lib.items import FillerLoop, Graphic
 
-from .factories import make_scheduleitem, make_video
+from .factories import make_scheduleitem, make_video, make_video_file_records
 
 TZ = ZoneInfo("Europe/Oslo")
 
@@ -35,6 +37,21 @@ def install_video_details(monkeypatch, videos_by_id, calls=None):
         return videos_by_id.get(video_id)
 
     monkeypatch.setattr(api, "get_video_details", fake_get_video_details)
+
+
+@pytest.fixture(autouse=True)
+def no_file_records(monkeypatch):
+    """Keep the loudness lookup off the network unless a test opts in."""
+    install_file_records(monkeypatch, {})
+
+
+def install_file_records(monkeypatch, records_by_id, fails=()):
+    async def fake_get_video_file_records(video_id, client):
+        if video_id in fails:
+            raise RuntimeError("API is having a day")
+        return records_by_id.get(video_id, {})
+
+    monkeypatch.setattr(api, "get_video_file_records", fake_get_video_file_records)
 
 
 class TestLoadSchedule:
@@ -152,3 +169,28 @@ class TestLoadSchedule:
 
         video_items = [i for i in schedule if hasattr(i, "video_id")]
         assert video_items[0].framerate == 25.0  # 25000 / 1000 default
+
+
+class TestLoudnessRecords:
+    async def test_attaches_file_records_to_their_video(self, monkeypatch):
+        items = [make_scheduleitem(1, 1, at(0), at(30))]
+        install_fetcher(monkeypatch, items)
+        install_video_details(monkeypatch, {1: make_video(1, broadcast="video1.mp4")})
+        install_file_records(monkeypatch, {1: make_video_file_records(broadcast=(-27.0, -12.0))})
+
+        schedule = await api.load_schedule()
+
+        video_item = next(i for i in schedule if hasattr(i, "video_id"))
+        assert video_item.gain_db == pytest.approx(4.0)
+
+    async def test_a_failed_lookup_leaves_the_video_playable(self, monkeypatch):
+        items = [make_scheduleitem(1, 1, at(0), at(30))]
+        install_fetcher(monkeypatch, items)
+        install_video_details(monkeypatch, {1: make_video(1, broadcast="video1.mp4")})
+        install_file_records(monkeypatch, {}, fails={1})
+
+        schedule = await api.load_schedule()
+
+        video_item = next(i for i in schedule if hasattr(i, "video_id"))
+        assert video_item.filename == "video1.mp4"
+        assert video_item.gain_db is None
