@@ -30,7 +30,7 @@ class PrerecordedVideo(PlannedItem):
             end_time: Scheduled end time
             video_details: Optional pre-fetched Video object with complete details.
                           If not provided, will be lazily fetched on first access.
-            video_files: Optional pre-fetched dict of format->filename mappings.
+            video_files: Optional pre-fetched dict of variant->filename mappings.
                         If not provided but video_details is, will be extracted from there.
         """
         super().__init__(layer, start_time, end_time)
