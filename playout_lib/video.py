@@ -2,9 +2,10 @@ import asyncio
 
 from loguru import logger
 
-from playout_lib.config import FILE_BASE, USE_ORIGINAL
-from playout_lib.get_video_files import get_video_details
+from playout_lib.config import FILE_BASE, LOUDNESS_NORMALIZATION, USE_ORIGINAL
+from playout_lib.get_video_files import get_video_details, get_video_file_records
 from playout_lib.items import PlannedItem, localtime
+from playout_lib.loudness import db_to_multiplier, playback_gain_db
 
 
 class PrerecordedVideo(PlannedItem):
@@ -19,6 +20,7 @@ class PrerecordedVideo(PlannedItem):
         end_time,
         video_details=None,
         video_files: dict[str, str] | None = None,
+        video_file_records: dict | None = None,
     ):
         """Initialize a PrerecordedVideo item.
 
@@ -32,15 +34,53 @@ class PrerecordedVideo(PlannedItem):
                           If not provided, will be lazily fetched on first access.
             video_files: Optional pre-fetched dict of variant->filename mappings.
                         If not provided but video_details is, will be extracted from there.
+            video_file_records: Optional pre-fetched dict of variant->VideoFile, carrying
+                        the loudness measurements. Absent means play unnormalized.
         """
         super().__init__(layer, start_time, end_time)
         self.video_id = video_id
         self._video_details = video_details
         self._video_files = video_files
+        self._video_file_records = video_file_records
         self.framerate = float(framerate / 1000)
         self.metadata = None
         self.has_been_prepared = False
         self._filename: str | None = None
+        self._variant: str | None = None
+
+    def _resolve_file(self) -> tuple[str | None, str]:
+        """Pick the file to play, honouring the USE_ORIGINAL setting.
+
+        Returns:
+            (variant, path) for the chosen file, or (None, filler) when there
+            is nothing to play. The variant is what the loudness measurement
+            has to be looked up under, so the two are resolved together.
+        """
+        if self._filename is not None:
+            return self._variant, self._filename
+
+        fallback = FILE_BASE + "filler/FrikanalenLoop.avi"
+
+        if self._video_files is None:
+            logger.error(f"Video files not yet fetched for video {self.video_id}, using fallback")
+            return None, fallback
+
+        try:
+            preferred = ("original", "broadcast") if USE_ORIGINAL else ("broadcast", "original")
+            variant = next((v for v in preferred if self._video_files.get(v)), None)
+
+            if variant is not None:
+                self._variant = variant
+                self._filename = FILE_BASE + self._video_files[variant]
+            else:
+                logger.error(f"video {self.video_id} has no associated file!")
+                self._filename = fallback
+        except Exception:
+            logger.error(f"Error determining filename for video {self.video_id}")
+            self._variant = None
+            self._filename = fallback
+
+        return self._variant, self._filename
 
     @property
     def filename(self) -> str:
@@ -49,30 +89,28 @@ class PrerecordedVideo(PlannedItem):
         Returns:
             Full path to the video file to play
         """
-        if self._filename is not None:
-            return self._filename
+        return self._resolve_file()[1]
 
-        if self._video_files is None:
-            logger.error(f"Video files not yet fetched for video {self.video_id}, using fallback")
-            return FILE_BASE + "filler/FrikanalenLoop.avi"
+    @property
+    def gain_db(self) -> float | None:
+        """Loudness correction for the file we are about to play, in dB.
 
-        try:
-            if USE_ORIGINAL:
-                filename = self._video_files.get("original") or self._video_files.get("broadcast")
-            else:
-                filename = self._video_files.get("broadcast") or self._video_files.get("original")
+        Returns:
+            The gain to apply, or None when the file carries no usable
+            measurement and should go out at its recorded level.
+        """
+        if not LOUDNESS_NORMALIZATION:
+            return None
 
-            if filename:
-                self._filename = FILE_BASE + filename
-            else:
-                logger.error(f"video {self.video_id} has no associated file!")
-                self._filename = FILE_BASE + "filler/FrikanalenLoop.avi"
+        variant, _ = self._resolve_file()
+        if variant is None or not self._video_file_records:
+            return None
 
-            return self._filename
-        except Exception:
-            logger.error(f"Error determining filename for video {self.video_id}")
-            self._filename = FILE_BASE + "filler/FrikanalenLoop.avi"
-            return self._filename
+        record = self._video_file_records.get(variant)
+        if record is None:
+            return None
+
+        return playback_gain_db(record.integrated_lufs, record.truepeak_lufs)
 
     async def ensure_files_loaded(self):
         """Ensure video details and files are fetched from the API."""
@@ -84,6 +122,19 @@ class PrerecordedVideo(PlannedItem):
                 self._video_files = self._video_details.files.additional_properties
             # Reset cached filename so property will recalculate
             self._filename = None
+            self._variant = None
+
+        if self._video_file_records is None:
+            # Loudness is a nicety; a video that plays at its recorded level
+            # is much better than a video that does not play at all.
+            try:
+                self._video_file_records = await get_video_file_records(self.video_id)
+            except Exception as error:
+                logger.warning(
+                    f"Could not fetch file records for video {self.video_id} "
+                    f"({error}), playing it unnormalized"
+                )
+                self._video_file_records = {}
 
     async def prepare(self):
         """Preload the video file into CasparCG."""
@@ -119,6 +170,7 @@ class PrerecordedVideo(PlannedItem):
                 if seconds_since_start > 2.0:
                     cmd_string += f" SEEK {int(current_player.frame_rate * seconds_since_start)}"
 
+            await self._set_playback_volume()
             await current_player.issue(cmd_string)
             await self._completion()
             print("I would have cleared here if it weren't for debugging")
@@ -128,6 +180,29 @@ class PrerecordedVideo(PlannedItem):
             logger.warning("asyncio.CancelledError, clearing layer...")
             print("I would have cleared here if it weren't for debugging")
             # await self.clear()
+
+    async def _set_playback_volume(self):
+        """Set the layer volume for this file just before it goes to air.
+
+        The mixer setting sticks to the layer, so an unmeasured file has to
+        actively reset it to unity rather than inherit the last item's gain.
+        The command is issued at cue time, not at prepare time, so it cannot
+        land on the outgoing video still playing on this layer.
+        """
+        from .caspar_player import current_player
+
+        gain_db = self.gain_db
+        if gain_db is None:
+            volume = 1.0
+            logger.debug(f"No usable loudness measurement for video {self.video_id}, playing as-is")
+        else:
+            volume = db_to_multiplier(gain_db)
+            logger.info(
+                f"Loudness: playing video {self.video_id} at {gain_db:+.2f} dB "
+                f"(volume {volume:.4f})"
+            )
+
+        await current_player.issue(f"MIXER {self.layer} VOLUME {volume:.4f}")
 
     def __repr__(self):
         time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
