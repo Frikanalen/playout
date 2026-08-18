@@ -26,6 +26,7 @@ LOUDNESS_TARGET_LUFS = float(os.getenv("LOUDNESS_TARGET_LUFS", "-23.0"))
 # Cap on how much a quiet file may be lifted. Guards against a bogus
 # measurement turning a near-silent file into a wall of amplified hiss.
 LOUDNESS_MAX_BOOST_DB = float(os.getenv("LOUDNESS_MAX_BOOST_DB", "12.0"))
-# Boost is held back so the true peak stays under this. We have gain, not a
-# limiter, so the only way not to clip is not to turn it up that far.
+# Hard ceiling on the true peak of anything we play out. There is no limiter
+# downstream, so gain is the only control we have: a file measured above this
+# is turned down to it, and a quiet one is lifted only as far as it allows.
 LOUDNESS_TRUEPEAK_CEILING_DBTP = float(os.getenv("LOUDNESS_TRUEPEAK_CEILING_DBTP", "-1.0"))

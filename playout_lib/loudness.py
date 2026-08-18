@@ -4,6 +4,12 @@ The API stores an integrated loudness and a true peak per video file, filled
 in by the upload pipeline. When those are present we can play the file back
 through a fixed gain that brings it to the house target instead of at
 whatever level it was delivered at. Files nobody has measured are left alone.
+
+There is no limiter anywhere downstream of playout, so the true peak ceiling
+is a hard constraint rather than a preference: whatever loudness asks for,
+the gain we return never puts a measured peak above it. Where the file has
+no usable peak measurement we cannot make that promise, so we refuse to add
+any gain at all rather than boost blind into a clip.
 """
 
 import math
@@ -20,6 +26,14 @@ from .config import (
 # programme material to normalize, and pretending otherwise only amplifies
 # whatever noise is in the file.
 SILENCE_FLOOR_LUFS = -70.0
+
+# Bounds beyond which a measurement is more likely broken than true, and acting
+# on it would do more harm than ignoring it. Programme material does not average
+# above 0 LUFS, and a file peaking 12 dB over full scale is a measurement fault,
+# not a loud video -- obeying it literally would attenuate the programme into
+# inaudibility. A few such records exist in the library.
+MAX_PLAUSIBLE_INTEGRATED_LUFS = 0.0
+MAX_PLAUSIBLE_TRUEPEAK_DBTP = 12.0
 
 
 def _as_measurement(value) -> float | None:
@@ -55,27 +69,35 @@ def playback_gain_db(
     measured = _as_measurement(integrated_lufs)
     if measured is None or measured <= SILENCE_FLOOR_LUFS:
         return None
+    if measured > MAX_PLAUSIBLE_INTEGRATED_LUFS:
+        logger.warning(f"Loudness: ignoring implausible measurement of {measured:.2f} LUFS")
+        return None
 
-    gain = target_lufs - measured
-
-    if gain > max_boost_db:
-        logger.debug(
-            f"Loudness: {measured:.2f} LUFS wants {gain:+.2f} dB, capped at {max_boost_db:+.2f} dB"
-        )
-        gain = max_boost_db
-
-    # Attenuation can never clip, so the ceiling only ever holds back boost.
     peak = _as_measurement(truepeak_dbtp)
-    if peak is not None and gain > 0:
-        headroom = max(truepeak_ceiling_dbtp - peak, 0.0)
-        if gain > headroom:
-            logger.debug(
-                f"Loudness: true peak {peak:.2f} dBTP leaves only "
-                f"{headroom:+.2f} dB of headroom, holding back {gain:+.2f} dB"
-            )
-            gain = headroom
+    if peak is not None and peak > MAX_PLAUSIBLE_TRUEPEAK_DBTP:
+        logger.warning(
+            f"Loudness: ignoring implausible true peak of {peak:.2f} dBTP, "
+            f"treating the file as unmeasured for peak"
+        )
+        peak = None
 
-    return gain
+    gain = min(target_lufs - measured, max_boost_db)
+
+    if peak is None:
+        # Nothing rules out this file already sitting at full scale, so the
+        # most we can safely do is turn it down.
+        return min(gain, 0.0)
+
+    # One constraint, applied whichever way loudness wants to go: a file that
+    # is already over the ceiling gets pulled down to it, and one that is quiet
+    # but peaky is lifted only as far as its headroom allows.
+    ceiling_gain = truepeak_ceiling_dbtp - peak
+    if ceiling_gain < gain:
+        logger.debug(
+            f"Loudness: true peak {peak:.2f} dBTP allows {ceiling_gain:+.2f} dB, "
+            f"holding back {gain:+.2f} dB"
+        )
+    return min(gain, ceiling_gain)
 
 
 def db_to_multiplier(gain_db: float) -> float:

@@ -2,7 +2,12 @@ import math
 
 import pytest
 
-from playout_lib.loudness import SILENCE_FLOOR_LUFS, db_to_multiplier, playback_gain_db
+from playout_lib.loudness import (
+    MAX_PLAUSIBLE_TRUEPEAK_DBTP,
+    SILENCE_FLOOR_LUFS,
+    db_to_multiplier,
+    playback_gain_db,
+)
 
 # Defaults the production config ships with, pinned here so the cases below
 # stay readable and do not drift with the environment the tests run in.
@@ -31,8 +36,13 @@ class TestPlaybackGain:
     def test_leaves_an_on_target_file_alone(self):
         assert gain(TARGET, truepeak_dbtp=-2.0) == pytest.approx(0.0)
 
-    def test_works_without_a_truepeak_measurement(self):
-        assert gain(-27.0, truepeak_dbtp=None) == pytest.approx(4.0)
+    def test_a_measured_file_never_ends_up_over_the_ceiling(self):
+        # The property the whole thing exists to guarantee: there is no
+        # limiter downstream, so peak + gain must land under the ceiling.
+        for lufs in (-40.0, -31.0, -23.0, -16.0, -5.0):
+            for peak in (-30.0, -12.0, -1.0, -0.1, 0.0, 3.0, 11.0):
+                applied = gain(lufs, truepeak_dbtp=peak)
+                assert peak + applied <= CEILING + 1e-9, f"{lufs} LUFS / {peak} dBTP"
 
 
 class TestMissingMeasurements:
@@ -45,7 +55,31 @@ class TestMissingMeasurements:
         assert gain(SILENCE_FLOOR_LUFS - 1.0) is None
 
     def test_unusable_truepeak_is_ignored_rather_than_fatal(self):
-        assert gain(-27.0, truepeak_dbtp=float("nan")) == pytest.approx(4.0)
+        assert gain(-27.0, truepeak_dbtp=float("nan")) == pytest.approx(0.0)
+
+    def test_an_implausible_loudness_is_not_acted_on(self):
+        # Real programme material does not average above 0 LUFS; the library
+        # holds a few records that do, and they are measurement faults.
+        assert gain(5.0, truepeak_dbtp=-2.0) is None
+
+
+class TestUnmeasuredPeak:
+    """Without a peak we cannot promise anything, so we must not add level."""
+
+    def test_a_quiet_file_is_not_boosted_blind(self):
+        assert gain(-31.0, truepeak_dbtp=None) == pytest.approx(0.0)
+
+    def test_a_loud_file_is_still_turned_down(self):
+        # Attenuation cannot clip, so it stays available without a peak.
+        assert gain(-14.0, truepeak_dbtp=None) == pytest.approx(-9.0)
+
+    def test_an_implausible_peak_is_treated_as_no_peak(self):
+        # Obeying a +80 dBTP reading literally would mute the programme.
+        assert gain(-31.0, truepeak_dbtp=80.15) == pytest.approx(0.0)
+        assert gain(-14.0, truepeak_dbtp=80.15) == pytest.approx(-9.0)
+
+    def test_the_plausibility_edge_is_still_honoured(self):
+        assert gain(-31.0, truepeak_dbtp=MAX_PLAUSIBLE_TRUEPEAK_DBTP) == pytest.approx(-13.0)
 
 
 class TestBoostLimits:
@@ -58,11 +92,14 @@ class TestBoostLimits:
         # Wants +8 dB but only 3 dB of headroom is left below the ceiling.
         assert gain(-31.0, truepeak_dbtp=-4.0) == pytest.approx(3.0)
 
-    def test_a_file_already_over_the_ceiling_is_not_boosted(self):
-        assert gain(-31.0, truepeak_dbtp=0.5) == pytest.approx(0.0)
+    def test_a_file_already_over_the_ceiling_is_pulled_down_to_it(self):
+        # Half the library peaks above -1 dBTP, and with no limiter downstream
+        # the only way under the ceiling is to turn the file down.
+        assert gain(-31.0, truepeak_dbtp=0.5) == pytest.approx(-1.5)
+        assert gain(-23.0, truepeak_dbtp=0.5) == pytest.approx(-1.5)
 
-    def test_attenuation_is_never_held_back_by_truepeak(self):
-        # Attenuation cannot clip, so a hot peak must not limit the cut.
+    def test_loudness_wins_when_it_asks_for_more_cut_than_the_ceiling(self):
+        # -10 LUFS wants -13 dB; the ceiling would only ask for -1.5 dB.
         assert gain(-10.0, truepeak_dbtp=0.5) == pytest.approx(-13.0)
 
 
