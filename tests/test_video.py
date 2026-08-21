@@ -95,6 +95,24 @@ class TestFilenameSelection:
 
         assert pv.filename == "broadcast.mp4"
 
+    def test_uses_videofile_record_filename_with_a_media_mount(self, monkeypatch):
+        monkeypatch.setattr(video, "USE_ORIGINAL", False)
+        monkeypatch.setattr(video, "MEDIA_ROOT", "/mnt/media")
+        monkeypatch.setattr(video, "media_location", lambda path: f"/mnt/media/{path}")
+        pv = make_prerecorded(
+            {"broadcast": "https://frikanalen.no/media/broadcast.mp4"},
+            records=make_video_file_records(broadcast=(UNSET, UNSET)),
+        )
+
+        assert pv.filename == "/mnt/media/broadcast.mp4"
+
+    def test_preserves_http_media_url_without_a_mount(self, monkeypatch):
+        monkeypatch.setattr(video, "USE_ORIGINAL", False)
+        media_url = "https://frikanalen.no/media/broadcast.mp4"
+        pv = make_prerecorded({"broadcast": media_url})
+
+        assert pv.filename == media_url
+
 
 class TestFramerate:
     def test_framerate_is_scaled_from_millihertz(self):

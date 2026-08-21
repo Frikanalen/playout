@@ -12,7 +12,23 @@ CHANNELBUG_LAYER = "1-100"
 API_URL = os.environ.get("API_URL", "https://frikanalen.no/")
 
 # File and media settings
-FILE_BASE = ""
+#
+# Leave MEDIA_ROOT empty for development, where CasparCG can load the URLs
+# returned by the video-details API. Production uses the bare filenames from
+# the videofiles API beneath the mounted Django media volume instead.
+MEDIA_ROOT = os.environ.get("MEDIA_ROOT", "")
+
+
+def media_location(location: str) -> str:
+    """Place a bare media filename beneath CasparCG's configured media mount."""
+    if not MEDIA_ROOT:
+        return location
+
+    return f"{MEDIA_ROOT.rstrip('/')}/{location.lstrip('/')}"
+
+
+# Backwards-compatible name for non-video media paths such as the filler.
+FILE_BASE = MEDIA_ROOT.rstrip("/") + "/" if MEDIA_ROOT else ""
 CASPAR_HOST = os.environ["CASPAR_HOST"]
 USE_ORIGINAL = strtobool(os.getenv("USE_ORIGINAL", "false"))
 

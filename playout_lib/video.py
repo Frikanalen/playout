@@ -2,7 +2,13 @@ import asyncio
 
 from loguru import logger
 
-from playout_lib.config import FILE_BASE, LOUDNESS_NORMALIZATION, USE_ORIGINAL
+from playout_lib.config import (
+    FILE_BASE,
+    LOUDNESS_NORMALIZATION,
+    MEDIA_ROOT,
+    USE_ORIGINAL,
+    media_location,
+)
 from playout_lib.get_video_files import get_video_details, get_video_file_records
 from playout_lib.items import PlannedItem, localtime
 from playout_lib.loudness import db_to_multiplier, playback_gain_db
@@ -61,17 +67,28 @@ class PrerecordedVideo(PlannedItem):
 
         fallback = FILE_BASE + "filler/FrikanalenLoop.avi"
 
-        if self._video_files is None:
+        if self._video_files is None and not self._video_file_records:
             logger.error(f"Video files not yet fetched for video {self.video_id}, using fallback")
             return None, fallback
 
         try:
             preferred = ("original", "broadcast") if USE_ORIGINAL else ("broadcast", "original")
-            variant = next((v for v in preferred if self._video_files.get(v)), None)
 
-            if variant is not None:
+            # The videofiles endpoint supplies bare filenames. In production,
+            # prefer those records and put the chosen filename under the media
+            # mount. Development keeps using the HTTP URLs from video details.
+            records = self._video_file_records or {}
+            if MEDIA_ROOT and records:
+                variant = next((v for v in preferred if records.get(v)), None)
+                location = media_location(records[variant].filename) if variant else None
+            else:
+                files = self._video_files or {}
+                variant = next((v for v in preferred if files.get(v)), None)
+                location = files.get(variant) if variant else None
+
+            if variant is not None and location:
                 self._variant = variant
-                self._filename = FILE_BASE + self._video_files[variant]
+                self._filename = location
             else:
                 logger.error(f"video {self.video_id} has no associated file!")
                 self._filename = fallback
