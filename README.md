@@ -23,6 +23,10 @@ uv sync
 uv run playout
 ```
 
+The schedule API and interstitial graphics endpoint can be configured
+independently with `API_URL` and `GRAPHICS_URL`. For example, a staging
+deployment should set `GRAPHICS_URL=https://staging.frikanalen.no/graphics/`.
+
 ### Refreshing the API schema and regenerating the client
 
 The repo keeps a checked-in OpenAPI snapshot in `schema.yaml`. Two scripts manage schema updates and client generation:

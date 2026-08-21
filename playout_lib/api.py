@@ -8,12 +8,9 @@ from loguru import logger
 from frikanalen_django_api_client import Client
 from playout_lib.get_video_files import get_video_details, get_video_file_records
 
-from .config import GRAPHICS_LAYER, VIDEO_LAYER
+from .config import GRAPHICS_LAYER, GRAPHICS_URL, VIDEO_LAYER
 from .schedule_api import ScheduleFetcher
 from .video import PrerecordedVideo
-
-# Graphics URL for generating graphics between videos
-GRAPHICS_URL = "https://frikanalen.no/graphics/"
 
 # Gaps shorter than this just loop the filler reel instead of showing a
 # proper graphics overlay.
