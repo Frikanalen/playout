@@ -15,6 +15,8 @@ env:
   value: "192.168.3.35"
 - name: API_URL
   value: "https://frikanalen.no/"
+- name: MEDIA_ROOT
+  value: "/mnt/media"
 
 timezone:
   enabled: true
