@@ -10,6 +10,7 @@ CHANNELBUG_LAYER = "1-100"
 
 # API endpoints
 API_URL = os.environ.get("API_URL", "https://frikanalen.no/")
+GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.no/graphics/")
 
 # File and media settings
 #

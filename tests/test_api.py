@@ -93,6 +93,24 @@ class TestLoadSchedule:
         assert graphics[0].end_time == at(35)
         assert "duration=300000" in graphics[0].url  # 5 minutes in ms
 
+    async def test_uses_configured_graphics_url(self, monkeypatch):
+        items = [
+            make_scheduleitem(1, 1, at(0), at(30)),
+            make_scheduleitem(2, 2, at(35), at(65)),
+        ]
+        videos = {
+            1: make_video(1, broadcast="video1.mp4"),
+            2: make_video(2, broadcast="video2.mp4"),
+        }
+        install_fetcher(monkeypatch, items)
+        install_video_details(monkeypatch, videos)
+        monkeypatch.setattr(api, "GRAPHICS_URL", "https://staging.frikanalen.no/graphics/")
+
+        schedule = await api.load_schedule()
+
+        graphic = next(i for i in schedule if isinstance(i, Graphic))
+        assert graphic.url == "https://staging.frikanalen.no/graphics/?duration=300000"
+
     async def test_uses_filler_loop_for_gaps_under_30_seconds(self, monkeypatch):
         items = [
             make_scheduleitem(1, 1, at(0), at(30)),
