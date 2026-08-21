@@ -276,6 +276,7 @@ dependencies = [
     { name = "attrs" },
     { name = "httpx" },
     { name = "loguru" },
+    { name = "python-dateutil" },
     { name = "pytz" },
 ]
 
@@ -292,6 +293,7 @@ requires-dist = [
     { name = "attrs", specifier = ">=22.2.0" },
     { name = "httpx", specifier = ">=0.23.0,<0.29.0" },
     { name = "loguru", specifier = ">=0.7.0" },
+    { name = "python-dateutil", specifier = ">=2.8.2" },
     { name = "pytz", specifier = ">=2025.2" },
 ]
 

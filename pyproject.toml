@@ -11,6 +11,7 @@ dependencies = [
     # package, which ships as vendored source without its own metadata.
     "httpx>=0.23.0,<0.29.0",
     "attrs>=22.2.0",
+    "python-dateutil>=2.8.2",
 ]
 
 [project.scripts]
