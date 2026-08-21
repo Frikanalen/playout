@@ -8,9 +8,6 @@ ENV UV_COMPILE_BYTECODE=1
 # Install dependencies to system Python (no venv overhead)
 ENV UV_PROJECT_ENVIRONMENT=/usr/local
 
-# We need git for retrieving dependencies
-RUN apt update && apt install -y git && apt clean && rm -rf /var/lib/apt/lists/*
-
 # Copy dependency files
 COPY pyproject.toml .python-version uv.lock README.md ./
 

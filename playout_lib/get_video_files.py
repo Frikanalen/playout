@@ -50,25 +50,6 @@ async def _fetch_video_details(video_id: int, client: Client) -> Video | None:
     return video
 
 
-# Backward compatibility wrapper
-async def get_video_files(video_id: int, client: Client | None = None) -> dict[str, str]:
-    """Fetch video files dict from a video's details.
-
-    DEPRECATED: Use get_video_details() instead to preserve all video metadata.
-
-    Args:
-        video_id: The video ID to fetch files for
-        client: Optional Client instance. If not provided, creates a new one.
-
-    Returns:
-        Dictionary mapping format names (e.g., 'broadcast', 'original') to file URLs/paths.
-    """
-    video = await get_video_details(video_id, client)
-    if video is None:
-        return {}
-    return video.files.additional_properties
-
-
 async def get_video_file_records(
     video_id: int, client: Client | None = None
 ) -> dict[str, VideoFile]:
