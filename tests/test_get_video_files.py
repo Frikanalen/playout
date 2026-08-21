@@ -1,8 +1,9 @@
 from http import HTTPStatus
 
+from frikanalen_django_api_client.models import PaginatedVideoFileList
 from playout_lib import get_video_files
 
-from .factories import make_response, make_video
+from .factories import make_response, make_video, make_video_file
 
 
 class TestGetVideoDetails:
@@ -52,3 +53,32 @@ class TestGetVideoDetails:
 
         assert result.id == 7
         assert len(created_clients) == 1
+
+
+class TestGetVideoFileRecords:
+    async def test_returns_records_keyed_by_variant(self, monkeypatch):
+        files = [
+            make_video_file(variant="broadcast", integrated_lufs=-23.5),
+            make_video_file(variant="original", integrated_lufs=-19.0),
+        ]
+
+        async def fake_call(*, video_id, limit, client):
+            assert video_id == 42
+            return make_response(PaginatedVideoFileList(count=len(files), results=files))
+
+        monkeypatch.setattr(get_video_files.videofiles_list, "asyncio_detailed", fake_call)
+
+        result = await get_video_files.get_video_file_records(42, client="fake-client")
+
+        assert set(result) == {"broadcast", "original"}
+        assert result["broadcast"].integrated_lufs == -23.5
+
+    async def test_returns_empty_dict_when_the_lookup_fails(self, monkeypatch):
+        async def fake_call(*, video_id, limit, client):
+            return make_response(None, status_code=HTTPStatus.NOT_FOUND)
+
+        monkeypatch.setattr(get_video_files.videofiles_list, "asyncio_detailed", fake_call)
+
+        result = await get_video_files.get_video_file_records(42, client="fake-client")
+
+        assert result == {}

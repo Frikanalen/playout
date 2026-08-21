@@ -74,6 +74,37 @@ uv add <package-name>
 uv add --dev <package-name>
 ```
 
+## Loudness normalization
+
+Video files carry an integrated loudness and a true peak measured by the upload
+pipeline (`integratedLufs` and `truepeakLufs` on the video file record). When
+the file about to go to air has been measured, playout sets the CasparCG layer
+volume so it comes out at the house target instead of at its delivered level.
+Files that have not been measured play unchanged, and a failed lookup never
+holds up playout.
+
+Nothing downstream of playout limits, so the true peak ceiling is enforced as a
+hard constraint in both directions: a file measured above it is turned down to
+it, and a quiet file with hot peaks is lifted only as far as its headroom
+allows, staying under target rather than clipping. Roughly half the library
+peaks above -1 dBTP as delivered, though most of those are loud enough that
+loudness alone already turns them down further than the ceiling would.
+
+Two limits are worth knowing. Measurements outside a plausible range are
+ignored rather than obeyed -- a few records read +80 dBTP or +5 LUFS, and
+acting on those literally would mute the programme. And a file with no usable
+true peak is never boosted, only ever turned down: without a peak we cannot
+rule out that it already sits at full scale. That means playout will not push
+anything over 0 dBFS, but it cannot make a delivered file that is already over
+into one that is not.
+
+| Variable | Default | Meaning |
+| --- | --- | --- |
+| `LOUDNESS_NORMALIZATION` | `true` | Set false to play everything at its delivered level. |
+| `LOUDNESS_TARGET_LUFS` | `-23.0` | House target loudness (EBU R128). |
+| `LOUDNESS_MAX_BOOST_DB` | `12.0` | Ceiling on how far a quiet file may be lifted. |
+| `LOUDNESS_TRUEPEAK_CEILING_DBTP` | `-1.0` | Boost stops here rather than clipping. |
+
 ## Docker
 
 Build and run using Docker:
@@ -91,4 +122,6 @@ docker run frikanalen-playout
   - `caspar_player.py` - CasparCG player interface
   - `config.py` - Configuration management
   - `items.py` - Playout items
+  - `logging_setup.py` - Logging configuration
+  - `loudness.py` - Playback gain from R128 measurements
   - `scheduler.py` - Scheduling logic

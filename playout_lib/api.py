@@ -6,7 +6,7 @@ from itertools import pairwise
 from loguru import logger
 
 from frikanalen_django_api_client import Client
-from playout_lib.get_video_files import get_video_details
+from playout_lib.get_video_files import get_video_details, get_video_file_records
 
 from .config import GRAPHICS_LAYER, VIDEO_LAYER
 from .schedule_api import ScheduleFetcher
@@ -43,13 +43,33 @@ async def load_schedule(api_url="https://frikanalen.no/"):
         # Get unique video IDs
         video_ids = list({item.video.id for item in schedule_items})
 
-        # Fetch full video details (including files and framerate) for all videos in parallel
+        # Fetch full video details (including files and framerate) for all videos in
+        # parallel, along with the file records that carry the loudness measurements
         logger.info(f"Fetching video details for {len(video_ids)} videos")
-        video_details_tasks = [get_video_details(vid, client) for vid in video_ids]
-        video_details_results = await asyncio.gather(*video_details_tasks)
+        video_details_task = asyncio.gather(*[get_video_details(vid, client) for vid in video_ids])
+        file_records_task = asyncio.gather(
+            *[get_video_file_records(vid, client) for vid in video_ids],
+            # Loudness is a nicety; never let a failed lookup take the channel
+            # off air. A video with no records just plays at its recorded level.
+            return_exceptions=True,
+        )
+        video_details_results, file_records_results = await asyncio.gather(
+            video_details_task, file_records_task
+        )
 
         # Create mapping of video_id -> Video object
         video_details_map = dict(zip(video_ids, video_details_results, strict=True))
+
+        file_records_map = {}
+        for vid, result in zip(video_ids, file_records_results, strict=True):
+            if isinstance(result, BaseException):
+                logger.warning(
+                    f"Could not fetch file records for video {vid} "
+                    f"({result}), playing it unnormalized"
+                )
+                file_records_map[vid] = {}
+            else:
+                file_records_map[vid] = result
 
     schedule = []
 
@@ -78,6 +98,7 @@ async def load_schedule(api_url="https://frikanalen.no/"):
                 item.endtime,
                 video_details=video_details,
                 video_files=video_files,
+                video_file_records=file_records_map.get(video_id, {}),
             )
         )
 

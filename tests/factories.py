@@ -1,5 +1,6 @@
 """Builders for frikanalen_django_api_client model objects used across tests."""
 
+from datetime import UTC, datetime
 from http import HTTPStatus
 
 from frikanalen_django_api_client.models import (
@@ -7,9 +8,11 @@ from frikanalen_django_api_client.models import (
     ScheduleitemRead,
     ScheduleitemVideo,
     Video,
+    VideoFile,
     VideoFiles,
+    VideoFileVariantEnum,
 )
-from frikanalen_django_api_client.types import Response
+from frikanalen_django_api_client.types import UNSET, Response
 
 
 def make_org(id_=1, name="Test Org"):
@@ -61,3 +64,35 @@ def make_video(video_id, framerate=25000, name="Test Video", **files):
 
 def make_response(parsed, status_code=HTTPStatus.OK):
     return Response(status_code=status_code, content=b"", headers={}, parsed=parsed)
+
+
+def make_video_file(
+    file_id=1,
+    video_id=1,
+    variant="broadcast",
+    filename="broadcast.mp4",
+    integrated_lufs=UNSET,
+    truepeak_lufs=UNSET,
+):
+    return VideoFile(
+        id=file_id,
+        created_time=datetime(2026, 1, 1, tzinfo=UTC),
+        video=video_id,
+        variant=VideoFileVariantEnum(variant),
+        filename=filename,
+        integrated_lufs=integrated_lufs,
+        truepeak_lufs=truepeak_lufs,
+    )
+
+
+def make_video_file_records(**by_variant):
+    """Build a variant -> VideoFile mapping from {variant: (lufs, truepeak)}."""
+    return {
+        variant: make_video_file(
+            variant=variant,
+            filename=f"{variant}.mp4",
+            integrated_lufs=integrated_lufs,
+            truepeak_lufs=truepeak_lufs,
+        )
+        for variant, (integrated_lufs, truepeak_lufs) in by_variant.items()
+    }

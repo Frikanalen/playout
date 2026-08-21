@@ -4,7 +4,7 @@ info:
   version: 1.1.0
   description: API for Frikanalen
 paths:
-  /api/:
+  /api:
     get:
       operationId: root_retrieve
       description: The root of the FK API / web services
@@ -125,8 +125,13 @@ paths:
                       attr: null
           description: ''
         '200':
-          description: No response body
-  /api/asrun/:
+          content:
+            application/json:
+              schema:
+                type: object
+                additionalProperties: {}
+          description: ''
+  /api/asrun:
     get:
       operationId: asrun_list
       description: A historic log over what was sent through playout.
@@ -403,7 +408,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AsRun'
           description: ''
-  /api/asrun/{id}/:
+  /api/asrun/{id}:
     get:
       operationId: asrun_retrieve
       description: A historic log over what was sent through playout.
@@ -942,7 +947,7 @@ paths:
           description: ''
         '204':
           description: No response body
-  /api/categories/:
+  /api/categories:
     get:
       operationId: categories_list
       parameters:
@@ -1218,7 +1223,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/Category'
           description: ''
-  /api/categories/{id}/:
+  /api/categories/{id}:
     get:
       operationId: categories_retrieve
       parameters:
@@ -1762,7 +1767,7 @@ paths:
           description: ''
         '204':
           description: No response body
-  /api/csrf/:
+  /api/csrf:
     get:
       operationId: csrf_retrieve
       tags:
@@ -1847,130 +1852,11 @@ paths:
                       attr: null
           description: ''
         '200':
-          description: No response body
-  /api/jukebox_csv:
-    get:
-      operationId: jukebox_csv_retrieve
-      tags:
-      - jukebox_csv
-      security:
-      - tokenAuth: []
-      - cookieAuth: []
-      - {}
-      responses:
-        '400':
           content:
             application/json:
               schema:
-                $ref: '#/components/schemas/JukeboxCsvRetrieveErrorResponse400'
+                $ref: '#/components/schemas/Csrf'
           description: ''
-        '401':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse401'
-              examples:
-                AuthenticationFailed:
-                  value:
-                    type: client_error
-                    errors:
-                    - code: authentication_failed
-                      detail: Incorrect authentication credentials.
-                      attr: null
-                NotAuthenticated:
-                  value:
-                    type: client_error
-                    errors:
-                    - code: not_authenticated
-                      detail: Authentication credentials were not provided.
-                      attr: null
-          description: ''
-        '403':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse403'
-              examples:
-                PermissionDenied:
-                  value:
-                    type: client_error
-                    errors:
-                    - code: permission_denied
-                      detail: You do not have permission to perform this action.
-                      attr: null
-          description: ''
-        '404':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse404'
-              examples:
-                NotFound:
-                  value:
-                    type: client_error
-                    errors:
-                    - code: not_found
-                      detail: Not found.
-                      attr: null
-          description: ''
-        '405':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse405'
-              examples:
-                MethodNotAllowed:
-                  value:
-                    type: client_error
-                    errors:
-                    - code: method_not_allowed
-                      detail: Method "get" not allowed.
-                      attr: null
-          description: ''
-        '406':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse406'
-              examples:
-                NotAcceptable:
-                  value:
-                    type: client_error
-                    errors:
-                    - code: not_acceptable
-                      detail: Could not satisfy the request Accept header.
-                      attr: null
-          description: ''
-        '415':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse415'
-              examples:
-                UnsupportedMediaType:
-                  value:
-                    type: client_error
-                    errors:
-                    - code: unsupported_media_type
-                      detail: Unsupported media type "application/json" in request.
-                      attr: null
-          description: ''
-        '500':
-          content:
-            application/json:
-              schema:
-                $ref: '#/components/schemas/ErrorResponse500'
-              examples:
-                APIException:
-                  value:
-                    type: server_error
-                    errors:
-                    - code: error
-                      detail: A server error occurred.
-                      attr: null
-          description: ''
-        '200':
-          description: No response body
   /api/news/bulletins/:
     get:
       operationId: news_bulletins_list
@@ -2894,7 +2780,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/AuthToken'
           description: ''
-  /api/organization/:
+  /api/organization:
     get:
       operationId: organization_list
       parameters:
@@ -3710,7 +3596,7 @@ paths:
           description: ''
         '204':
           description: No response body
-  /api/scheduleitems/:
+  /api/scheduleitems:
     get:
       operationId: scheduleitems_list
       description: |-
@@ -4025,7 +3911,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/ScheduleitemModify'
           description: ''
-  /api/scheduleitems/{id}/:
+  /api/scheduleitems/{id}:
     get:
       operationId: scheduleitems_retrieve
       description: |-
@@ -5898,7 +5784,11 @@ paths:
                       attr: null
           description: ''
         '200':
-          description: No response body
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Logout'
+          description: ''
   /api/user/register:
     post:
       operationId: user_register_create
@@ -6032,7 +5922,7 @@ paths:
               schema:
                 $ref: '#/components/schemas/NewUser'
           description: ''
-  /api/videofiles/:
+  /api/videofiles:
     get:
       operationId: videofiles_list
       description: Video file list and detail endpoint.
@@ -6047,30 +5937,6 @@ paths:
         schema:
           type: string
           format: date-time
-      - in: query
-        name: format__fsname
-        schema:
-          type: string
-          enum:
-          - broadcast
-          - cloudflare_id
-          - large_thumb
-          - med_thumb
-          - original
-          - small_thumb
-          - srt
-          - theora
-          - vc1
-        description: |-
-          * `large_thumb` - large_thumb
-          * `broadcast` - broadcast
-          * `vc1` - vc1
-          * `med_thumb` - med_thumb
-          * `small_thumb` - small_thumb
-          * `original` - original
-          * `theora` - theora
-          * `srt` - srt
-          * `cloudflare_id` - cloudflare_id
       - in: query
         name: integrated_lufs__isnull
         schema:
@@ -6093,6 +5959,34 @@ paths:
         description: Which field to use when ordering the results.
         schema:
           type: string
+      - in: query
+        name: variant
+        schema:
+          type: string
+          enum:
+          - broadcast
+          - cloudflare_id
+          - dash
+          - large_thumb
+          - med_thumb
+          - original
+          - small_thumb
+          - srt
+          - theora
+          - vc1
+          - webm_med
+        description: |-
+          * `large_thumb` - Large thumbnail
+          * `broadcast` - Broadcast master
+          * `vc1` - VC-1
+          * `med_thumb` - Medium thumbnail
+          * `small_thumb` - Small thumbnail
+          * `original` - Original upload
+          * `theora` - Ogg Theora
+          * `srt` - SubRip subtitles
+          * `cloudflare_id` - Cloudflare Stream identifier
+          * `dash` - MPEG-DASH manifest
+          * `webm_med` - Medium-quality WebM
       - in: query
         name: video_id
         schema:
@@ -6360,8 +6254,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
-          pattern: ^\d+$
+          type: integer
+        description: A unique integer value identifying this video file.
         required: true
       tags:
       - videofiles
@@ -6493,8 +6387,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
-          pattern: ^\d+$
+          type: integer
+        description: A unique integer value identifying this video file.
         required: true
       tags:
       - videofiles
@@ -6632,8 +6526,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
-          pattern: ^\d+$
+          type: integer
+        description: A unique integer value identifying this video file.
         required: true
       tags:
       - videofiles
@@ -6770,8 +6664,8 @@ paths:
       - in: path
         name: id
         schema:
-          type: string
-          pattern: ^\d+$
+          type: integer
+        description: A unique integer value identifying this video file.
         required: true
       tags:
       - videofiles
@@ -6892,7 +6786,7 @@ paths:
           description: ''
         '204':
           description: No response body
-  /api/videos/:
+  /api/videos:
     get:
       operationId: videos_list
       description: |-
@@ -7928,6 +7822,285 @@ paths:
           description: ''
         '204':
           description: No response body
+  /api/videos/{id}/ingest:
+    get:
+      operationId: videos_ingest_retrieve
+      description: How far ingest has got with the video's uploaded file. Videos that
+        were ingested before this endpoint existed report `done`; videos nothing has
+        uploaded to report `pending`.
+      summary: Read a video's ingest state
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - videos
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideosIngestRetrieveErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse403'
+              examples:
+                PermissionDenied:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: permission_denied
+                      detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestJob'
+          description: ''
+    put:
+      operationId: videos_ingest_report
+      description: Replaces the video's ingest state with the one given. Reserved
+        for the ingest service; the whole state is sent every time, so a retried report
+        is indistinguishable from the first.
+      summary: Report a video's ingest state
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - videos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/IngestJobRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideosIngestReportErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse403'
+              examples:
+                PermissionDenied:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: permission_denied
+                      detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/IngestJob'
+          description: ''
   /api/videos/{id}/upload_token:
     get:
       operationId: videos_upload_token_retrieve
@@ -8062,6 +8235,132 @@ paths:
               schema:
                 $ref: '#/components/schemas/VideoUploadToken'
           description: ''
+  /api/videos/{id}/upload_token/verify:
+    post:
+      operationId: videos_upload_token_verify
+      description: Confirms that `uploadToken` authorizes an upload for this video.
+        An invalid token deliberately produces the same response as an unknown video.
+      summary: Verify an upload token
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: string
+          pattern: ^\d+$
+        required: true
+      tags:
+      - videos
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UploadTokenVerificationRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/VideosUploadTokenVerifyErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '403':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse403'
+              examples:
+                PermissionDenied:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: permission_denied
+                      detail: You do not have permission to perform this action.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '204':
+          description: The upload token is valid.
+        '404':
+          description: The video does not exist or the upload token is invalid.
 components:
   parameters:
     X-CSRFToken:
@@ -9384,7 +9683,7 @@ components:
           type: string
           maxLength: 255
         videocount:
-          type: string
+          type: integer
           readOnly: true
       required:
       - id
@@ -9412,6 +9711,13 @@ components:
       - client_error
       type: string
       description: '* `client_error` - Client Error'
+    Csrf:
+      type: object
+      properties:
+        csrfToken:
+          type: string
+      required:
+      - csrfToken
     CsrfRetrieveErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/ParseErrorResponse'
@@ -9670,13 +9976,90 @@ components:
       required:
       - errors
       - type
-    JukeboxCsvRetrieveErrorResponse400:
-      oneOf:
-      - $ref: '#/components/schemas/ParseErrorResponse'
-      discriminator:
-        propertyName: type
-        mapping:
-          client_error: '#/components/schemas/ParseErrorResponse'
+    IngestJob:
+      type: object
+      description: |-
+        What ingest reports about an upload, and what its uploader is shown.
+
+        `status_text` is write-only deliberately: it carries ffmpeg's
+        complaints and the archive paths behind them, which belong in the
+        admin and the logs rather than in a response to an organization's
+        members. What they get instead is `error_code`, which the frontend
+        turns into words -- ingest has no business choosing the Norwegian.
+      properties:
+        video:
+          type: integer
+          readOnly: true
+        state:
+          $ref: '#/components/schemas/IngestStateEnum'
+        percentageDone:
+          type: integer
+          maximum: 100
+          minimum: 0
+          nullable: true
+          description: Progress through the current state, not through the pipeline
+            as a whole. Null where the current state has no progress to report.
+        errorCode:
+          type: string
+          description: Machine-readable reason the ingest failed; empty otherwise.
+            The wording shown to the uploader is the frontend's to choose, not ingest's.
+          maxLength: 64
+        updatedTime:
+          type: string
+          format: date-time
+          readOnly: true
+          nullable: true
+      required:
+      - state
+      - updatedTime
+      - video
+    IngestJobRequest:
+      type: object
+      description: |-
+        What ingest reports about an upload, and what its uploader is shown.
+
+        `status_text` is write-only deliberately: it carries ffmpeg's
+        complaints and the archive paths behind them, which belong in the
+        admin and the logs rather than in a response to an organization's
+        members. What they get instead is `error_code`, which the frontend
+        turns into words -- ingest has no business choosing the Norwegian.
+      properties:
+        state:
+          $ref: '#/components/schemas/IngestStateEnum'
+        percentageDone:
+          type: integer
+          maximum: 100
+          minimum: 0
+          nullable: true
+          description: Progress through the current state, not through the pipeline
+            as a whole. Null where the current state has no progress to report.
+        statusText:
+          type: string
+          writeOnly: true
+          maxLength: 1000
+        errorCode:
+          type: string
+          description: Machine-readable reason the ingest failed; empty otherwise.
+            The wording shown to the uploader is the frontend's to choose, not ingest's.
+          maxLength: 64
+      required:
+      - state
+    IngestStateEnum:
+      enum:
+      - pending
+      - probing
+      - archiving
+      - transcoding
+      - done
+      - failed
+      type: string
+      description: |-
+        * `pending` - Waiting to be picked up
+        * `probing` - Inspecting the uploaded file
+        * `archiving` - Storing the original
+        * `transcoding` - Generating derived files
+        * `done` - Finished
+        * `failed` - Failed
     Login:
       type: object
       properties:
@@ -9701,6 +10084,16 @@ components:
       required:
       - email
       - password
+    Logout:
+      type: object
+      description: 'Representation for the logout response: a short human-readable
+        message.'
+      properties:
+        detail:
+          type: string
+          readOnly: true
+      required:
+      - detail
     NewUser:
       type: object
       properties:
@@ -11300,8 +11693,8 @@ components:
       properties:
         video:
           type: integer
-        format:
-          type: integer
+        variant:
+          $ref: '#/components/schemas/VideoFileVariantEnum'
         filename:
           type: string
           minLength: 1
@@ -11501,16 +11894,17 @@ components:
         id:
           type: integer
           readOnly: true
-        fsname:
-          type: string
+        variant:
+          allOf:
+          - $ref: '#/components/schemas/VideoFileVariantEnum'
           readOnly: true
         filename:
           type: string
           readOnly: true
       required:
       - filename
-      - fsname
       - id
+      - variant
     ScheduleitemsCreateDurationErrorComponent:
       type: object
       properties:
@@ -12174,6 +12568,16 @@ components:
           maxLength: 255
       required:
       - name
+    UploadTokenVerificationRequest:
+      type: object
+      description: The upload capability presented by ingest for a specific video.
+      properties:
+        uploadToken:
+          type: string
+          minLength: 1
+          maxLength: 32
+      required:
+      - uploadToken
     User:
       type: object
       properties:
@@ -12186,7 +12590,8 @@ components:
           readOnly: true
           title: Email address
         isStaff:
-          type: string
+          type: boolean
+          description: Is the user a member of staff?
           readOnly: true
         dateJoined:
           type: string
@@ -12344,13 +12749,56 @@ components:
       required:
       - errors
       - type
+    UserLogoutCreateError:
+      oneOf:
+      - $ref: '#/components/schemas/UserLogoutCreateNonFieldErrorsErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          non_field_errors: '#/components/schemas/UserLogoutCreateNonFieldErrorsErrorComponent'
     UserLogoutCreateErrorResponse400:
       oneOf:
+      - $ref: '#/components/schemas/UserLogoutCreateValidationError'
       - $ref: '#/components/schemas/ParseErrorResponse'
       discriminator:
         propertyName: type
         mapping:
+          validation_error: '#/components/schemas/UserLogoutCreateValidationError'
           client_error: '#/components/schemas/ParseErrorResponse'
+    UserLogoutCreateNonFieldErrorsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - non_field_errors
+          type: string
+          description: '* `non_field_errors` - non_field_errors'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    UserLogoutCreateValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/UserLogoutCreateError'
+      required:
+      - errors
+      - type
     UserPartialUpdateDateOfBirthErrorComponent:
       type: object
       properties:
@@ -13213,8 +13661,8 @@ components:
           description: Time the video file was created
         video:
           type: integer
-        format:
-          type: integer
+        variant:
+          $ref: '#/components/schemas/VideoFileVariantEnum'
         filename:
           type: string
           maxLength: 256
@@ -13231,16 +13679,16 @@ components:
       required:
       - createdTime
       - filename
-      - format
       - id
+      - variant
       - video
     VideoFileRequest:
       type: object
       properties:
         video:
           type: integer
-        format:
-          type: integer
+        variant:
+          $ref: '#/components/schemas/VideoFileVariantEnum'
         filename:
           type: string
           minLength: 1
@@ -13257,8 +13705,34 @@ components:
           title: True peak LUFS of file defined in ITU R.128
       required:
       - filename
-      - format
+      - variant
       - video
+    VideoFileVariantEnum:
+      enum:
+      - large_thumb
+      - broadcast
+      - vc1
+      - med_thumb
+      - small_thumb
+      - original
+      - theora
+      - srt
+      - cloudflare_id
+      - dash
+      - webm_med
+      type: string
+      description: |-
+        * `large_thumb` - Large thumbnail
+        * `broadcast` - Broadcast master
+        * `vc1` - VC-1
+        * `med_thumb` - Medium thumbnail
+        * `small_thumb` - Small thumbnail
+        * `original` - Original upload
+        * `theora` - Ogg Theora
+        * `srt` - SubRip subtitles
+        * `cloudflare_id` - Cloudflare Stream identifier
+        * `dash` - MPEG-DASH manifest
+        * `webm_med` - Medium-quality WebM
     VideoRequest:
       type: object
       description: 'The read serializer: the organization arrives whole.'
@@ -13316,14 +13790,14 @@ components:
         uploadUrl:
           type: string
           readOnly: true
-          default: http://localhost:1080/files/
+          default: https://staging.frikanalen.no/upload
       required:
       - uploadUrl
     VideofilesCreateError:
       oneOf:
       - $ref: '#/components/schemas/VideofilesCreateNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/VideofilesCreateVideoErrorComponent'
-      - $ref: '#/components/schemas/VideofilesCreateFormatErrorComponent'
+      - $ref: '#/components/schemas/VideofilesCreateVariantErrorComponent'
       - $ref: '#/components/schemas/VideofilesCreateFilenameErrorComponent'
       - $ref: '#/components/schemas/VideofilesCreateIntegratedLufsErrorComponent'
       - $ref: '#/components/schemas/VideofilesCreateTruepeakLufsErrorComponent'
@@ -13332,7 +13806,7 @@ components:
         mapping:
           non_field_errors: '#/components/schemas/VideofilesCreateNonFieldErrorsErrorComponent'
           video: '#/components/schemas/VideofilesCreateVideoErrorComponent'
-          format: '#/components/schemas/VideofilesCreateFormatErrorComponent'
+          variant: '#/components/schemas/VideofilesCreateVariantErrorComponent'
           filename: '#/components/schemas/VideofilesCreateFilenameErrorComponent'
           integrated_lufs: '#/components/schemas/VideofilesCreateIntegratedLufsErrorComponent'
           truepeak_lufs: '#/components/schemas/VideofilesCreateTruepeakLufsErrorComponent'
@@ -13371,32 +13845,6 @@ components:
             * `null_characters_not_allowed` - null_characters_not_allowed
             * `required` - required
             * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
-        detail:
-          type: string
-      required:
-      - attr
-      - code
-      - detail
-    VideofilesCreateFormatErrorComponent:
-      type: object
-      properties:
-        attr:
-          enum:
-          - format
-          type: string
-          description: '* `format` - format'
-        code:
-          enum:
-          - does_not_exist
-          - incorrect_type
-          - 'null'
-          - required
-          type: string
-          description: |-
-            * `does_not_exist` - does_not_exist
-            * `incorrect_type` - incorrect_type
-            * `null` - null
-            * `required` - required
         detail:
           type: string
       required:
@@ -13483,6 +13931,30 @@ components:
       required:
       - errors
       - type
+    VideofilesCreateVariantErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - variant
+          type: string
+          description: '* `variant` - variant'
+        code:
+          enum:
+          - invalid_choice
+          - 'null'
+          - required
+          type: string
+          description: |-
+            * `invalid_choice` - invalid_choice
+            * `null` - null
+            * `required` - required
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
     VideofilesCreateVideoErrorComponent:
       type: object
       properties:
@@ -13538,13 +14010,13 @@ components:
     VideofilesListError:
       oneOf:
       - $ref: '#/components/schemas/VideofilesListVideoIdErrorComponent'
-      - $ref: '#/components/schemas/VideofilesListFormat_fsnameErrorComponent'
+      - $ref: '#/components/schemas/VideofilesListVariantErrorComponent'
       - $ref: '#/components/schemas/VideofilesListCreatedTimeErrorComponent'
       discriminator:
         propertyName: attr
         mapping:
           video_id: '#/components/schemas/VideofilesListVideoIdErrorComponent'
-          format__fsname: '#/components/schemas/VideofilesListFormat_fsnameErrorComponent'
+          variant: '#/components/schemas/VideofilesListVariantErrorComponent'
           created_time: '#/components/schemas/VideofilesListCreatedTimeErrorComponent'
     VideofilesListErrorResponse400:
       oneOf:
@@ -13555,25 +14027,6 @@ components:
         mapping:
           validation_error: '#/components/schemas/VideofilesListValidationError'
           client_error: '#/components/schemas/ParseErrorResponse'
-    VideofilesListFormat_fsnameErrorComponent:
-      type: object
-      properties:
-        attr:
-          enum:
-          - format__fsname
-          type: string
-          description: '* `format__fsname` - format__fsname'
-        code:
-          enum:
-          - invalid_choice
-          type: string
-          description: '* `invalid_choice` - invalid_choice'
-        detail:
-          type: string
-      required:
-      - attr
-      - code
-      - detail
     VideofilesListValidationError:
       type: object
       properties:
@@ -13586,6 +14039,25 @@ components:
       required:
       - errors
       - type
+    VideofilesListVariantErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - variant
+          type: string
+          description: '* `variant` - variant'
+        code:
+          enum:
+          - invalid_choice
+          type: string
+          description: '* `invalid_choice` - invalid_choice'
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
     VideofilesListVideoIdErrorComponent:
       type: object
       properties:
@@ -13609,7 +14081,7 @@ components:
       oneOf:
       - $ref: '#/components/schemas/VideofilesPartialUpdateNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/VideofilesPartialUpdateVideoErrorComponent'
-      - $ref: '#/components/schemas/VideofilesPartialUpdateFormatErrorComponent'
+      - $ref: '#/components/schemas/VideofilesPartialUpdateVariantErrorComponent'
       - $ref: '#/components/schemas/VideofilesPartialUpdateFilenameErrorComponent'
       - $ref: '#/components/schemas/VideofilesPartialUpdateIntegratedLufsErrorComponent'
       - $ref: '#/components/schemas/VideofilesPartialUpdateTruepeakLufsErrorComponent'
@@ -13618,7 +14090,7 @@ components:
         mapping:
           non_field_errors: '#/components/schemas/VideofilesPartialUpdateNonFieldErrorsErrorComponent'
           video: '#/components/schemas/VideofilesPartialUpdateVideoErrorComponent'
-          format: '#/components/schemas/VideofilesPartialUpdateFormatErrorComponent'
+          variant: '#/components/schemas/VideofilesPartialUpdateVariantErrorComponent'
           filename: '#/components/schemas/VideofilesPartialUpdateFilenameErrorComponent'
           integrated_lufs: '#/components/schemas/VideofilesPartialUpdateIntegratedLufsErrorComponent'
           truepeak_lufs: '#/components/schemas/VideofilesPartialUpdateTruepeakLufsErrorComponent'
@@ -13657,32 +14129,6 @@ components:
             * `null_characters_not_allowed` - null_characters_not_allowed
             * `required` - required
             * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
-        detail:
-          type: string
-      required:
-      - attr
-      - code
-      - detail
-    VideofilesPartialUpdateFormatErrorComponent:
-      type: object
-      properties:
-        attr:
-          enum:
-          - format
-          type: string
-          description: '* `format` - format'
-        code:
-          enum:
-          - does_not_exist
-          - incorrect_type
-          - 'null'
-          - required
-          type: string
-          description: |-
-            * `does_not_exist` - does_not_exist
-            * `incorrect_type` - incorrect_type
-            * `null` - null
-            * `required` - required
         detail:
           type: string
       required:
@@ -13769,6 +14215,30 @@ components:
       required:
       - errors
       - type
+    VideofilesPartialUpdateVariantErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - variant
+          type: string
+          description: '* `variant` - variant'
+        code:
+          enum:
+          - invalid_choice
+          - 'null'
+          - required
+          type: string
+          description: |-
+            * `invalid_choice` - invalid_choice
+            * `null` - null
+            * `required` - required
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
     VideofilesPartialUpdateVideoErrorComponent:
       type: object
       properties:
@@ -13806,7 +14276,7 @@ components:
       oneOf:
       - $ref: '#/components/schemas/VideofilesUpdateNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/VideofilesUpdateVideoErrorComponent'
-      - $ref: '#/components/schemas/VideofilesUpdateFormatErrorComponent'
+      - $ref: '#/components/schemas/VideofilesUpdateVariantErrorComponent'
       - $ref: '#/components/schemas/VideofilesUpdateFilenameErrorComponent'
       - $ref: '#/components/schemas/VideofilesUpdateIntegratedLufsErrorComponent'
       - $ref: '#/components/schemas/VideofilesUpdateTruepeakLufsErrorComponent'
@@ -13815,7 +14285,7 @@ components:
         mapping:
           non_field_errors: '#/components/schemas/VideofilesUpdateNonFieldErrorsErrorComponent'
           video: '#/components/schemas/VideofilesUpdateVideoErrorComponent'
-          format: '#/components/schemas/VideofilesUpdateFormatErrorComponent'
+          variant: '#/components/schemas/VideofilesUpdateVariantErrorComponent'
           filename: '#/components/schemas/VideofilesUpdateFilenameErrorComponent'
           integrated_lufs: '#/components/schemas/VideofilesUpdateIntegratedLufsErrorComponent'
           truepeak_lufs: '#/components/schemas/VideofilesUpdateTruepeakLufsErrorComponent'
@@ -13854,32 +14324,6 @@ components:
             * `null_characters_not_allowed` - null_characters_not_allowed
             * `required` - required
             * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
-        detail:
-          type: string
-      required:
-      - attr
-      - code
-      - detail
-    VideofilesUpdateFormatErrorComponent:
-      type: object
-      properties:
-        attr:
-          enum:
-          - format
-          type: string
-          description: '* `format` - format'
-        code:
-          enum:
-          - does_not_exist
-          - incorrect_type
-          - 'null'
-          - required
-          type: string
-          description: |-
-            * `does_not_exist` - does_not_exist
-            * `incorrect_type` - incorrect_type
-            * `null` - null
-            * `required` - required
         detail:
           type: string
       required:
@@ -13966,6 +14410,30 @@ components:
       required:
       - errors
       - type
+    VideofilesUpdateVariantErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - variant
+          type: string
+          description: '* `variant` - variant'
+        code:
+          enum:
+          - invalid_choice
+          - 'null'
+          - required
+          type: string
+          description: |-
+            * `invalid_choice` - invalid_choice
+            * `null` - null
+            * `required` - required
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
     VideofilesUpdateVideoErrorComponent:
       type: object
       properties:
@@ -14369,6 +14837,177 @@ components:
       - errors
       - type
     VideosDestroyErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
+    VideosIngestReportError:
+      oneOf:
+      - $ref: '#/components/schemas/VideosIngestReportNonFieldErrorsErrorComponent'
+      - $ref: '#/components/schemas/VideosIngestReportStateErrorComponent'
+      - $ref: '#/components/schemas/VideosIngestReportPercentageDoneErrorComponent'
+      - $ref: '#/components/schemas/VideosIngestReportStatusTextErrorComponent'
+      - $ref: '#/components/schemas/VideosIngestReportErrorCodeErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          non_field_errors: '#/components/schemas/VideosIngestReportNonFieldErrorsErrorComponent'
+          state: '#/components/schemas/VideosIngestReportStateErrorComponent'
+          percentage_done: '#/components/schemas/VideosIngestReportPercentageDoneErrorComponent'
+          status_text: '#/components/schemas/VideosIngestReportStatusTextErrorComponent'
+          error_code: '#/components/schemas/VideosIngestReportErrorCodeErrorComponent'
+    VideosIngestReportErrorCodeErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - error_code
+          type: string
+          description: '* `error_code` - error_code'
+        code:
+          enum:
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    VideosIngestReportErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/VideosIngestReportValidationError'
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          validation_error: '#/components/schemas/VideosIngestReportValidationError'
+          client_error: '#/components/schemas/ParseErrorResponse'
+    VideosIngestReportNonFieldErrorsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - non_field_errors
+          type: string
+          description: '* `non_field_errors` - non_field_errors'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    VideosIngestReportPercentageDoneErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - percentage_done
+          type: string
+          description: '* `percentage_done` - percentage_done'
+        code:
+          enum:
+          - invalid
+          - max_string_length
+          - max_value
+          - min_value
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `max_string_length` - max_string_length
+            * `max_value` - max_value
+            * `min_value` - min_value
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    VideosIngestReportStateErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - state
+          type: string
+          description: '* `state` - state'
+        code:
+          enum:
+          - invalid_choice
+          - 'null'
+          - required
+          type: string
+          description: |-
+            * `invalid_choice` - invalid_choice
+            * `null` - null
+            * `required` - required
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    VideosIngestReportStatusTextErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - status_text
+          type: string
+          description: '* `status_text` - status_text'
+        code:
+          enum:
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    VideosIngestReportValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideosIngestReportError'
+      required:
+      - errors
+      - type
+    VideosIngestRetrieveErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/ParseErrorResponse'
       discriminator:
@@ -15636,6 +16275,90 @@ components:
         propertyName: type
         mapping:
           client_error: '#/components/schemas/ParseErrorResponse'
+    VideosUploadTokenVerifyError:
+      oneOf:
+      - $ref: '#/components/schemas/VideosUploadTokenVerifyNonFieldErrorsErrorComponent'
+      - $ref: '#/components/schemas/VideosUploadTokenVerifyUploadTokenErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          non_field_errors: '#/components/schemas/VideosUploadTokenVerifyNonFieldErrorsErrorComponent'
+          upload_token: '#/components/schemas/VideosUploadTokenVerifyUploadTokenErrorComponent'
+    VideosUploadTokenVerifyErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/VideosUploadTokenVerifyValidationError'
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          validation_error: '#/components/schemas/VideosUploadTokenVerifyValidationError'
+          client_error: '#/components/schemas/ParseErrorResponse'
+    VideosUploadTokenVerifyNonFieldErrorsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - non_field_errors
+          type: string
+          description: '* `non_field_errors` - non_field_errors'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    VideosUploadTokenVerifyUploadTokenErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - upload_token
+          type: string
+          description: '* `upload_token` - upload_token'
+        code:
+          enum:
+          - blank
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - required
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `blank` - blank
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `required` - required
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    VideosUploadTokenVerifyValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/VideosUploadTokenVerifyError'
+      required:
+      - errors
+      - type
   securitySchemes:
     cookieAuth:
       type: apiKey
