@@ -95,16 +95,17 @@ class TestFilenameSelection:
 
         assert pv.filename == "broadcast.mp4"
 
-    def test_uses_videofile_record_filename_with_a_media_mount(self, monkeypatch):
+    def test_uses_videofile_record_filename_as_a_caspar_relative_path(self, monkeypatch):
         monkeypatch.setattr(video, "USE_ORIGINAL", False)
         monkeypatch.setattr(video, "MEDIA_ROOT", "/mnt/media")
-        monkeypatch.setattr(video, "media_location", lambda path: f"/mnt/media/{path}")
         pv = make_prerecorded(
             {"broadcast": "https://frikanalen.no/media/broadcast.mp4"},
             records=make_video_file_records(broadcast=(UNSET, UNSET)),
         )
 
-        assert pv.filename == "/mnt/media/broadcast.mp4"
+        # MEDIA_ROOT only gates prod-vs-dev selection here; the resulting
+        # filename must stay relative for CasparCG's own media-path to resolve.
+        assert pv.filename == "broadcast.mp4"
 
     def test_preserves_http_media_url_without_a_mount(self, monkeypatch):
         monkeypatch.setattr(video, "USE_ORIGINAL", False)
