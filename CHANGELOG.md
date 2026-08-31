@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.1](https://github.com/Frikanalen/playout/compare/v2.1.0...v2.1.1) (2026-08-31)
+
+
+### Bug Fixes
+
+* stop double-basing CasparCG media paths ([#16](https://github.com/Frikanalen/playout/issues/16)) ([6b59ec1](https://github.com/Frikanalen/playout/commit/6b59ec1d6c568834c341edd4d9533fa72b93510e))
+
 ## [2.1.0](https://github.com/Frikanalen/playout/compare/v2.0.1...v2.1.0) (2026-08-21)
 
 
