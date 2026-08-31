@@ -3,7 +3,6 @@ import asyncio
 from loguru import logger
 
 from playout_lib.config import (
-    FILE_BASE,
     LOUDNESS_NORMALIZATION,
     MEDIA_ROOT,
     USE_ORIGINAL,
@@ -65,7 +64,7 @@ class PrerecordedVideo(PlannedItem):
         if self._filename is not None:
             return self._variant, self._filename
 
-        fallback = FILE_BASE + "filler/FrikanalenLoop.avi"
+        fallback = "filler/FrikanalenLoop.avi"
 
         if self._video_files is None and not self._video_file_records:
             logger.error(f"Video files not yet fetched for video {self.video_id}, using fallback")

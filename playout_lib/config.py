@@ -16,20 +16,21 @@ GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.no/graphics/")
 #
 # Leave MEDIA_ROOT empty for development, where CasparCG can load the URLs
 # returned by the video-details API. Production uses the bare filenames from
-# the videofiles API beneath the mounted Django media volume instead.
+# the videofiles API instead.
 MEDIA_ROOT = os.environ.get("MEDIA_ROOT", "")
 
 
 def media_location(location: str) -> str:
-    """Place a bare media filename beneath CasparCG's configured media mount."""
-    if not MEDIA_ROOT:
-        return location
+    """Normalize a bare filename for CasparCG's own AMCP-relative media path.
 
-    return f"{MEDIA_ROOT.rstrip('/')}/{location.lstrip('/')}"
+    CasparCG resolves PLAY/LOADBG filenames relative to its own configured
+    <media-path>, so this must NOT be joined with a local mount path such as
+    MEDIA_ROOT: doing so double-applies the media root (CasparCG then looks
+    for <media-path>/<MEDIA_ROOT>/... and fails to find the file).
+    """
+    return location.lstrip("/")
 
 
-# Backwards-compatible name for non-video media paths such as the filler.
-FILE_BASE = MEDIA_ROOT.rstrip("/") + "/" if MEDIA_ROOT else ""
 CASPAR_HOST = os.environ["CASPAR_HOST"]
 USE_ORIGINAL = strtobool(os.getenv("USE_ORIGINAL", "false"))
 
