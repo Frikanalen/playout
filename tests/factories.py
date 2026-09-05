@@ -7,6 +7,7 @@ from frikanalen_django_api_client.models import (
     ScheduleitemOrganization,
     ScheduleitemRead,
     ScheduleitemVideo,
+    SchedulereasonEnum,
     Video,
     VideoFile,
     VideoFiles,
@@ -32,10 +33,14 @@ def make_scheduleitem_video(video_id, name="Test Video", files=None):
 def make_scheduleitem(item_id, video_id, start_time, end_time, displaceable=False):
     return ScheduleitemRead(
         id=item_id,
+        default_name="Test Video",
         video=make_scheduleitem_video(video_id),
+        schedulereason=SchedulereasonEnum.VALUE_3,
         starttime=start_time,
         endtime=end_time,
+        duration="00:30:00",
         displaceable=displaceable,
+        weekly_slot=None,
     )
 
 
@@ -52,13 +57,12 @@ def make_video(video_id, framerate=25000, name="Test Video", **files):
         files=make_video_files(**files),
         creator="test@example.com",
         organization=make_org(),
+        series=None,
         duration_sec=None,
         categories=[],
         framerate=framerate,
-        created_time=None,
-        updated_time=None,
-        ogv_url="",
-        large_thumbnail_url="",
+        created_time=datetime(2026, 1, 1, tzinfo=UTC),
+        updated_time=datetime(2026, 1, 1, tzinfo=UTC),
     )
 
 
