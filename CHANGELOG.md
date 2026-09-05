@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.1.2](https://github.com/Frikanalen/playout/compare/v2.1.1...v2.1.2) (2026-09-05)
+
+
+### Bug Fixes
+
+* **api:** allow XML responses in client generation ([4f46d9f](https://github.com/Frikanalen/playout/commit/4f46d9fe7875c24b7820614126cac0196f114664))
+
 ## [2.1.1](https://github.com/Frikanalen/playout/compare/v2.1.0...v2.1.1) (2026-08-31)
 
 
