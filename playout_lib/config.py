@@ -1,6 +1,5 @@
 """Configuration constants and environment settings for the playout system."""
 
-import json
 import os
 from distutils.util import strtobool
 
@@ -18,11 +17,10 @@ GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.no/graphics/")
 # Base URL CasparCG reads MediaMTX from, e.g. rtsp://192.0.2.10:8554. Live
 # slots are covered with filler while this is unset.
 LIVE_INPUT_URL = os.environ.get("LIVE_INPUT_URL", "")
-# MediaMTX Read credentials, scoped per source by Django: a JSON object of
-# {"<source stream UUID>": "<key UUID>:<password>"}. Keep it in a Secret.
-LIVE_SOURCE_CREDENTIALS: dict[str, str] = json.loads(
-    os.environ.get("LIVE_SOURCE_CREDENTIALS") or "{}"
-)
+# The playout reader credential from Django admin, "<key UUID>:<password>".
+# It reads any enabled source, so new sources need no change here. Keep it
+# in a Secret.
+LIVE_READER_CREDENTIAL = os.environ.get("LIVE_READER_CREDENTIAL", "")
 
 # File and media settings
 #

@@ -24,7 +24,7 @@ env:
 # - name: LIVE_INPUT_URL
 #   value: "rtsp://<mediamtx address>:8554"
 
-# Secrets for the container, e.g. a Secret holding LIVE_SOURCE_CREDENTIALS:
+# Secrets for the container, e.g. a Secret holding LIVE_READER_CREDENTIAL:
 # envFrom:
 # - secretRef:
 #     name: playout-live-credentials

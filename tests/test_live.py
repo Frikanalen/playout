@@ -25,7 +25,7 @@ def frozen_time(monkeypatch):
 @pytest.fixture
 def configured(monkeypatch):
     monkeypatch.setattr(live, "LIVE_INPUT_URL", "rtsp://192.0.2.10:8554/")
-    monkeypatch.setattr(live, "LIVE_SOURCE_CREDENTIALS", {STREAM_ID: f"{KEY_ID}:s3cr/t"})
+    monkeypatch.setattr(live, "LIVE_READER_CREDENTIAL", f"{KEY_ID}:s3cr/t")
 
 
 @pytest.fixture
@@ -65,7 +65,7 @@ class TestUrl:
         assert "s3cr" not in make_live()._url(redact=True)
 
     def test_reads_without_credential_when_none_is_configured(self, configured, monkeypatch):
-        monkeypatch.setattr(live, "LIVE_SOURCE_CREDENTIALS", {})
+        monkeypatch.setattr(live, "LIVE_READER_CREDENTIAL", "")
 
         assert make_live()._url() == f"rtsp://192.0.2.10:8554/contrib/live/{STREAM_ID}"
 

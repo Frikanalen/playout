@@ -34,14 +34,11 @@ A schedule item with a `liveTransmission` plays its MediaMTX source,
 `LIVE_INPUT_URL` (for example `rtsp://192.0.2.10:8554`), so that address must
 be reachable from the CasparCG host, not just from the playout pod.
 
-MediaMTX checks every read with Django, and Read credentials are scoped to a
-single source. Issue one Read credential per source in the Django admin and
-give them to playout as JSON in `LIVE_SOURCE_CREDENTIALS`, preferably from a
-Secret via the chart's `envFrom`:
-
-```json
-{"<source stream UUID>": "<key UUID>:<password>"}
-```
+MediaMTX checks every read with Django. Issue one **Playout reader (all
+enabled sources)** credential in the Django admin, with no source, and give it
+to playout as `LIVE_READER_CREDENTIAL=<key UUID>:<password>`, preferably from
+a Secret via the chart's `envFrom`. It reads any enabled source, so new sources
+need no playout change.
 
 If the source is not publishing when the slot starts, playout covers with the
 filler loop and retries every 10 seconds until the slot ends. Without

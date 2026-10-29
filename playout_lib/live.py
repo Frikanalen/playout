@@ -5,7 +5,7 @@ from urllib.parse import quote, urlsplit, urlunsplit
 
 from loguru import logger
 
-from playout_lib.config import LIVE_INPUT_URL, LIVE_SOURCE_CREDENTIALS
+from playout_lib.config import LIVE_INPUT_URL, LIVE_READER_CREDENTIAL
 from playout_lib.items import PlannedItem
 
 FILLER = "filler/FrikanalenLoop"
@@ -29,20 +29,20 @@ class LiveTransmission(PlannedItem):
     def _url(self, redact=False) -> str | None:
         """The URL CasparCG reads the source from, with the reader's credentials.
 
-        MediaMTX authenticates every read against Django, and Read credentials
-        are scoped to one source, so playout holds one per source it may air.
+        MediaMTX authenticates every read against Django. Playout's reader
+        credential covers every enabled source, so the path alone picks it.
         """
         if not LIVE_INPUT_URL:
             return None
         parts = urlsplit(f"{LIVE_INPUT_URL.rstrip('/')}/{self.path}")
-        if credential := LIVE_SOURCE_CREDENTIALS.get(self.stream_id):
-            username, _, password = credential.partition(":")
+        if LIVE_READER_CREDENTIAL:
+            username, _, password = LIVE_READER_CREDENTIAL.partition(":")
             if redact:
                 password = "***"
             netloc = f"{quote(username, safe='')}:{quote(password, safe='')}@{parts.netloc}"
             parts = parts._replace(netloc=netloc)
         else:
-            logger.warning(f"No read credential configured for live source {self.stream_id}")
+            logger.warning("LIVE_READER_CREDENTIAL is not set; MediaMTX will refuse the read")
         return urlunsplit(parts)
 
     async def _play_live(self) -> bool:
