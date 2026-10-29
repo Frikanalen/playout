@@ -326,6 +326,19 @@ class TestCue:
         assert mediamtx.commands.count("SWAP 1-49 1-50") == 1
         assert mediamtx.commands.count("PLAY 1-50 filler/FrikanalenLoop loop 0") == 1
 
+    async def test_an_error_covers_the_rest_of_the_slot_with_filler(
+        self, configured, caspar, monkeypatch
+    ):
+        async def broken(layer):
+            raise TimeoutError
+
+        monkeypatch.setattr(live.LiveTransmission, "_position", lambda self, layer: broken(layer))
+
+        await make_live(minutes=1).cue()
+
+        assert "CLEAR 1-49" in caspar.commands
+        assert caspar.commands[-2:] == ["PLAY 1-50 filler/FrikanalenLoop loop 0", "STOP 1-50"]
+
     async def test_plays_filler_when_live_input_is_unconfigured(self, monkeypatch, caspar):
         monkeypatch.setattr(live, "LIVE_INPUT_URL", "")
 

@@ -209,6 +209,16 @@ class LiveTransmission(PlannedItem):
             await current_player.issue(f"STOP {self.layer}")
         except asyncio.CancelledError:
             logger.warning("asyncio.CancelledError during live transmission")
+        except Exception:
+            # Never leave the slot to whatever the layers happened to hold.
+            logger.exception(f"Live transmission {self.stream_id} failed; covering with filler")
+            try:
+                await current_player.issue(f"CLEAR {LIVE_PROBE_LAYER}")
+                await current_player.issue(f"PLAY {self.layer} {FILLER} loop 0")
+                await self._completion()
+                await current_player.issue(f"STOP {self.layer}")
+            except Exception:
+                logger.exception("Could not cover the failed live transmission")
 
     async def _wait_for_publisher(self):
         """Wait until MediaMTX has a publisher on the path, so a retry is quick."""

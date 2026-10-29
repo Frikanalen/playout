@@ -32,3 +32,19 @@ async def test_reads_a_whole_xml_201_reply():
 
     assert reply.startswith("<?xml") and reply.rstrip().endswith("</channel>")
     assert player.reader._buffer == b""
+
+
+async def test_reads_an_info_reply_as_caspar_2_5_sends_it():
+    # Captured from CasparCG 2.5: CRLF after the XML declaration, bare LF
+    # inside the document, and "\n\r\n" at its end.
+    xml = (
+        b'<?xml version="1.0" encoding="utf-8"?>\r\n<channel>\n'
+        + b"   <stage></stage>\n" * 200
+        + b"</channel>\n\r\n"
+    )
+    player = player_reading(b"201 INFO OK\r\n" + xml)
+
+    reply = await player._get_response()
+
+    assert reply.startswith("<?xml") and reply.rstrip().endswith("</channel>")
+    assert player.reader._buffer == b""
