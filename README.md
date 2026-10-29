@@ -42,7 +42,7 @@ need no playout change.
 
 CasparCG (2.5) answers `PLAY` of a dead RTSP source with `202 PLAY OK` and
 plays black, so playout never trusts the reply. It starts the source on a
-muted probe layer below the programme (`LIVE_PROBE_LAYER`, default `1-49`),
+muted, transparent probe layer below the programme (`LIVE_PROBE_LAYER`, default `1-49`),
 covered by the filler loop on the programme layer, and only once `INFO` shows
 the source's clock advancing does it `SWAP` the running producer onto the
 programme layer. Mixer volume stays with the layer number, so the probe stays

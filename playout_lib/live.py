@@ -182,6 +182,9 @@ class LiveTransmission(PlannedItem):
         from .caspar_player import current_player
 
         await current_player.issue(f"MIXER {LIVE_PROBE_LAYER} VOLUME 0")
+        # Hidden too, in case the programme layer does not cover the frame
+        # (a pillarboxed programme would show the probe in its bars).
+        await current_player.issue(f"MIXER {LIVE_PROBE_LAYER} OPACITY 0")
         await self._play_live(LIVE_PROBE_LAYER)
         flowing, position = False, None
         waited = 0.0

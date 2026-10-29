@@ -236,6 +236,7 @@ class TestCue:
         assert caspar.commands[0] == "MIXER 1-50 VOLUME 1.0000"
         assert caspar.commands[1] == "PLAY 1-50 filler/FrikanalenLoop loop 0"
         assert "MIXER 1-49 VOLUME 0" in caspar.commands
+        assert "MIXER 1-49 OPACITY 0" in caspar.commands
         live_plays = [c for c in caspar.commands if "rtsp://" in c]
         assert len(live_plays) == 1
         assert live_plays[0].startswith(f'PLAY 1-49 "rtsp://{KEY_ID}:')
