@@ -27,6 +27,16 @@ The schedule API and interstitial graphics endpoint can be configured
 independently with `API_URL` and `GRAPHICS_URL`. For example, a staging
 deployment should set `GRAPHICS_URL=https://staging.frikanalen.no/graphics/`.
 
+### Schedule changes
+
+Playout follows the schedule as it changes. It listens to Django's event
+stream at `/api/playout/events` and reloads the schedule whenever an event
+arrives, every 15 minutes in case the stream is down, and just after midnight to pick
+up the next day. Each load is reconciled
+against the running tasks: an unchanged booking keeps playing, a new one is
+added, and one that moved or was removed is cancelled. The item on air is kept
+and only its end time moves, unless it was replaced by something else.
+
 ### Live transmissions
 
 A schedule item with a `liveTransmission` plays its MediaMTX source,
@@ -159,6 +169,7 @@ docker run frikanalen-playout
   - `api.py` - API integration
   - `caspar_player.py` - CasparCG player interface
   - `config.py` - Configuration management
+  - `events.py` - Django's playout event stream
   - `items.py` - Playout items
   - `logging_setup.py` - Logging configuration
   - `loudness.py` - Playback gain from R128 measurements

@@ -1,101 +1,161 @@
-"""Schedule management and item playback coordination."""
+"""Schedule management and item playback coordination.
+
+The scheduler keeps one task per schedule item and reconciles that set
+against the schedule whenever Django says it changed, and every
+POLL_INTERVAL and just after midnight as a fallback. Reconciling changes only what
+differs: an item that is still booked as it was keeps its task, one that
+moved or went away is cancelled, and a new one gets a task of its own.
+"""
 
 import asyncio
-from collections.abc import Callable
-from datetime import datetime, timedelta
+from collections.abc import Awaitable, Callable
+from datetime import timedelta
 
 from loguru import logger
 
 from .api import load_schedule
 from .config import API_URL
-from .items import localtime
+from .events import listen_for_changes
+from .items import PlannedItem, localtime
+
+# The fallback for when the event stream itself is down. A dropped stream
+# needs no poll: every reconnect announces itself and triggers a reload.
+POLL_INTERVAL = timedelta(minutes=15)
+# Loads cover "today", and nothing announces a new day, so reload just after
+# midnight to pick up the next day's schedule.
+AFTER_MIDNIGHT = timedelta(seconds=5)
+# A booking often lands as a couple of commits in quick succession (the
+# schedule item, then its live transmission): wait for the rest of them.
+SETTLE_SECONDS = 0.5
 
 
-class ScheduleExpiryException(Exception):
-    """Raised when the current schedule has expired and needs refresh."""
+def seconds_until_next_load(now) -> float:
+    """Until the next poll, or just after midnight if that comes sooner."""
+    midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return min(POLL_INTERVAL, midnight + AFTER_MIDNIGHT - now).total_seconds()
 
-    pass
+
+def item_key(item: PlannedItem) -> tuple:
+    """What makes two loads' items the same item, apart from where it ends.
+
+    Graphics are told their duration in their URL, so the URL is left out:
+    a gap that shrinks keeps its graphic on air and just ends it sooner.
+    """
+    identity = getattr(item, "video_id", None) or getattr(item, "stream_id", None)
+    return (type(item).__name__, item.layer, item.start_time, identity)
+
+
+def _log_failure(item, task: asyncio.Task):
+    if not task.cancelled() and task.exception() is not None:
+        logger.opt(exception=task.exception()).error(f"{item!r} failed")
 
 
 class Scheduler:
-    """Manages loading, validation, and execution of the playout schedule."""
+    """Plays the schedule, keeping its tasks in step with Django's."""
 
-    schedule_refresh_rate = timedelta(seconds=30)
-
-    def __init__(self):
-        self.schedule = []
-        self.last_refreshed = datetime.min
+    def __init__(
+        self,
+        load: Callable[[], Awaitable[list[PlannedItem]]] = lambda: load_schedule(API_URL),
+        listen: Callable[[Callable[[], None]], Awaitable[None]] = lambda changed: (
+            listen_for_changes(API_URL, changed)
+        ),
+    ):
+        self._load = load
+        self._listen = listen
+        self._changed = asyncio.Event()
+        # Item key -> (the item, the task playing it).
+        self.tasks: dict[tuple, tuple[PlannedItem, asyncio.Task]] = {}
 
     async def _play_item(self, item):
-        """Execute a scheduled item with preparation and timing.
-
-        Args:
-            item: The schedule item to play
-
-        Raises:
-            ScheduleExpiryException: If schedule needs refresh
-        """
+        """Prepare item ahead if it can be, then cue it at its start time."""
         prepare_op = getattr(item, "prepare", None)
         if callable(prepare_op):
             await item.sleep_until_time_to_prepare()
-            await self._prepare_item(item)
+            logger.info(f"Preparing {item!r}")
+            await prepare_op()
+            # Most prepare() methods swallow a cancellation; don't cue an
+            # item that was taken off the schedule while it prepared.
+            if asyncio.current_task().cancelling():
+                raise asyncio.CancelledError
 
         await item.sleep_until_time_to_play()
-        logger.info(f"Playing item {repr(item)}")
+        logger.info(f"Playing item {item!r}")
         await item.cue()
-        if self.last_refreshed + self.schedule_refresh_rate > localtime():
-            raise ScheduleExpiryException
 
-    async def _prepare_item(self, item):
-        """Perform preparatory work for an item before playback."""
-        prepare_op: Callable | None = getattr(item, "prepare", None)
+    async def _cancel(self, item, task):
+        logger.info(f"Taking {item!r} off the schedule")
+        task.cancel()
+        try:
+            await task
+        except asyncio.CancelledError:
+            pass
+        except Exception:
+            logger.exception(f"{item!r} failed while being cancelled")
+        # Cancelled before it was cued: undo anything prepare() left behind.
+        abort = getattr(item, "abort", None)
+        if callable(abort):
+            await abort()
 
-        if not callable(prepare_op):
-            logger.info(f"Next item {item} does not have a prepare() method")
-            return
+    def _start(self, item):
+        logger.info(f"Adding cue to task list: {item!r}")
+        task = asyncio.create_task(self._play_item(item))
+        task.add_done_callback(lambda task: _log_failure(item, task))
+        self.tasks[item_key(item)] = (item, task)
 
-        logger.info("Preparing next item")
-        await prepare_op()
+    async def reconcile(self, schedule: list[PlannedItem]):
+        """Bring the running tasks in line with schedule."""
+        now = localtime()
+        wanted = {item_key(item): item for item in schedule if not item.already_done()}
 
-    async def _validate(self):
-        """Validate the loaded schedule (placeholder for future validation)."""
-        pass
+        # A task that ended early (one that failed, say) stays on the books
+        # until its slot is over, rather than being restarted on every load.
+        for key, (item, task) in list(self.tasks.items()):
+            if task.done() and item.already_done():
+                del self.tasks[key]
+
+        # Cancel first, so the layers are clear before any replacement starts.
+        for key, (item, task) in list(self.tasks.items()):
+            booked = wanted.get(key)
+            if booked is None:
+                await self._cancel(item, task)
+                del self.tasks[key]
+            elif booked.end_time != item.end_time:
+                if item.start_time <= now:
+                    # On air: keep it going and only move where it stops.
+                    logger.info(f"{item!r} now ends at {booked.end_time:%H:%M:%S}")
+                    item.reschedule(booked.end_time)
+                else:
+                    await self._cancel(item, task)
+                    del self.tasks[key]
+
+        for key, item in sorted(wanted.items(), key=lambda kv: kv[1].start_time):
+            if key not in self.tasks:
+                self._start(item)
+
+    def changed(self):
+        """Ask for the schedule to be fetched again now."""
+        self._changed.set()
 
     async def run(self):
-        """Main scheduler loop - loads schedule and executes items."""
-        while True:
-            tasks = ()
-            try:
-                self.schedule = await load_schedule(API_URL)
-                self.last_refreshed = localtime()
-            except Exception:
-                logger.error("Failed to load a schedule!")
-                raise
-
-            try:
-                await self._validate()
-            except Exception:
-                logger.error("Failed to validate schedule!")
-                raise
-
-            for item in self.schedule:
-                if not item.already_done():
-                    tasks = tasks + (await self.task_from_item(item),)
-                else:
-                    logger.debug(f"ScheduleItem {item} is in the past, skipping...")
-
-            logger.info("Waiting for tasks...")
-            await asyncio.wait(tasks)
-
-    async def task_from_item(self, item):
-        """Create an asyncio task for a schedule item.
-
-        Args:
-            item: The schedule item to create a task for
-
-        Returns:
-            asyncio.Task: The created task
-        """
-        logger.info(f"Adding cue to task list: {item}")
-        task = asyncio.create_task(self._play_item(item))
-        return task
+        """Main scheduler loop: reload and reconcile on every change."""
+        listener = asyncio.create_task(self._listen(self.changed))
+        self.changed()
+        try:
+            while True:
+                try:
+                    await asyncio.wait_for(
+                        self._changed.wait(), seconds_until_next_load(localtime())
+                    )
+                    await asyncio.sleep(SETTLE_SECONDS)
+                except TimeoutError:
+                    pass
+                self._changed.clear()
+                try:
+                    schedule = await self._load()
+                except Exception:
+                    # Keep playing what is queued; the next change or poll retries.
+                    logger.exception("Failed to load the schedule, keeping the current one")
+                    continue
+                await self.reconcile(schedule)
+        finally:
+            listener.cancel()
