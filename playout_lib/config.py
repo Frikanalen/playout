@@ -1,5 +1,6 @@
 """Configuration constants and environment settings for the playout system."""
 
+import json
 import os
 from distutils.util import strtobool
 
@@ -11,6 +12,17 @@ CHANNELBUG_LAYER = "1-100"
 # API endpoints
 API_URL = os.environ.get("API_URL", "https://frikanalen.no/")
 GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.no/graphics/")
+
+# Live transmissions
+#
+# Base URL CasparCG reads MediaMTX from, e.g. rtsp://192.0.2.10:8554. Live
+# slots are covered with filler while this is unset.
+LIVE_INPUT_URL = os.environ.get("LIVE_INPUT_URL", "")
+# MediaMTX Read credentials, scoped per source by Django: a JSON object of
+# {"<source stream UUID>": "<key UUID>:<password>"}. Keep it in a Secret.
+LIVE_SOURCE_CREDENTIALS: dict[str, str] = json.loads(
+    os.environ.get("LIVE_SOURCE_CREDENTIALS") or "{}"
+)
 
 # File and media settings
 #

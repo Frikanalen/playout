@@ -37,6 +37,10 @@ spec:
           value: {{ .value | quote }}
         {{- end }}
         {{- end }}
+        {{- with .Values.envFrom }}
+        envFrom:
+          {{- toYaml . | nindent 10 }}
+        {{- end }}
         resources:
           {{- toYaml .Values.resources | nindent 10 }}
         {{- if .Values.timezone.enabled }}

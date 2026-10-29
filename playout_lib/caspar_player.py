@@ -95,16 +95,19 @@ class CasparPlayer:
 
         return returned_data
 
-    async def issue(self, cmd):
+    async def issue(self, cmd, log_as=None):
+        """Issues a command to CasparCG. Blocks until a response is received.
+
+        log_as replaces the command in the log, for commands carrying secrets.
+        """
         assert self.writer is not None, "Not connected to CasparCG"
 
-        """Issues a command to CasparCG. Blocks until a response is received."""
         async with self.caspar_lock:
             if self.writer.is_closing():
                 logger.error("Connection closed!")
                 sys.exit("Lost CasparCG connection")
             try:
-                logger.debug("Issuing command to Caspar: %s", cmd.encode("utf-8"))
+                logger.debug("Issuing command to Caspar: %s", (log_as or cmd).encode("utf-8"))
                 self.writer.write((cmd + "\r\n").encode("utf-8"))
                 await asyncio.wait_for(self.writer.drain(), 10)
                 return await self._get_response()

@@ -19,6 +19,16 @@ env:
   value: "https://frikanalen.no/graphics/"
 - name: MEDIA_ROOT
   value: "/mnt/media"
+# Where CasparCG reads live sources from MediaMTX. Leave unset to cover
+# live slots with filler.
+# - name: LIVE_INPUT_URL
+#   value: "rtsp://<mediamtx address>:8554"
+
+# Secrets for the container, e.g. a Secret holding LIVE_SOURCE_CREDENTIALS:
+# envFrom:
+# - secretRef:
+#     name: playout-live-credentials
+envFrom: []
 
 timezone:
   enabled: true

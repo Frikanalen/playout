@@ -9,6 +9,7 @@ from frikanalen_django_api_client import Client
 from playout_lib.get_video_files import get_video_details, get_video_file_records
 
 from .config import GRAPHICS_LAYER, GRAPHICS_URL, VIDEO_LAYER
+from .live import LiveTransmission
 from .schedule_api import ScheduleFetcher
 from .video import PrerecordedVideo
 
@@ -24,7 +25,7 @@ async def load_schedule(api_url="https://frikanalen.no/"):
         api_url: Base URL for the Frikanalen API (default: "https://frikanalen.no/")
 
     Returns:
-        list: List of schedule items (PrerecordedVideo and Graphic instances)
+        list: List of schedule items (PrerecordedVideo, LiveTransmission and Graphic instances)
     """
     import asyncio
 
@@ -37,8 +38,10 @@ async def load_schedule(api_url="https://frikanalen.no/"):
     async with client:
         schedule_items = await fetcher.get_schedule(date="today", days=1, surrounding=True)
 
-        # Get unique video IDs
-        video_ids = list({item.video.id for item in schedule_items})
+        # A live slot plays its source, not its video, so it needs no files
+        video_ids = list(
+            {item.video.id for item in schedule_items if item.video and not item.live_transmission}
+        )
 
         # Fetch full video details (including files and framerate) for all videos in
         # parallel, along with the file records that carry the loudness measurements
@@ -72,6 +75,17 @@ async def load_schedule(api_url="https://frikanalen.no/"):
 
     # Convert API items to PrerecordedVideo instances with pre-fetched details
     for item in schedule_items:
+        if item.live_transmission:
+            schedule.append(
+                LiveTransmission(
+                    item.live_transmission.stream_id, VIDEO_LAYER, item.starttime, item.endtime
+                )
+            )
+            continue
+        if not item.video:
+            logger.error(f"Schedule item {item.id} has neither a video nor a live source")
+            continue
+
         video_id = item.video.id
         video_details = video_details_map.get(video_id)
 
@@ -119,5 +133,5 @@ async def load_schedule(api_url="https://frikanalen.no/"):
     all_items = schedule + graphics
     all_items.sort(key=lambda x: x.start_time)
 
-    logger.info(f"Loaded {len(schedule)} videos and generated {len(graphics)} graphics")
+    logger.info(f"Loaded {len(schedule)} programmes and generated {len(graphics)} graphics")
     return all_items
