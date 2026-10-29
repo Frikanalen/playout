@@ -21,6 +21,15 @@ LIVE_INPUT_URL = os.environ.get("LIVE_INPUT_URL", "")
 # It reads any enabled source, so new sources need no change here. Keep it
 # in a Secret.
 LIVE_READER_CREDENTIAL = os.environ.get("LIVE_READER_CREDENTIAL", "")
+# The layer above VIDEO_LAYER that carries a live source. It is started
+# hidden ahead of the slot and shown with the mixer once it flows, while the
+# filler keeps running underneath, so a drop is covered by hiding it again.
+LIVE_LAYER = os.environ.get("LIVE_LAYER", "1-55")
+# MediaMTX's Prometheus endpoint, e.g. http://mediamtx-metrics:9998/metrics.
+# CasparCG keeps a dead live input's clock running, so this is how playout
+# sees an encoder drop and puts the filler back. Without it a source on air
+# is only taken off when CasparCG's producer ends.
+LIVE_METRICS_URL = os.environ.get("LIVE_METRICS_URL", "")
 
 # File and media settings
 #
