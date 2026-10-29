@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from http import HTTPStatus
 
 from frikanalen_django_api_client.models import (
+    LiveTransmissionRead,
     ScheduleitemOrganization,
     ScheduleitemRead,
     ScheduleitemVideo,
@@ -30,7 +31,9 @@ def make_scheduleitem_video(video_id, name="Test Video", files=None):
     )
 
 
-def make_scheduleitem(item_id, video_id, start_time, end_time, displaceable=False):
+def make_scheduleitem(
+    item_id, video_id, start_time, end_time, displaceable=False, live_stream_id=None
+):
     return ScheduleitemRead(
         id=item_id,
         default_name="Test Video",
@@ -41,6 +44,11 @@ def make_scheduleitem(item_id, video_id, start_time, end_time, displaceable=Fals
         duration="00:30:00",
         displaceable=displaceable,
         weekly_slot=None,
+        live_transmission=(
+            LiveTransmissionRead(id=item_id, source=1, stream_id=live_stream_id)
+            if live_stream_id
+            else None
+        ),
     )
 
 

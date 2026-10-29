@@ -27,6 +27,24 @@ The schedule API and interstitial graphics endpoint can be configured
 independently with `API_URL` and `GRAPHICS_URL`. For example, a staging
 deployment should set `GRAPHICS_URL=https://staging.frikanalen.no/graphics/`.
 
+### Live transmissions
+
+A schedule item with a `liveTransmission` plays its MediaMTX source,
+`contrib/live/<stream UUID>`, instead of a video file. CasparCG reads it from
+`LIVE_INPUT_URL` (for example `rtsp://192.0.2.10:8554`), so that address must
+be reachable from the CasparCG host, not just from the playout pod.
+
+MediaMTX checks every read with Django. Issue one **Playout reader (all
+enabled sources)** credential in the Django admin, with no source, and give it
+to playout as `LIVE_READER_CREDENTIAL=<key UUID>:<password>`, preferably from
+a Secret via the chart's `envFrom`. It reads any enabled source, so new sources
+need no playout change.
+
+If the source is not publishing when the slot starts, playout covers with the
+filler loop and retries every 10 seconds until the slot ends. Without
+`LIVE_INPUT_URL` the whole slot is covered with filler. The password is
+redacted from the command log.
+
 ### Refreshing the API schema and regenerating the client
 
 The repo keeps a checked-in OpenAPI snapshot in `schema.yaml`. Two scripts manage schema updates and client generation:

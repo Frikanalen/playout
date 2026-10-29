@@ -13770,6 +13770,23 @@ components:
         * `transcoding` - Generating derived files
         * `done` - Finished
         * `failed` - Failed
+    LiveTransmissionRead:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        source:
+          type: integer
+          readOnly: true
+        streamId:
+          type: string
+          format: uuid
+          readOnly: true
+      required:
+      - id
+      - source
+      - streamId
     Login:
       type: object
       properties:
@@ -15981,12 +15998,18 @@ components:
           type: integer
           readOnly: true
           nullable: true
+        liveTransmission:
+          allOf:
+          - $ref: '#/components/schemas/LiveTransmissionRead'
+          readOnly: true
+          nullable: true
       required:
       - defaultName
       - displaceable
       - duration
       - endtime
       - id
+      - liveTransmission
       - schedulereason
       - starttime
       - video

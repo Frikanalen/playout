@@ -1,10 +1,13 @@
 from datetime import datetime, timedelta
+from uuid import UUID
 from zoneinfo import ZoneInfo
 
 import pytest
 
 from playout_lib import api
 from playout_lib.items import FillerLoop, Graphic
+from playout_lib.live import LiveTransmission
+from playout_lib.video import PrerecordedVideo
 
 from .factories import make_scheduleitem, make_video, make_video_file_records
 
@@ -187,6 +190,58 @@ class TestLoadSchedule:
 
         video_items = [i for i in schedule if hasattr(i, "video_id")]
         assert video_items[0].framerate == 25.0  # 25000 / 1000 default
+
+
+class TestLiveTransmissions:
+    STREAM_ID = UUID("6f1c2d6e-8a1b-4c3d-9e2f-0a1b2c3d4e5f")
+
+    async def test_a_live_slot_plays_its_source(self, monkeypatch):
+        items = [make_scheduleitem(1, 1, at(0), at(30), live_stream_id=self.STREAM_ID)]
+        install_fetcher(monkeypatch, items)
+        install_video_details(monkeypatch, {})
+
+        schedule = await api.load_schedule()
+
+        assert len(schedule) == 1
+        assert isinstance(schedule[0], LiveTransmission)
+        assert schedule[0].path == f"contrib/live/{self.STREAM_ID}"
+        assert schedule[0].start_time == at(0)
+        assert schedule[0].end_time == at(30)
+
+    async def test_a_live_slot_fetches_no_video_files(self, monkeypatch):
+        items = [
+            make_scheduleitem(1, 1, at(0), at(30)),
+            make_scheduleitem(2, 2, at(30), at(60), live_stream_id=self.STREAM_ID),
+        ]
+        calls = []
+        install_fetcher(monkeypatch, items)
+        install_video_details(monkeypatch, {1: make_video(1, broadcast="v.mp4")}, calls=calls)
+
+        await api.load_schedule()
+
+        assert calls == [1]
+
+    async def test_gaps_around_a_live_slot_get_graphics(self, monkeypatch):
+        items = [
+            make_scheduleitem(1, 1, at(0), at(30), live_stream_id=self.STREAM_ID),
+            make_scheduleitem(2, 2, at(35), at(65)),
+        ]
+        install_fetcher(monkeypatch, items)
+        install_video_details(monkeypatch, {2: make_video(2, broadcast="v.mp4")})
+
+        schedule = await api.load_schedule()
+
+        assert [type(i) for i in schedule] == [LiveTransmission, Graphic, PrerecordedVideo]
+
+    async def test_skips_an_item_with_neither_video_nor_source(self, monkeypatch):
+        item = make_scheduleitem(1, 1, at(0), at(30))
+        item.video = None
+        install_fetcher(monkeypatch, [item, make_scheduleitem(2, 2, at(35), at(65))])
+        install_video_details(monkeypatch, {2: make_video(2, broadcast="v.mp4")})
+
+        schedule = await api.load_schedule()
+
+        assert [i.video_id for i in schedule] == [2]
 
 
 class TestLoudnessRecords:
