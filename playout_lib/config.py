@@ -24,6 +24,11 @@ LIVE_READER_CREDENTIAL = os.environ.get("LIVE_READER_CREDENTIAL", "")
 # A muted layer below VIDEO_LAYER where a live source is started and checked
 # before it is cut to air, so a dead input never shows black.
 LIVE_PROBE_LAYER = os.environ.get("LIVE_PROBE_LAYER", "1-49")
+# MediaMTX's Prometheus endpoint, e.g. http://mediamtx-metrics:9998/metrics.
+# CasparCG keeps a dead live input's clock running, so this is how playout
+# sees an encoder drop and puts the filler back. Without it a source on air
+# is only taken off when CasparCG's producer ends.
+LIVE_METRICS_URL = os.environ.get("LIVE_METRICS_URL", "")
 
 # File and media settings
 #

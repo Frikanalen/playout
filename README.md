@@ -46,11 +46,18 @@ muted probe layer below the programme (`LIVE_PROBE_LAYER`, default `1-49`),
 covered by the filler loop on the programme layer, and only once `INFO` shows
 the source's clock advancing does it `SWAP` the running producer onto the
 programme layer. Mixer volume stays with the layer number, so the probe stays
-muted and the programme layer plays at unity. While on air it checks every
-2 seconds that the clock still advances; if the encoder drops or freezes it
-puts the filler back and starts over, until the slot ends. Without
-`LIVE_INPUT_URL` the whole slot is covered with filler. The password is
-redacted from the command log.
+muted and the programme layer plays at unity.
+
+Once on air, CasparCG is no help: after an encoder drop its clock in `INFO`
+keeps running, although the input is dead and never reconnects. So playout
+watches MediaMTX's Prometheus metrics at `LIVE_METRICS_URL` (for example
+`http://mediamtx-metrics:9998/metrics`) every 2 seconds. When no RTSP reader
+of the path is getting more bytes for two checks in a row, it puts the filler
+back, waits until the path has a publisher again (`paths{state="ready"}`) and
+starts over, until the slot ends. An unreachable metrics endpoint leaves the
+source on air. Without `LIVE_METRICS_URL` it falls back to the `INFO` clock,
+which only notices a producer that ends. Without `LIVE_INPUT_URL` the whole
+slot is covered with filler. The password is redacted from the command log.
 
 ### Refreshing the API schema and regenerating the client
 

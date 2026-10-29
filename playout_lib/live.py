@@ -1,12 +1,20 @@
 """Live transmissions: play a MediaMTX contribution at its booked time."""
 
 import asyncio
+import re
+from dataclasses import dataclass, field
 from urllib.parse import quote, urlsplit, urlunsplit
 from xml.etree import ElementTree
 
+import httpx
 from loguru import logger
 
-from playout_lib.config import LIVE_INPUT_URL, LIVE_PROBE_LAYER, LIVE_READER_CREDENTIAL
+from playout_lib.config import (
+    LIVE_INPUT_URL,
+    LIVE_METRICS_URL,
+    LIVE_PROBE_LAYER,
+    LIVE_READER_CREDENTIAL,
+)
 from playout_lib.items import PlannedItem
 
 FILLER = "filler/FrikanalenLoop"
@@ -19,8 +27,73 @@ RETRY_INTERVAL = 10.0
 # so the only sign of a working input is its clock advancing in INFO. A
 # healthy source shows picture about 4 seconds after PLAY.
 STARTUP_TIME = 6.0
-# How often to check that the source on air is still advancing.
+# How often to check that the source on air is still flowing.
 WATCH_INTERVAL = 2.0
+# Checks in a row a source may look dead before the filler goes back. One
+# missed check rides out a slow metrics scrape.
+STALL_CHECKS = 2
+
+_SAMPLE = re.compile(r"^(\w+)(?:\{(.*)\})?\s+(\S+)")
+_LABEL = re.compile(r'(\w+)="((?:[^"\\]|\\.)*)"')
+
+
+@dataclass
+class PathState:
+    """What MediaMTX's metrics say about one path."""
+
+    # Whether a publisher is connected and sending.
+    ready: bool = False
+    # Bytes sent so far to each RTSP reader of the path, by session id.
+    readers: dict[str, float] = field(default_factory=dict)
+
+
+def path_state(metrics: str, path: str) -> PathState:
+    """Read the state of path from MediaMTX's Prometheus text output."""
+    state = PathState()
+    for line in metrics.splitlines():
+        match = _SAMPLE.match(line)
+        if not match:
+            continue
+        name, labels, value = match.groups()
+        labels = dict(_LABEL.findall(labels or ""))
+        try:
+            value = float(value)
+        except ValueError:
+            continue
+        if name == "paths" and labels.get("name") == path and labels.get("state") == "ready":
+            state.ready = value > 0
+        elif (
+            name == "rtsp_sessions_outbound_bytes"
+            and labels.get("path") == path
+            and labels.get("state") == "read"
+        ):
+            state.readers[labels.get("id", "")] = value
+    return state
+
+
+async def read_path_state(path: str) -> PathState | None:
+    """The state of path from MediaMTX, or None when it cannot be read."""
+    try:
+        async with httpx.AsyncClient(timeout=WATCH_INTERVAL) as client:
+            response = await client.get(LIVE_METRICS_URL)
+            response.raise_for_status()
+    except httpx.HTTPError as e:
+        logger.warning(f"Cannot read MediaMTX metrics: {e}")
+        return None
+    return path_state(response.text, path)
+
+
+def still_flowing(before: PathState | None, now: PathState) -> bool:
+    """Whether a reader of the path got more data since the previous check.
+
+    MediaMTX drops every reader of a path within a couple of seconds of its
+    publisher going away, and a reader whose byte count stops is fed nothing.
+    """
+    if not now.readers:
+        return False
+    if before is None:
+        return True
+    return any(now.readers[i] > before.readers[i] for i in now.readers.keys() & before.readers)
 
 
 def foreground_time(info, layer) -> float | None:
@@ -137,6 +210,43 @@ class LiveTransmission(PlannedItem):
         except asyncio.CancelledError:
             logger.warning("asyncio.CancelledError during live transmission")
 
+    async def _wait_for_publisher(self):
+        """Wait until MediaMTX has a publisher on the path, so a retry is quick."""
+        if not LIVE_METRICS_URL:
+            await self._sleep(RETRY_INTERVAL)
+            return
+        while self._seconds_left() > STARTUP_TIME:
+            state = await read_path_state(self.path)
+            if state is None or state.ready:
+                return
+            await self._sleep(WATCH_INTERVAL)
+
+    async def _watch(self):
+        """Return when the source on air stops flowing or the slot ends.
+
+        Returns True for a stall. CasparCG's own clock keeps running on a dead
+        input, so MediaMTX's metrics are the signal when they are configured.
+        """
+        if not LIVE_METRICS_URL:
+            logger.warning("LIVE_METRICS_URL is not set; an encoder drop will not be noticed")
+        before, misses = None, 0
+        position = await self._position(self.layer)
+        while True:
+            await self._sleep(WATCH_INTERVAL)
+            if self._seconds_left() <= 0:
+                return False
+            if LIVE_METRICS_URL:
+                state = await read_path_state(self.path)
+                if state is None:
+                    # MediaMTX unreachable says nothing about the source.
+                    continue
+                flowing, before = still_flowing(before, state), state
+            else:
+                flowing, position = await self._advancing(self.layer, position)
+            misses = 0 if flowing else misses + 1
+            if misses >= STALL_CHECKS:
+                return True
+
     async def _keep_on_air(self):
         from .caspar_player import current_player
 
@@ -144,21 +254,16 @@ class LiveTransmission(PlannedItem):
             logger.info(f"Taking live source {self._url(redact=True)}")
             if not await self._bring_up():
                 logger.error(f"Live source {self.stream_id} is not flowing; filler stays on air")
-                await self._sleep(RETRY_INTERVAL)
+                await self._wait_for_publisher()
                 continue
 
             logger.info(f"Live source {self.stream_id} is on air")
-            position = await self._position(self.layer)
-            while self._seconds_left() > 0:
-                await self._sleep(WATCH_INTERVAL)
-                if self._seconds_left() <= 0:
-                    return
-                flowing, position = await self._advancing(self.layer, position)
-                if not flowing:
-                    # The encoder dropped or froze: never leave black on air.
-                    logger.error(f"Live source {self.stream_id} stalled; back to filler")
-                    await current_player.issue(f"PLAY {self.layer} {FILLER} loop 0")
-                    break
+            if not await self._watch():
+                break
+            # The encoder dropped or froze: never leave black on air.
+            logger.error(f"Live source {self.stream_id} stalled; back to filler")
+            await current_player.issue(f"PLAY {self.layer} {FILLER} loop 0")
+            await self._wait_for_publisher()
         await self._completion()
 
     def __repr__(self):

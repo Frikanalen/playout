@@ -71,6 +71,29 @@ def caspar(monkeypatch, clock):
             # Freeze the source after this many seconds on air (None: never).
             self.stall_after = None
             self.layers = {}
+            # Seconds after NOW during which the encoder is not publishing.
+            self.outages = []
+
+        def publishing(self):
+            seconds = (clock.now - NOW).total_seconds()
+            return not any(start <= seconds < end for start, end in self.outages)
+
+        def reading(self):
+            """Bytes read by each live layer that MediaMTX still feeds.
+
+            A drop ends the reader for good: CasparCG never reconnects, though
+            its clock in INFO runs on.
+            """
+            readers = {}
+            for kind, started in self.layers.values():
+                if kind != "live":
+                    continue
+                since = (started - NOW).total_seconds()
+                now = (clock.now - NOW).total_seconds()
+                if any(start < now and end > since for start, end in self.outages):
+                    continue
+                readers[f"session-{since}"] = (clock.now - started).total_seconds() * 1e5
+            return readers
 
         def _live(self, started):
             seconds = (clock.now - started).total_seconds()
@@ -84,7 +107,7 @@ def caspar(monkeypatch, clock):
             words = cmd.split()
             layer = words[1].split("-")[1] if len(words) > 1 and "-" in words[1] else None
             if words[0] == "PLAY" and "rtsp://" in cmd:
-                if self.dead_bring_ups:
+                if self.dead_bring_ups or not self.publishing():
                     self.dead_bring_ups -= 1
                     self.layers[layer] = ("dead", None)
                 else:
@@ -117,6 +140,19 @@ def caspar(monkeypatch, clock):
     fake = FakeCaspar()
     monkeypatch.setattr(caspar_player.current_player, "issue", fake.issue)
     return fake
+
+
+@pytest.fixture
+def mediamtx(monkeypatch, caspar):
+    """MediaMTX metrics that follow the fake CasparCG and its encoder."""
+    monkeypatch.setattr(live, "LIVE_METRICS_URL", "http://mediamtx:9998/metrics")
+
+    async def read_path_state(path):
+        assert path == f"contrib/live/{STREAM_ID}"
+        return live.PathState(ready=caspar.publishing(), readers=caspar.reading())
+
+    monkeypatch.setattr(live, "read_path_state", read_path_state)
+    return caspar
 
 
 def make_live(minutes=30):
@@ -156,6 +192,36 @@ class TestForegroundTime:
         assert live.foreground_time(info_xml({"50": ("ffmpeg", 1.0)}), "1-90") is None
         assert live.foreground_time("not xml", "1-90") is None
         assert live.foreground_time(None, "1-90") is None
+
+
+LIVE = f'path="contrib/live/{STREAM_ID}"'
+METRICS = f"""# HELP paths
+paths{{name="contrib/live/{STREAM_ID}",state="ready"}} 1
+paths{{name="contrib/live/other",state="ready"}} 1
+rtsp_sessions{{id="a1",{LIVE},remoteAddr="192.0.2.101:51000",state="read"}} 1
+rtsp_sessions_outbound_bytes{{id="a1",{LIVE},remoteAddr="192.0.2.101:51000",state="read"}} 123456
+rtsp_sessions_outbound_bytes{{id="b2",path="contrib/live/other",state="read"}} 999
+srt_conns{{id="c3",{LIVE},state="publish"}} 1
+"""
+
+
+class TestPathState:
+    def test_reads_publisher_and_readers_of_the_path(self):
+        state = live.path_state(METRICS, f"contrib/live/{STREAM_ID}")
+
+        assert state.ready
+        assert state.readers == {"a1": 123456.0}
+
+    def test_an_unknown_path_is_not_ready(self):
+        assert live.path_state(METRICS, "contrib/live/gone") == live.PathState()
+
+    def test_flowing_needs_a_reader_whose_bytes_grow(self):
+        before = live.PathState(True, {"a1": 100.0})
+
+        assert live.still_flowing(before, live.PathState(True, {"a1": 200.0}))
+        assert not live.still_flowing(before, live.PathState(True, {"a1": 100.0}))
+        assert not live.still_flowing(before, live.PathState(False, {}))
+        assert live.still_flowing(None, live.PathState(True, {"a1": 1.0}))
 
 
 class TestCue:
@@ -209,7 +275,7 @@ class TestCue:
         assert len([c for c in caspar.commands if "rtsp://" in c]) == 3
         assert caspar.commands.count("SWAP 1-49 1-50") == 1
 
-    async def test_a_stalled_source_goes_back_to_filler_and_is_retried(self, configured, caspar):
+    async def test_without_metrics_a_frozen_clock_goes_back_to_filler(self, configured, caspar):
         caspar.stall_after = 30
 
         await make_live(minutes=2).cue()
@@ -218,6 +284,47 @@ class TestCue:
         assert caspar.commands.count(filler) >= 2
         stall = caspar.commands.index(filler, 2)
         assert any("rtsp://" in c for c in caspar.commands[stall:])
+
+    async def test_an_encoder_drop_goes_to_filler_and_comes_back(
+        self, configured, mediamtx, clock, monkeypatch
+    ):
+        mediamtx.outages = [(30, 50)]
+        seen = {}
+
+        async def watching_sleep(seconds):
+            await clock.sleep(seconds)
+            seen[(clock.now - NOW).total_seconds()] = mediamtx.on_air()
+
+        monkeypatch.setattr(live.asyncio, "sleep", watching_sleep)
+        await make_live(minutes=2).cue()
+
+        # Filler within a few seconds of the drop, CasparCG's clock notwithstanding.
+        assert any(30 < t <= 36 and kind == "filler" for t, kind in seen.items())
+        # Back on air within a probe of the encoder's return.
+        assert any(50 < t <= 60 and kind == "live" for t, kind in seen.items())
+        assert mediamtx.commands.count("SWAP 1-49 1-50") == 2
+        # No probes while nothing was publishing.
+        probes = [c for c in mediamtx.commands if "rtsp://" in c]
+        assert len(probes) == 2
+
+    async def test_a_steady_source_stays_on_air(self, configured, mediamtx):
+        await make_live(minutes=2).cue()
+
+        assert mediamtx.commands.count("SWAP 1-49 1-50") == 1
+        assert mediamtx.commands.count("PLAY 1-50 filler/FrikanalenLoop loop 0") == 1
+
+    async def test_an_unreachable_metrics_endpoint_keeps_the_source_on_air(
+        self, configured, mediamtx, monkeypatch
+    ):
+        async def unreachable(path):
+            return None
+
+        monkeypatch.setattr(live, "read_path_state", unreachable)
+
+        await make_live(minutes=2).cue()
+
+        assert mediamtx.commands.count("SWAP 1-49 1-50") == 1
+        assert mediamtx.commands.count("PLAY 1-50 filler/FrikanalenLoop loop 0") == 1
 
     async def test_plays_filler_when_live_input_is_unconfigured(self, monkeypatch, caspar):
         monkeypatch.setattr(live, "LIVE_INPUT_URL", "")
