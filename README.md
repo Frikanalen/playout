@@ -40,21 +40,23 @@ to playout as `LIVE_READER_CREDENTIAL=<key UUID>:<password>`, preferably from
 a Secret via the chart's `envFrom`. It reads any enabled source, so new sources
 need no playout change.
 
+The source plays on its own layer above the programme (`LIVE_LAYER`, default
+`1-55`), while the filler loops on the programme layer for the whole slot.
 CasparCG (2.5) answers `PLAY` of a dead RTSP source with `202 PLAY OK` and
-plays black, so playout never trusts the reply. It starts the source on a
-muted, transparent probe layer below the programme (`LIVE_PROBE_LAYER`, default `1-49`),
-covered by the filler loop on the programme layer, and only once `INFO` shows
-the source's clock advancing does it `SWAP` the running producer onto the
-programme layer. Mixer volume stays with the layer number, so the probe stays
-muted and the programme layer plays at unity.
+plays black, so playout never trusts the reply: it starts the source 15
+seconds before the slot with the live layer's opacity and volume at 0, and
+shows it (opacity 1, filler muted) only while `INFO` shows the source's clock
+advancing. A source that is up ahead of time is on air at the start time.
+`LOADBG` is no use here: a background producer shows nothing in `INFO`, live
+or dead.
 
 Once on air, CasparCG is no help: after an encoder drop its clock in `INFO`
 keeps running, although the input is dead and never reconnects. So playout
 watches MediaMTX's Prometheus metrics at `LIVE_METRICS_URL` (for example
 `http://mediamtx-metrics:9998/metrics`) every 2 seconds. When no RTSP reader
-of the path is getting more bytes for two checks in a row, it puts the filler
-back, waits until the path has a publisher again (`paths{state="ready"}`) and
-starts over, until the slot ends. An unreachable metrics endpoint leaves the
+of the path is getting more bytes for two checks in a row, it hides the live
+layer again, so the filler underneath is on air, waits until the path has a publisher again (`paths{state="ready"}`) and
+restarts the source hidden, until the slot ends. An unreachable metrics endpoint leaves the
 source on air. Without `LIVE_METRICS_URL` it falls back to the `INFO` clock,
 which only notices a producer that ends. Without `LIVE_INPUT_URL` the whole
 slot is covered with filler. The password is redacted from the command log.

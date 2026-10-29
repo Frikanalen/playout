@@ -67,11 +67,13 @@ def caspar(monkeypatch, clock):
     class FakeCaspar:
         def __init__(self):
             self.commands = []
+            self.sent_at = []
             self.logged = []
             self.dead_bring_ups = 0
             # Freeze the source after this many seconds on air (None: never).
             self.stall_after = None
             self.layers = {}
+            self.opacity = {}
             # Seconds after NOW during which the encoder is not publishing.
             self.outages = []
 
@@ -87,14 +89,15 @@ def caspar(monkeypatch, clock):
             """
             readers = {}
             for kind, started in self.layers.values():
-                if kind != "live":
-                    continue
-                since = (started - NOW).total_seconds()
-                now = (clock.now - NOW).total_seconds()
-                if any(start < now and end > since for start, end in self.outages):
-                    continue
-                readers[f"session-{since}"] = (clock.now - started).total_seconds() * 1e5
+                if kind == "live" and self._fed(started):
+                    since = (started - NOW).total_seconds()
+                    readers[f"session-{since}"] = (clock.now - started).total_seconds() * 1e5
             return readers
+
+        def _fed(self, started):
+            since = (started - NOW).total_seconds()
+            now = (clock.now - NOW).total_seconds()
+            return not any(start < now and end > since for start, end in self.outages)
 
         def _live(self, started):
             # CasparCG takes about 4 seconds to connect to an RTSP source and
@@ -108,6 +111,7 @@ def caspar(monkeypatch, clock):
 
         async def issue(self, cmd, log_as=None):
             self.commands.append(cmd)
+            self.sent_at.append((clock.now - NOW).total_seconds())
             self.logged.append(log_as or cmd)
             words = cmd.split()
             layer = words[1].split("-")[1] if len(words) > 1 and "-" in words[1] else None
@@ -121,13 +125,10 @@ def caspar(monkeypatch, clock):
                 self.layers[layer] = ("filler", None)
             elif words[0] in ("CLEAR", "STOP"):
                 self.layers.pop(layer, None)
-            elif words[0] == "SWAP":
-                other = words[2].split("-")[1]
-                a, b = self.layers.pop(layer, None), self.layers.pop(other, None)
-                if a:
-                    self.layers[other] = a
-                if b:
-                    self.layers[layer] = b
+            elif words[0] == "MIXER" and words[2] == "OPACITY":
+                self.opacity[layer] = float(words[3])
+            elif words[0] == "MIXER" and words[2] == "CLEAR":
+                self.opacity.pop(layer, None)
             elif words[0] == "INFO":
                 shown = {}
                 for number, (kind, started) in self.layers.items():
@@ -140,6 +141,14 @@ def caspar(monkeypatch, clock):
                 return info_xml(shown)
 
         def on_air(self):
+            """What program out shows: the live layer when visible, else the programme."""
+            if "55" in self.layers and self.opacity.get("55", 1.0) > 0:
+                kind, started = self.layers["55"]
+                if kind != "live":
+                    return "black"
+                if not self._fed(started) or self._live(started)[0] != "ffmpeg":
+                    return "frozen"
+                return "live"
             return self.layers.get("50", (None,))[0]
 
     fake = FakeCaspar()
@@ -160,8 +169,31 @@ def mediamtx(monkeypatch, caspar):
     return caspar
 
 
-def make_live(minutes=30):
-    return live.LiveTransmission(STREAM_ID, "1-50", NOW, NOW + timedelta(minutes=minutes))
+def make_live(minutes=30, start=NOW):
+    return live.LiveTransmission(STREAM_ID, "1-50", start, start + timedelta(minutes=minutes))
+
+
+async def scheduled(item):
+    """Run item as the scheduler does: prepare ahead, then cue at the start time."""
+    await item.sleep_until_time_to_prepare()
+    await item.prepare()
+    await item.sleep_until_time_to_play()
+    await item.cue()
+
+
+@pytest.fixture
+def program_out(caspar, clock, monkeypatch):
+    """What program out showed after each sleep, by seconds after NOW."""
+    seen = {}
+    sleep = live.asyncio.sleep
+
+    async def watching_sleep(seconds):
+        await sleep(seconds)
+        seen[(clock.now - NOW).total_seconds()] = caspar.on_air()
+
+    monkeypatch.setattr(live.asyncio, "sleep", watching_sleep)
+    monkeypatch.setattr(items.asyncio, "sleep", watching_sleep)
+    return seen
 
 
 class TestUrl:
@@ -230,46 +262,59 @@ class TestPathState:
 
 
 class TestCue:
-    async def test_probes_hidden_then_cuts_to_air_and_stops_at_the_end(self, configured, caspar):
+    async def test_starts_hidden_ahead_and_shows_live_at_the_start_time(
+        self, configured, caspar, program_out
+    ):
+        item = make_live(minutes=1, start=NOW + timedelta(seconds=30))
+
+        await scheduled(item)
+
+        play = next(i for i, c in enumerate(caspar.commands) if "rtsp://" in c)
+        assert caspar.commands[play].startswith(f'PLAY 1-55 "rtsp://{KEY_ID}:')
+        assert caspar.commands[play - 2 : play] == ["MIXER 1-55 OPACITY 0", "MIXER 1-55 VOLUME 0"]
+        # Started 15 s ahead, and nothing touched the programme layer before the slot.
+        assert not any(c.endswith(" 1-50") or " 1-50 " in c for c in caspar.commands[:play])
+        assert all(kind is None for t, kind in program_out.items() if t < 30)
+        # On air right at the start time.
+        assert caspar.sent_at[caspar.commands.index("MIXER 1-55 OPACITY 1")] == 30.0
+        assert program_out[32.0] == "live"
+        assert caspar.commands[-4:] == [
+            "CLEAR 1-55",
+            "MIXER 1-55 CLEAR",
+            "MIXER 1-50 VOLUME 1.0000",
+            "STOP 1-50",
+        ]
+
+    async def test_mutes_the_filler_under_live(self, configured, caspar):
         await make_live(minutes=1).cue()
 
-        assert caspar.commands[0] == "MIXER 1-50 VOLUME 1.0000"
-        assert caspar.commands[1] == "PLAY 1-50 filler/FrikanalenLoop loop 0"
-        assert "MIXER 1-49 VOLUME 0" in caspar.commands
-        assert "MIXER 1-49 OPACITY 0" in caspar.commands
-        live_plays = [c for c in caspar.commands if "rtsp://" in c]
-        assert len(live_plays) == 1
-        assert live_plays[0].startswith(f'PLAY 1-49 "rtsp://{KEY_ID}:')
-        assert "SWAP 1-49 1-50" in caspar.commands
-        assert caspar.commands[-1] == "STOP 1-50"
+        show = caspar.commands.index("MIXER 1-55 OPACITY 1")
+        assert caspar.commands[show - 2 : show] == [
+            "MIXER 1-50 VOLUME 0",
+            "MIXER 1-55 VOLUME 1.0000",
+        ]
 
-    async def test_is_on_air_during_the_slot(self, configured, caspar, clock, monkeypatch):
-        seen = []
+    async def test_never_shows_black(self, configured, caspar, program_out):
+        caspar.dead_bring_ups = 2
 
-        async def watching_sleep(seconds):
-            await clock.sleep(seconds)
-            seen.append(caspar.on_air())
+        await make_live(minutes=2).cue()
 
-        monkeypatch.setattr(live.asyncio, "sleep", watching_sleep)
-        await make_live(minutes=1).cue()
-
-        assert "live" in seen
-        # Never black: layer 50 only ever carries filler or a flowing source.
-        assert set(seen) <= {"filler", "live", None}
+        assert "live" in program_out.values()
+        assert set(program_out.values()) <= {"filler", "live", None}
 
     async def test_never_logs_the_password(self, configured, caspar):
-        await make_live(minutes=1).cue()
+        await scheduled(make_live(minutes=1, start=NOW + timedelta(seconds=30)))
 
         assert not any("s3cr" in line for line in caspar.logged)
 
-    async def test_a_dead_source_never_reaches_air(self, configured, caspar):
+    async def test_a_dead_source_never_reaches_air(self, configured, caspar, program_out):
         caspar.dead_bring_ups = 1000
 
         await make_live(minutes=2).cue()
 
-        assert not any(c.startswith("SWAP") for c in caspar.commands)
-        assert not any(c.startswith('PLAY 1-50 "rtsp://') for c in caspar.commands)
-        # It kept trying for the whole slot, on the hidden layer only.
+        assert "MIXER 1-55 OPACITY 1" not in caspar.commands
+        assert set(program_out.values()) <= {"filler", None}
+        # It kept trying for the whole slot.
         assert len([c for c in caspar.commands if "rtsp://" in c]) > 3
         assert caspar.commands[-1] == "STOP 1-50"
 
@@ -279,45 +324,41 @@ class TestCue:
         await make_live(minutes=2).cue()
 
         assert len([c for c in caspar.commands if "rtsp://" in c]) == 3
-        assert caspar.commands.count("SWAP 1-49 1-50") == 1
+        assert caspar.commands.count("MIXER 1-55 OPACITY 1") == 1
 
     async def test_without_metrics_a_frozen_clock_goes_back_to_filler(self, configured, caspar):
         caspar.stall_after = 30
 
         await make_live(minutes=2).cue()
 
-        filler = "PLAY 1-50 filler/FrikanalenLoop loop 0"
-        assert caspar.commands.count(filler) >= 2
-        stall = caspar.commands.index(filler, 2)
-        assert any("rtsp://" in c for c in caspar.commands[stall:])
+        hide = caspar.commands.index(
+            "MIXER 1-55 OPACITY 0", caspar.commands.index("MIXER 1-55 OPACITY 1")
+        )
+        assert any("rtsp://" in c for c in caspar.commands[hide:])
 
     async def test_an_encoder_drop_goes_to_filler_and_comes_back(
-        self, configured, mediamtx, clock, monkeypatch
+        self, configured, mediamtx, program_out
     ):
         mediamtx.outages = [(30, 50)]
-        seen = {}
 
-        async def watching_sleep(seconds):
-            await clock.sleep(seconds)
-            seen[(clock.now - NOW).total_seconds()] = mediamtx.on_air()
-
-        monkeypatch.setattr(live.asyncio, "sleep", watching_sleep)
         await make_live(minutes=2).cue()
 
         # Filler within a few seconds of the drop, CasparCG's clock notwithstanding.
-        assert any(30 < t <= 36 and kind == "filler" for t, kind in seen.items())
-        # Back on air within a probe of the encoder's return.
-        assert any(50 < t <= 60 and kind == "live" for t, kind in seen.items())
-        assert mediamtx.commands.count("SWAP 1-49 1-50") == 2
-        # No probes while nothing was publishing.
-        probes = [c for c in mediamtx.commands if "rtsp://" in c]
-        assert len(probes) == 2
+        assert any(30 < t <= 36 and kind == "filler" for t, kind in program_out.items())
+        # Back on air shortly after the encoder's return.
+        assert any(50 < t <= 60 and kind == "live" for t, kind in program_out.items())
+        assert mediamtx.commands.count("MIXER 1-55 OPACITY 1") == 2
+        # The filler ran underneath throughout: it was played once.
+        assert mediamtx.commands.count("PLAY 1-50 filler/FrikanalenLoop loop 0") == 1
+        # Never a dead picture for longer than the drop takes to notice.
+        frozen = [t for t, kind in program_out.items() if kind == "frozen"]
+        assert all(30 < t <= 35 for t in frozen)
 
     async def test_a_steady_source_stays_on_air(self, configured, mediamtx):
         await make_live(minutes=2).cue()
 
-        assert mediamtx.commands.count("SWAP 1-49 1-50") == 1
-        assert mediamtx.commands.count("PLAY 1-50 filler/FrikanalenLoop loop 0") == 1
+        assert mediamtx.commands.count("MIXER 1-55 OPACITY 1") == 1
+        assert len([c for c in mediamtx.commands if "rtsp://" in c]) == 1
 
     async def test_an_unreachable_metrics_endpoint_keeps_the_source_on_air(
         self, configured, mediamtx, monkeypatch
@@ -329,8 +370,7 @@ class TestCue:
 
         await make_live(minutes=2).cue()
 
-        assert mediamtx.commands.count("SWAP 1-49 1-50") == 1
-        assert mediamtx.commands.count("PLAY 1-50 filler/FrikanalenLoop loop 0") == 1
+        assert mediamtx.commands.count("MIXER 1-55 OPACITY 1") == 1
 
     async def test_an_error_covers_the_rest_of_the_slot_with_filler(
         self, configured, caspar, monkeypatch
@@ -342,8 +382,9 @@ class TestCue:
 
         await make_live(minutes=1).cue()
 
-        assert "CLEAR 1-49" in caspar.commands
-        assert caspar.commands[-2:] == ["PLAY 1-50 filler/FrikanalenLoop loop 0", "STOP 1-50"]
+        assert "MIXER 1-55 OPACITY 1" not in caspar.commands
+        assert caspar.commands[-1] == "STOP 1-50"
+        assert "CLEAR 1-55" in caspar.commands
 
     async def test_plays_filler_when_live_input_is_unconfigured(self, monkeypatch, caspar):
         monkeypatch.setattr(live, "LIVE_INPUT_URL", "")
