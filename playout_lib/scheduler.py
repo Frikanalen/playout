@@ -2,7 +2,7 @@
 
 The scheduler keeps one task per schedule item and reconciles that set
 against the schedule whenever Django says it changed, and every
-POLL_INTERVAL in case a notice went missing. Reconciling changes only what
+POLL_INTERVAL and just after midnight as a fallback. Reconciling changes only what
 differs: an item that is still booked as it was keeps its task, one that
 moved or went away is cancelled, and a new one gets a task of its own.
 """
@@ -18,11 +18,21 @@ from .config import API_URL
 from .events import listen_for_changes
 from .items import PlannedItem, localtime
 
-# The fallback for a missed or broken event stream.
-POLL_INTERVAL = timedelta(seconds=60)
+# The fallback for when the event stream itself is down. A dropped stream
+# needs no poll: every reconnect announces itself and triggers a reload.
+POLL_INTERVAL = timedelta(minutes=15)
+# Loads cover "today", and nothing announces a new day, so reload just after
+# midnight to pick up the next day's schedule.
+AFTER_MIDNIGHT = timedelta(seconds=5)
 # A booking often lands as a couple of commits in quick succession (the
 # schedule item, then its live transmission): wait for the rest of them.
 SETTLE_SECONDS = 0.5
+
+
+def seconds_until_next_load(now) -> float:
+    """Until the next poll, or just after midnight if that comes sooner."""
+    midnight = (now + timedelta(days=1)).replace(hour=0, minute=0, second=0, microsecond=0)
+    return min(POLL_INTERVAL, midnight + AFTER_MIDNIGHT - now).total_seconds()
 
 
 def item_key(item: PlannedItem) -> tuple:
@@ -133,7 +143,9 @@ class Scheduler:
         try:
             while True:
                 try:
-                    await asyncio.wait_for(self._changed.wait(), POLL_INTERVAL.total_seconds())
+                    await asyncio.wait_for(
+                        self._changed.wait(), seconds_until_next_load(localtime())
+                    )
                     await asyncio.sleep(SETTLE_SECONDS)
                 except TimeoutError:
                     pass

@@ -196,3 +196,12 @@ async def test_run_reloads_when_told_and_keeps_playing_through_a_failed_load(mon
     assert len(sched.tasks) == 1
     for _, task in sched.tasks.values():
         task.cancel()
+
+
+def test_the_next_load_comes_at_the_poll_or_just_after_midnight():
+    from datetime import datetime
+    from zoneinfo import ZoneInfo
+
+    oslo = ZoneInfo("Europe/Oslo")
+    assert scheduler.seconds_until_next_load(datetime(2026, 10, 31, 20, 0, tzinfo=oslo)) == 900
+    assert scheduler.seconds_until_next_load(datetime(2026, 10, 31, 23, 58, tzinfo=oslo)) == 125

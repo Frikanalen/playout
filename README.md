@@ -31,7 +31,8 @@ deployment should set `GRAPHICS_URL=https://staging.frikanalen.no/graphics/`.
 
 Playout follows the schedule as it changes. It listens to Django's event
 stream at `/api/playout/events` and reloads the schedule whenever an event
-arrives, and every 60 seconds in case one was missed. Each load is reconciled
+arrives, every 15 minutes in case the stream is down, and just after midnight to pick
+up the next day. Each load is reconciled
 against the running tasks: an unchanged booking keeps playing, a new one is
 added, and one that moved or was removed is cancelled. The item on air is kept
 and only its end time moves, unless it was replaced by something else.
