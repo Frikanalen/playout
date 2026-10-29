@@ -25,8 +25,10 @@ RETRY_INTERVAL = 10.0
 
 # CasparCG answers PLAY of a dead RTSP source with 202 OK and plays black,
 # so the only sign of a working input is its clock advancing in INFO. A
-# healthy source shows picture about 4 seconds after PLAY.
-STARTUP_TIME = 6.0
+# healthy source takes about 4 seconds to connect and shows picture then.
+STARTUP_TIME = 12.0
+# How often the probe layer is checked while the source starts.
+PROBE_INTERVAL = 1.0
 # How often to check that the source on air is still flowing.
 WATCH_INTERVAL = 2.0
 # Checks in a row a source may look dead before the filler goes back. One
@@ -181,10 +183,12 @@ class LiveTransmission(PlannedItem):
 
         await current_player.issue(f"MIXER {LIVE_PROBE_LAYER} VOLUME 0")
         await self._play_live(LIVE_PROBE_LAYER)
-        await self._sleep(STARTUP_TIME - WATCH_INTERVAL)
-        first = await self._position(LIVE_PROBE_LAYER)
-        await self._sleep(WATCH_INTERVAL)
-        flowing, _ = await self._advancing(LIVE_PROBE_LAYER, first)
+        flowing, position = False, None
+        waited = 0.0
+        while not flowing and waited < STARTUP_TIME and self._seconds_left() > 0:
+            await self._sleep(PROBE_INTERVAL)
+            waited += PROBE_INTERVAL
+            flowing, position = await self._advancing(LIVE_PROBE_LAYER, position)
         if flowing:
             await current_player.issue(f"SWAP {LIVE_PROBE_LAYER} {self.layer}")
         await current_player.issue(f"CLEAR {LIVE_PROBE_LAYER}")

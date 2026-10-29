@@ -8,6 +8,7 @@ from playout_lib import items, live
 TZ = ZoneInfo("Europe/Oslo")
 NOW = datetime(2026, 10, 31, 20, 0, tzinfo=TZ)
 STREAM_ID = "6f1c2d6e-8a1b-4c3d-9e2f-0a1b2c3d4e5f"
+CONNECT_TIME = 4.0
 KEY_ID = "0d9e8f7a-6b5c-4d3e-8f1a-2b3c4d5e6f70"
 
 
@@ -96,7 +97,11 @@ def caspar(monkeypatch, clock):
             return readers
 
         def _live(self, started):
-            seconds = (clock.now - started).total_seconds()
+            # CasparCG takes about 4 seconds to connect to an RTSP source and
+            # shows a transition producer until then.
+            seconds = (clock.now - started).total_seconds() - CONNECT_TIME
+            if seconds < 0:
+                return ("transition", 0)
             if self.stall_after is not None:
                 seconds = min(seconds, self.stall_after)
             return ("ffmpeg", seconds)
