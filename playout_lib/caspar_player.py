@@ -83,7 +83,14 @@ class CasparPlayer:
         elif return_code == 201:  # single-line returned_data
             returned_data = b""
             while returned_data[-2:] != b"\r\n":
-                returned_data += await self.reader.read(512)
+                returned_data += await asyncio.wait_for(self.reader.read(512), 10.0)
+
+            # CasparCG 2.5 answers INFO <layer> with 201 but a whole XML
+            # document, ended by a blank line like a 200 reply. Read all of
+            # it, or the rest would be taken for the next command's reply.
+            if returned_data.startswith(b"<?xml"):
+                while returned_data[-4:] != b"\r\n\r\n":
+                    returned_data += await asyncio.wait_for(self.reader.read(512), 10.0)
 
             returned_data = returned_data.decode()
 

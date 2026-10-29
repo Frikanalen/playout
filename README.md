@@ -40,8 +40,15 @@ to playout as `LIVE_READER_CREDENTIAL=<key UUID>:<password>`, preferably from
 a Secret via the chart's `envFrom`. It reads any enabled source, so new sources
 need no playout change.
 
-If the source is not publishing when the slot starts, playout covers with the
-filler loop and retries every 10 seconds until the slot ends. Without
+CasparCG (2.5) answers `PLAY` of a dead RTSP source with `202 PLAY OK` and
+plays black, so playout never trusts the reply. It starts the source on a
+muted probe layer below the programme (`LIVE_PROBE_LAYER`, default `1-49`),
+covered by the filler loop on the programme layer, and only once `INFO` shows
+the source's clock advancing does it `SWAP` the running producer onto the
+programme layer. Mixer volume stays with the layer number, so the probe stays
+muted and the programme layer plays at unity. While on air it checks every
+2 seconds that the clock still advances; if the encoder drops or freezes it
+puts the filler back and starts over, until the slot ends. Without
 `LIVE_INPUT_URL` the whole slot is covered with filler. The password is
 redacted from the command log.
 

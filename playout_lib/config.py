@@ -21,6 +21,9 @@ LIVE_INPUT_URL = os.environ.get("LIVE_INPUT_URL", "")
 # It reads any enabled source, so new sources need no change here. Keep it
 # in a Secret.
 LIVE_READER_CREDENTIAL = os.environ.get("LIVE_READER_CREDENTIAL", "")
+# A muted layer below VIDEO_LAYER where a live source is started and checked
+# before it is cut to air, so a dead input never shows black.
+LIVE_PROBE_LAYER = os.environ.get("LIVE_PROBE_LAYER", "1-49")
 
 # File and media settings
 #

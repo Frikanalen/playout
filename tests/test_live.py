@@ -11,15 +11,26 @@ STREAM_ID = "6f1c2d6e-8a1b-4c3d-9e2f-0a1b2c3d4e5f"
 KEY_ID = "0d9e8f7a-6b5c-4d3e-8f1a-2b3c4d5e6f70"
 
 
+class Clock:
+    """Wall clock for the tests; sleeping is what moves it forward."""
+
+    def __init__(self):
+        self.now = NOW
+
+    def __call__(self):
+        return self.now
+
+    async def sleep(self, seconds):
+        self.now += timedelta(seconds=max(0.0, seconds))
+
+
 @pytest.fixture(autouse=True)
-def frozen_time(monkeypatch):
-    monkeypatch.setattr(items, "localtime", lambda: NOW)
-
-    async def no_sleep(seconds):
-        return None
-
-    monkeypatch.setattr(live.asyncio, "sleep", no_sleep)
-    monkeypatch.setattr(items.asyncio, "sleep", no_sleep)
+def clock(monkeypatch):
+    clock = Clock()
+    monkeypatch.setattr(items, "localtime", clock)
+    monkeypatch.setattr(live.asyncio, "sleep", clock.sleep)
+    monkeypatch.setattr(items.asyncio, "sleep", clock.sleep)
+    return clock
 
 
 @pytest.fixture
@@ -28,23 +39,80 @@ def configured(monkeypatch):
     monkeypatch.setattr(live, "LIVE_READER_CREDENTIAL", f"{KEY_ID}:s3cr/t")
 
 
+def info_xml(layers):
+    """INFO as CasparCG 2.5 returns it: the whole channel, whatever layer was asked."""
+    xml = ""
+    for number, (producer, position) in layers.items():
+        if producer == "ffmpeg":
+            foreground = (
+                f"<file><time>{position}</time><time>0</time></file><producer>ffmpeg</producer>"
+            )
+        else:
+            # A source still connecting, or a dead one, never gets past this.
+            foreground = (
+                "<file><time>0</time><time>0</time></file><producer>transition</producer>"
+                "<transition><producer>ffmpeg</producer><type>cut</type></transition>"
+            )
+        xml += f"<layer_{number}><foreground>{foreground}</foreground></layer_{number}>"
+    header = '<?xml version="1.0" encoding="utf-8"?>\r\n'
+    return f"{header}<channel><stage><layer>{xml}</layer></stage></channel>\r\n"
+
+
 @pytest.fixture
-def caspar(monkeypatch):
-    """Record AMCP commands; PLAYs of the live URL fail while `refusals` > 0."""
+def caspar(monkeypatch, clock):
+    """A CasparCG whose live source is up unless `dead_bring_ups` says otherwise."""
     from playout_lib import caspar_player
 
     class FakeCaspar:
         def __init__(self):
             self.commands = []
             self.logged = []
-            self.refusals = 0
+            self.dead_bring_ups = 0
+            # Freeze the source after this many seconds on air (None: never).
+            self.stall_after = None
+            self.layers = {}
+
+        def _live(self, started):
+            seconds = (clock.now - started).total_seconds()
+            if self.stall_after is not None:
+                seconds = min(seconds, self.stall_after)
+            return ("ffmpeg", seconds)
 
         async def issue(self, cmd, log_as=None):
             self.commands.append(cmd)
             self.logged.append(log_as or cmd)
-            if "rtsp://" in cmd and self.refusals:
-                self.refusals -= 1
-                raise ValueError("CasparCG command failed: 404 PLAY FAILED")
+            words = cmd.split()
+            layer = words[1].split("-")[1] if len(words) > 1 and "-" in words[1] else None
+            if words[0] == "PLAY" and "rtsp://" in cmd:
+                if self.dead_bring_ups:
+                    self.dead_bring_ups -= 1
+                    self.layers[layer] = ("dead", None)
+                else:
+                    self.layers[layer] = ("live", clock.now)
+            elif words[0] == "PLAY":
+                self.layers[layer] = ("filler", None)
+            elif words[0] in ("CLEAR", "STOP"):
+                self.layers.pop(layer, None)
+            elif words[0] == "SWAP":
+                other = words[2].split("-")[1]
+                a, b = self.layers.pop(layer, None), self.layers.pop(other, None)
+                if a:
+                    self.layers[other] = a
+                if b:
+                    self.layers[layer] = b
+            elif words[0] == "INFO":
+                shown = {}
+                for number, (kind, started) in self.layers.items():
+                    if kind == "live":
+                        shown[number] = self._live(started)
+                    elif kind == "filler":
+                        shown[number] = ("ffmpeg", (clock.now - NOW).total_seconds())
+                    else:
+                        shown[number] = ("transition", 0)
+                return info_xml(shown)
+
+        def on_air(self):
+            return self.layers.get("50", (None,))[0]
 
     fake = FakeCaspar()
     monkeypatch.setattr(caspar_player.current_player, "issue", fake.issue)
@@ -75,42 +143,86 @@ class TestUrl:
         assert make_live()._url() is None
 
 
+class TestForegroundTime:
+    def test_reads_the_position_of_the_asked_layer(self):
+        info = info_xml({"50": ("ffmpeg", 1041.44), "90": ("ffmpeg", 4.18)})
+        assert live.foreground_time(info, "1-90") == 4.18
+        assert live.foreground_time(info, "1-50") == 1041.44
+
+    def test_a_connecting_or_dead_source_has_no_position(self):
+        assert live.foreground_time(info_xml({"90": ("transition", 0)}), "1-90") is None
+
+    def test_an_empty_layer_or_garbage_has_no_position(self):
+        assert live.foreground_time(info_xml({"50": ("ffmpeg", 1.0)}), "1-90") is None
+        assert live.foreground_time("not xml", "1-90") is None
+        assert live.foreground_time(None, "1-90") is None
+
+
 class TestCue:
-    async def test_plays_the_source_at_unity_gain_and_stops_at_the_end(self, configured, caspar):
-        await make_live().cue()
+    async def test_probes_hidden_then_cuts_to_air_and_stops_at_the_end(self, configured, caspar):
+        await make_live(minutes=1).cue()
 
         assert caspar.commands[0] == "MIXER 1-50 VOLUME 1.0000"
-        assert caspar.commands[1].startswith(f'PLAY 1-50 "rtsp://{KEY_ID}:')
+        assert caspar.commands[1] == "PLAY 1-50 filler/FrikanalenLoop loop 0"
+        assert "MIXER 1-49 VOLUME 0" in caspar.commands
+        live_plays = [c for c in caspar.commands if "rtsp://" in c]
+        assert len(live_plays) == 1
+        assert live_plays[0].startswith(f'PLAY 1-49 "rtsp://{KEY_ID}:')
+        assert "SWAP 1-49 1-50" in caspar.commands
         assert caspar.commands[-1] == "STOP 1-50"
 
+    async def test_is_on_air_during_the_slot(self, configured, caspar, clock, monkeypatch):
+        seen = []
+
+        async def watching_sleep(seconds):
+            await clock.sleep(seconds)
+            seen.append(caspar.on_air())
+
+        monkeypatch.setattr(live.asyncio, "sleep", watching_sleep)
+        await make_live(minutes=1).cue()
+
+        assert "live" in seen
+        # Never black: layer 50 only ever carries filler or a flowing source.
+        assert set(seen) <= {"filler", "live", None}
+
     async def test_never_logs_the_password(self, configured, caspar):
-        await make_live().cue()
+        await make_live(minutes=1).cue()
 
         assert not any("s3cr" in line for line in caspar.logged)
 
-    async def test_covers_with_filler_until_the_source_comes_up(self, configured, caspar):
-        caspar.refusals = 2
+    async def test_a_dead_source_never_reaches_air(self, configured, caspar):
+        caspar.dead_bring_ups = 1000
 
-        await make_live().cue()
+        await make_live(minutes=2).cue()
 
-        plays = [c for c in caspar.commands if c.startswith("PLAY")]
-        assert plays[0].startswith('PLAY 1-50 "rtsp://')
-        assert plays[1] == "PLAY 1-50 filler/FrikanalenLoop loop 0"
-        assert plays[4].startswith('PLAY 1-50 "rtsp://')
-        assert len(plays) == 5
-
-    async def test_gives_up_retrying_near_the_end_of_the_slot(self, configured, caspar):
-        caspar.refusals = 1000
-
-        await live.LiveTransmission(STREAM_ID, "1-50", NOW, NOW + timedelta(seconds=5)).cue()
-
-        assert caspar.commands[-2] == "PLAY 1-50 filler/FrikanalenLoop loop 0"
+        assert not any(c.startswith("SWAP") for c in caspar.commands)
+        assert not any(c.startswith('PLAY 1-50 "rtsp://') for c in caspar.commands)
+        # It kept trying for the whole slot, on the hidden layer only.
+        assert len([c for c in caspar.commands if "rtsp://" in c]) > 3
         assert caspar.commands[-1] == "STOP 1-50"
+
+    async def test_a_late_encoder_is_taken_once_it_flows(self, configured, caspar):
+        caspar.dead_bring_ups = 2
+
+        await make_live(minutes=2).cue()
+
+        assert len([c for c in caspar.commands if "rtsp://" in c]) == 3
+        assert caspar.commands.count("SWAP 1-49 1-50") == 1
+
+    async def test_a_stalled_source_goes_back_to_filler_and_is_retried(self, configured, caspar):
+        caspar.stall_after = 30
+
+        await make_live(minutes=2).cue()
+
+        filler = "PLAY 1-50 filler/FrikanalenLoop loop 0"
+        assert caspar.commands.count(filler) >= 2
+        stall = caspar.commands.index(filler, 2)
+        assert any("rtsp://" in c for c in caspar.commands[stall:])
 
     async def test_plays_filler_when_live_input_is_unconfigured(self, monkeypatch, caspar):
         monkeypatch.setattr(live, "LIVE_INPUT_URL", "")
 
-        await make_live().cue()
+        await make_live(minutes=1).cue()
 
         assert "PLAY 1-50 filler/FrikanalenLoop loop 0" in caspar.commands
         assert not any("rtsp://" in c for c in caspar.commands)
