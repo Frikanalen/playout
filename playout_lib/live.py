@@ -228,7 +228,23 @@ class LiveTransmission(PlannedItem):
             await asyncio.sleep(seconds_until_start - PROBE_INTERVAL)
             self._seen_position = await self._position(LIVE_LAYER)
         except asyncio.CancelledError:
-            pass
+            # Taken off the schedule before it aired: the hidden source must
+            # not linger on the live layer above whatever plays next.
+            await self.abort()
+            raise
+
+    async def abort(self):
+        """Undo a prepare for a slot that will not air."""
+        from .caspar_player import current_player
+
+        if self._started_at is None:
+            return
+        try:
+            await current_player.issue(f"CLEAR {LIVE_LAYER}")
+            await current_player.issue(f"MIXER {LIVE_LAYER} CLEAR")
+        except Exception:
+            logger.exception("Could not clear the live layer after a cancelled slot")
+        self._started_at = None
 
     async def _flowing(self) -> bool:
         """Whether the source on the live layer flows, waiting for it to connect."""
@@ -265,8 +281,8 @@ class LiveTransmission(PlannedItem):
             else:
                 await self._keep_on_air()
         except asyncio.CancelledError:
-            logger.warning("asyncio.CancelledError during live transmission")
-            return
+            # Taken off the schedule on air: clear the layers for its replacement.
+            logger.warning(f"Live transmission {self.stream_id} was taken off the schedule")
         except Exception:
             # Never leave the slot to whatever the layers happened to hold.
             logger.exception(f"Live transmission {self.stream_id} failed; covering with filler")

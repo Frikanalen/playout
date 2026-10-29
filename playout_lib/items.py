@@ -41,7 +41,25 @@ class PlannedItem(Item):
     def __init__(self, layer, start_time, end_time):
         self.start_time = start_time
         self.end_time = end_time
+        self._end_moved = asyncio.Event()
         super().__init__(layer)
+
+    def reschedule(self, end_time):
+        """Move the end of this item, including while it is on air."""
+        self.end_time = end_time
+        self._end_moved.set()
+
+    async def _wait_until_end(self, margin=0.0):
+        """Block until margin seconds before the end, following any reschedule."""
+        while self._seconds_left() > margin:
+            self._end_moved.clear()
+            sleeper = asyncio.ensure_future(asyncio.sleep(self._seconds_left() - margin))
+            moved = asyncio.ensure_future(self._end_moved.wait())
+            try:
+                await asyncio.wait({sleeper, moved}, return_when=asyncio.FIRST_COMPLETED)
+            finally:
+                sleeper.cancel()
+                moved.cancel()
 
     async def sleep_until_time_to_prepare(self):
         """Sleep until 5 seconds before scheduled start time."""
@@ -66,7 +84,7 @@ class PlannedItem(Item):
     async def _completion(self):
         """Block until the scheduled end time or until cancelled."""
         logger.info(f"waiting for completion {self._seconds_left():.2f} seconds left {repr(self)}")
-        await asyncio.sleep(self._seconds_left())
+        await self._wait_until_end()
         logger.info(f"Finished waiting {repr(self)}")
 
 
@@ -94,7 +112,7 @@ class Graphic(PlannedItem):
             # two seconds before the next programme, just like the old
             # NRK clock used to do it! ^_^
             if self._seconds_left() >= 5.0:
-                await asyncio.sleep(self._seconds_left() - 2.0)
+                await self._wait_until_end(margin=2.0)
                 await current_player.issue(f"MIXER {self.layer}1 OPACITY 0 50 easeinsine")
                 await current_player.issue(f"MIXER {self.layer} OPACITY 0 50 easeinsine")
 

@@ -193,9 +193,10 @@ class PrerecordedVideo(PlannedItem):
             await current_player.issue(f"STOP {self.layer}")
             # await self.clear()
         except asyncio.CancelledError:
-            logger.warning("asyncio.CancelledError, clearing layer...")
-            print("I would have cleared here if it weren't for debugging")
-            # await self.clear()
+            # Cancelled on air: the schedule replaced this item, so it has to
+            # leave the air for whatever comes in its place.
+            logger.warning(f"{self!r} was taken off the schedule, stopping it")
+            await current_player.issue(f"STOP {self.layer}")
 
     async def _set_playback_volume(self):
         """Set the layer volume for this file just before it goes to air.
