@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.3.0](https://github.com/Frikanalen/playout/compare/v2.2.0...v2.3.0) (2026-10-31)
+
+
+### Features
+
+* say DIREKTE in the channel bug while live is on air ([#22](https://github.com/Frikanalen/playout/issues/22)) ([a7f4e1e](https://github.com/Frikanalen/playout/commit/a7f4e1e234f72657ebeae5fc882089c122abfaa4))
+
 ## [2.2.0](https://github.com/Frikanalen/playout/compare/v2.1.1...v2.2.0) (2026-10-29)
 
 
