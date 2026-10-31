@@ -8,6 +8,11 @@ VIDEO_LAYER = "1-50"
 GRAPHICS_LAYER = "1-60"
 CHANNELBUG_LAYER = "1-100"
 
+# Stills CasparCG keeps on CHANNELBUG_LAYER: the channel bug, and the same
+# bug with a DIREKTE tag for while a live source is on air.
+CHANNELBUG = "stills/screenbug"
+CHANNELBUG_LIVE = "stills/screenbug_live"
+
 # API endpoints
 API_URL = os.environ.get("API_URL", "https://frikanalen.no/")
 GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.no/graphics/")

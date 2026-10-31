@@ -294,6 +294,19 @@ class TestCue:
             "MIXER 1-55 VOLUME 1.0000",
         ]
 
+    async def test_the_bug_says_direkte_only_while_live_is_on_air(self, configured, caspar):
+        caspar.stall_after = 30
+
+        await make_live(minutes=2).cue()
+
+        bugs = [c for c in caspar.commands if c.startswith("PLAY 1-100 ")]
+        show = caspar.commands.index("MIXER 1-55 OPACITY 1")
+        assert caspar.commands[show + 1] == "PLAY 1-100 stills/screenbug_live"
+        # Back to the plain bug with the filler after the stall, and at the end.
+        hide = caspar.commands.index("MIXER 1-55 OPACITY 0", show)
+        assert "PLAY 1-100 stills/screenbug" in caspar.commands[hide : hide + 3]
+        assert bugs[-1] == "PLAY 1-100 stills/screenbug"
+
     async def test_never_shows_black(self, configured, caspar, program_out):
         caspar.dead_bring_ups = 2
 

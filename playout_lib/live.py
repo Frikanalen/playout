@@ -11,6 +11,9 @@ from loguru import logger
 
 from playout_lib import items
 from playout_lib.config import (
+    CHANNELBUG,
+    CHANNELBUG_LAYER,
+    CHANNELBUG_LIVE,
     LIVE_INPUT_URL,
     LIVE_LAYER,
     LIVE_METRICS_URL,
@@ -190,6 +193,8 @@ class LiveTransmission(PlannedItem):
         await current_player.issue(f"MIXER {self.layer} VOLUME 0")
         await current_player.issue(f"MIXER {LIVE_LAYER} VOLUME 1.0000")
         await current_player.issue(f"MIXER {LIVE_LAYER} OPACITY 1")
+        # The bug says DIREKTE only while the live picture is what airs.
+        await current_player.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG_LIVE}")
 
     async def _hide(self):
         """Cut back to the filler under the live layer."""
@@ -197,6 +202,7 @@ class LiveTransmission(PlannedItem):
 
         await current_player.issue(f"MIXER {LIVE_LAYER} OPACITY 0")
         await current_player.issue(f"MIXER {LIVE_LAYER} VOLUME 0")
+        await current_player.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG}")
         # The contribution is not loudness measured, nor is the filler, so
         # both play at their own level.
         await current_player.issue(f"MIXER {self.layer} VOLUME 1.0000")
@@ -297,6 +303,7 @@ class LiveTransmission(PlannedItem):
         from .caspar_player import current_player
 
         try:
+            await current_player.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG}")
             await current_player.issue(f"CLEAR {LIVE_LAYER}")
             await current_player.issue(f"MIXER {LIVE_LAYER} CLEAR")
             await current_player.issue(f"MIXER {self.layer} VOLUME 1.0000")

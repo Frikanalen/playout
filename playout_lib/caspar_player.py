@@ -2,7 +2,7 @@ import asyncio
 import logging
 import sys
 
-from playout_lib.config import CASPAR_HOST, CHANNELBUG_LAYER
+from playout_lib.config import CASPAR_HOST, CHANNELBUG, CHANNELBUG_LAYER
 
 logger = logging.getLogger(__name__)
 
@@ -43,7 +43,7 @@ class CasparPlayer:
 
         logger.info(f"Connecting to {CASPAR_HOST}")
         self.reader, self.writer = await asyncio.open_connection(CASPAR_HOST, 5250)
-        await current_player.issue(f"PLAY {CHANNELBUG_LAYER} stills/screenbug")
+        await current_player.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG}")
         await self._query_framerate()
 
     async def _get_response(self):
