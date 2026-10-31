@@ -1,5 +1,19 @@
 # Changelog
 
+## [2.2.0](https://github.com/Frikanalen/playout/compare/v2.1.1...v2.2.0) (2026-10-29)
+
+
+### Features
+
+* follow schedule changes as they happen ([#21](https://github.com/Frikanalen/playout/issues/21)) ([4d4c300](https://github.com/Frikanalen/playout/commit/4d4c300c173ced6e85854c1d7e98d2a0066ac0c7))
+* keep a live slot on air, covering encoder drops with filler ([#20](https://github.com/Frikanalen/playout/issues/20)) ([745cfb7](https://github.com/Frikanalen/playout/commit/745cfb740c6fde3bd8fef045b04ad75528a8a60b))
+* play booked live transmissions from MediaMTX ([#19](https://github.com/Frikanalen/playout/issues/19)) ([839dd4f](https://github.com/Frikanalen/playout/commit/839dd4f4c6d9a30923ff8a01141bfb580ab848af))
+
+
+### Bug Fixes
+
+* **api:** allow XML responses in client generation ([4f46d9f](https://github.com/Frikanalen/playout/commit/4f46d9fe7875c24b7820614126cac0196f114664))
+
 ## [2.1.1](https://github.com/Frikanalen/playout/compare/v2.1.0...v2.1.1) (2026-08-31)
 
 
