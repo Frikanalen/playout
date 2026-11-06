@@ -99,7 +99,7 @@ class TestFilenameSelection:
         monkeypatch.setattr(video, "USE_ORIGINAL", False)
         monkeypatch.setattr(video, "MEDIA_ROOT", "/mnt/media")
         pv = make_prerecorded(
-            {"broadcast": "https://frikanalen.no/media/broadcast.mp4"},
+            {"broadcast": "https://frikanalen.tv/media/broadcast.mp4"},
             records=make_video_file_records(broadcast=(UNSET, UNSET)),
         )
 
@@ -109,7 +109,7 @@ class TestFilenameSelection:
 
     def test_preserves_http_media_url_without_a_mount(self, monkeypatch):
         monkeypatch.setattr(video, "USE_ORIGINAL", False)
-        media_url = "https://frikanalen.no/media/broadcast.mp4"
+        media_url = "https://frikanalen.tv/media/broadcast.mp4"
         pv = make_prerecorded({"broadcast": media_url})
 
         assert pv.filename == media_url

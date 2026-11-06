@@ -107,12 +107,12 @@ class TestLoadSchedule:
         }
         install_fetcher(monkeypatch, items)
         install_video_details(monkeypatch, videos)
-        monkeypatch.setattr(api, "GRAPHICS_URL", "https://staging.frikanalen.no/graphics/")
+        monkeypatch.setattr(api, "GRAPHICS_URL", "https://staging.frikanalen.tv/graphics/")
 
         schedule = await api.load_schedule()
 
         graphic = next(i for i in schedule if isinstance(i, Graphic))
-        assert graphic.url == "https://staging.frikanalen.no/graphics/?duration=300000"
+        assert graphic.url == "https://staging.frikanalen.tv/graphics/?duration=300000"
 
     async def test_uses_filler_loop_for_gaps_under_30_seconds(self, monkeypatch):
         items = [
