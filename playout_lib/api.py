@@ -18,11 +18,11 @@ from .video import PrerecordedVideo
 MINIMUM_GRAPHIC_DURATION = timedelta(seconds=30)
 
 
-async def load_schedule(api_url="https://frikanalen.no/"):
+async def load_schedule(api_url="https://frikanalen.tv/"):
     """Load and parse schedule from the API with automatic graphics insertion.
 
     Args:
-        api_url: Base URL for the Frikanalen API (default: "https://frikanalen.no/")
+        api_url: Base URL for the Frikanalen API (default: "https://frikanalen.tv/")
 
     Returns:
         list: List of schedule items (PrerecordedVideo, LiveTransmission and Graphic instances)
