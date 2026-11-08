@@ -23,7 +23,7 @@ async def get_video_details(video_id: int, client: Client | None = None) -> Vide
         or None if fetch fails.
     """
     if client is None:
-        client = Client("https://frikanalen.no/")
+        client = Client("https://frikanalen.tv/")
         async with client:
             return await _fetch_video_details(video_id, client)
     else:
@@ -67,7 +67,7 @@ async def get_video_file_records(
         empty if the lookup fails.
     """
     if client is None:
-        client = Client("https://frikanalen.no/")
+        client = Client("https://frikanalen.tv/")
         async with client:
             return await _fetch_video_file_records(video_id, client)
     else:

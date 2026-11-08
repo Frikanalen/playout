@@ -14,8 +14,8 @@ CHANNELBUG = "stills/screenbug"
 CHANNELBUG_LIVE = "stills/screenbug_live"
 
 # API endpoints
-API_URL = os.environ.get("API_URL", "https://frikanalen.no/")
-GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.no/graphics/")
+API_URL = os.environ.get("API_URL", "https://frikanalen.tv/")
+GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.tv/graphics/")
 
 # Live transmissions
 #

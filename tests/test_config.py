@@ -2,8 +2,8 @@ from playout_lib import config
 
 
 def test_media_location_leaves_urls_untouched():
-    assert config.media_location("https://frikanalen.no/media/video.mp4") == (
-        "https://frikanalen.no/media/video.mp4"
+    assert config.media_location("https://frikanalen.tv/media/video.mp4") == (
+        "https://frikanalen.tv/media/video.mp4"
     )
 
 

@@ -31,13 +31,13 @@ async def test_every_event_asks_for_a_reload_and_a_drop_reconnects(monkeypatch):
 
     listener = asyncio.create_task(
         events.listen_for_changes(
-            "https://staging.frikanalen.no/", changed, httpx.MockTransport(handler)
+            "https://staging.frikanalen.tv/", changed, httpx.MockTransport(handler)
         )
     )
     await asyncio.wait_for(done.wait(), 2)
     listener.cancel()
 
-    assert requests[0] == "https://staging.frikanalen.no/api/playout/events"
+    assert requests[0] == "https://staging.frikanalen.tv/api/playout/events"
     # Refused once, then reconnected; every event asks for a reload.
     assert len(requests) >= 3
     assert len(calls) >= 4
