@@ -1,5 +1,13 @@
 # Changelog
 
+## [2.3.0](https://github.com/Frikanalen/playout/compare/v2.2.0...v2.3.0) (2026-11-08)
+
+
+### Features
+
+* move from frikanalen.no to frikanalen.tv ([#24](https://github.com/Frikanalen/playout/issues/24)) ([58c4d8c](https://github.com/Frikanalen/playout/commit/58c4d8c6e7bb4e83afcaf422f850d57c105948db))
+* say DIREKTE in the channel bug while live is on air ([#22](https://github.com/Frikanalen/playout/issues/22)) ([a7f4e1e](https://github.com/Frikanalen/playout/commit/a7f4e1e234f72657ebeae5fc882089c122abfaa4))
+
 ## [2.2.0](https://github.com/Frikanalen/playout/compare/v2.1.1...v2.2.0) (2026-10-29)
 
 
