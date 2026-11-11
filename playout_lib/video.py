@@ -99,6 +99,20 @@ class PrerecordedVideo(PlannedItem):
         return self._variant, self._filename
 
     @property
+    def file_missing(self) -> bool:
+        """Whether the API says this video has no file to play.
+
+        Only a known answer counts: if the details could not be fetched, we
+        don't know, and the video is tried anyway.
+        """
+        if self._video_details is None:
+            return False
+        preferred = ("original", "broadcast")
+        return not any((self._video_file_records or {}).get(v) for v in preferred) and not any(
+            (self._video_files or {}).get(v) for v in preferred
+        )
+
+    @property
     def filename(self) -> str:
         """Get the filename to play. Determines which file to use based on USE_ORIGINAL setting.
 

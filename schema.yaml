@@ -15976,6 +15976,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/SchedulereasonEnum'
           readOnly: true
+          nullable: true
         starttime:
           type: string
           format: date-time
@@ -16005,7 +16006,6 @@ components:
           nullable: true
       required:
       - defaultName
-      - displaceable
       - duration
       - endtime
       - id
@@ -16013,7 +16013,6 @@ components:
       - schedulereason
       - starttime
       - video
-      - weeklySlot
     ScheduleitemVideo:
       type: object
       properties:
