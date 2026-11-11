@@ -1,15 +1,18 @@
 import asyncio
+from urllib.parse import urlencode
 
 from loguru import logger
 
 from playout_lib.config import (
+    GRAPHICS_URL,
     LOUDNESS_NORMALIZATION,
     MEDIA_ROOT,
+    NOTICE_LAYER,
     USE_ORIGINAL,
     media_location,
 )
 from playout_lib.get_video_files import get_video_details, get_video_file_records
-from playout_lib.items import PlannedItem, localtime
+from playout_lib.items import PlannedItem, ProgrammeUnavailable, localtime
 from playout_lib.loudness import db_to_multiplier, playback_gain_db
 
 
@@ -52,6 +55,8 @@ class PrerecordedVideo(PlannedItem):
         self.has_been_prepared = False
         self._filename: str | None = None
         self._variant: str | None = None
+        # The notice standing in for this video if CasparCG can't play it.
+        self.notice: ProgrammeUnavailable | None = None
 
     def _resolve_file(self) -> tuple[str | None, str]:
         """Pick the file to play, honouring the USE_ORIGINAL setting.
@@ -183,6 +188,11 @@ class PrerecordedVideo(PlannedItem):
             await current_player.issue(cmd_string)
         except asyncio.CancelledError:
             pass
+        except ValueError as error:
+            # CasparCG refused the file (404 if it isn't there). cue() tries
+            # once more and falls back to the notice if it fails again.
+            logger.error(f"Could not load video {self.video_id} ({error})")
+            self.has_been_prepared = False
 
     async def cue(self):
         """Start playing the video."""
@@ -201,7 +211,12 @@ class PrerecordedVideo(PlannedItem):
                     cmd_string += f" SEEK {int(current_player.frame_rate * seconds_since_start)}"
 
             await self._set_playback_volume()
-            await current_player.issue(cmd_string)
+            try:
+                await current_player.issue(cmd_string)
+            except ValueError as error:
+                logger.error(f"Could not play video {self.video_id} ({error}), showing a notice")
+                await self._show_unavailable()
+                return
             await self._completion()
             print("I would have cleared here if it weren't for debugging")
             await current_player.issue(f"STOP {self.layer}")
@@ -211,6 +226,29 @@ class PrerecordedVideo(PlannedItem):
             # leave the air for whatever comes in its place.
             logger.warning(f"{self!r} was taken off the schedule, stopping it")
             await current_player.issue(f"STOP {self.layer}")
+
+    def reschedule(self, end_time):
+        """Move the end, and the end of any notice standing in for the video."""
+        super().reschedule(end_time)
+        if self.notice is not None:
+            self.notice.reschedule(end_time)
+
+    async def _show_unavailable(self):
+        """Cover the rest of the slot with the "not available" notice.
+
+        The file the API lists can still be missing where CasparCG looks for
+        it. Viewers get the same notice as for a programme with no file at
+        all, rather than whatever was left on air.
+        """
+        title = getattr(self._video_details, "name", "") or ""
+        start = localtime()
+        duration_ms = max(int((self.end_time - start).total_seconds() * 1000), 0)
+        query = urlencode({"duration": duration_ms, "unavailable": title})
+        notice = ProgrammeUnavailable(
+            f"{GRAPHICS_URL}?{query}", NOTICE_LAYER, start, self.end_time, self.video_id, title
+        )
+        self.notice = notice
+        await notice.cue()
 
     async def _set_playback_volume(self):
         """Set the layer volume for this file just before it goes to air.

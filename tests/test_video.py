@@ -253,3 +253,59 @@ class TestVolumeCommand:
         await pv.cue()
 
         assert issued[:2] == ["MIXER 1-50 VOLUME 1.9953", "PLAY 1-50"]
+
+
+class TestUnplayableFile:
+    """A file CasparCG can't find airs the notice instead of dead air."""
+
+    @pytest.fixture
+    def caspar_refuses_play(self, monkeypatch):
+        from playout_lib import caspar_player, items
+
+        commands = []
+
+        async def fake_issue(cmd):
+            commands.append(cmd)
+            if cmd.startswith(("PLAY 1-50", "LOADBG 1-50")):
+                raise ValueError("CasparCG command failed: 404 PLAY FAILED")
+
+        monkeypatch.setattr(caspar_player.current_player, "issue", fake_issue)
+        monkeypatch.setattr(items, "localtime", lambda: NOW)
+        return commands
+
+    async def test_a_failed_play_shows_the_notice_for_the_rest_of_the_slot(
+        self, caspar_refuses_play, monkeypatch
+    ):
+        monkeypatch.setattr(video, "GRAPHICS_URL", "https://example.com/graphics/")
+        pv = make_prerecorded(
+            {"original": "missing.webm"}, video_details=make_video(1, name="Ukeslutt")
+        )
+
+        # The clock is frozen, so a slot that ends now lets the notice finish.
+        pv.end_time = NOW
+        await pv.cue()
+
+        assert pv.notice is not None
+        assert pv.notice.layer == "1-58"
+        assert (pv.notice.start_time, pv.notice.end_time) == (NOW, NOW)
+        assert (
+            'CG 1-581 ADD 0 "https://example.com/graphics/?duration=0&unavailable=Ukeslutt" 1'
+            in (caspar_refuses_play)
+        )
+        assert "CG 1-581 CLEAR" in caspar_refuses_play
+
+    async def test_a_failed_load_is_not_fatal(self, caspar_refuses_play):
+        pv = make_prerecorded({"original": "missing.webm"}, video_details=make_video(1))
+
+        # Item.__init__ shadows prepare() with None, so call it from the class.
+        await video.PrerecordedVideo.prepare(pv)
+
+        assert pv.has_been_prepared is False
+
+    def test_a_moved_end_moves_the_notice_too(self):
+        pv = make_prerecorded({"original": "x.webm"})
+        pv.notice = video.ProgrammeUnavailable("u", "1-58", NOW, pv.end_time, 1, "")
+
+        pv.reschedule(NOW + timedelta(minutes=10))
+
+        assert pv.notice.end_time == NOW + timedelta(minutes=10)
