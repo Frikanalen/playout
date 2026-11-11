@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.0](https://github.com/Frikanalen/playout/compare/v2.4.0...v2.5.0) (2026-11-11)
+
+
+### Features
+
+* loop filler music under the graphics ([#29](https://github.com/Frikanalen/playout/issues/29)) ([b0f27c0](https://github.com/Frikanalen/playout/commit/b0f27c0b8482597da96b850ba6f9b2931449d0ef))
+
 ## [2.4.0](https://github.com/Frikanalen/playout/compare/v2.3.0...v2.4.0) (2026-11-11)
 
 
