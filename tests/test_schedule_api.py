@@ -164,6 +164,14 @@ class TestScheduleitemShape:
 
         assert item.endtime == datetime.datetime.fromisoformat("2026-01-01T10:30:00+01:00")
 
+    def test_parses_a_compiled_item_with_no_schedule_reason(self):
+        # Rows the grant compiler writes carry no schedulereason.
+        item = ScheduleitemRead.from_dict(
+            dict(self.ITEM, schedulereason=None, displaceable=False, weeklySlot=None, grant=7)
+        )
+
+        assert item.endtime == datetime.datetime.fromisoformat("2026-01-01T10:30:00+01:00")
+
     def test_still_parses_the_old_shape(self):
         item = ScheduleitemRead.from_dict(dict(self.ITEM, displaceable=False, weeklySlot=None))
 

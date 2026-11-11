@@ -15976,6 +15976,7 @@ components:
           allOf:
           - $ref: '#/components/schemas/SchedulereasonEnum'
           readOnly: true
+          nullable: true
         starttime:
           type: string
           format: date-time
