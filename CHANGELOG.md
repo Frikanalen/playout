@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.4.0](https://github.com/Frikanalen/playout/compare/v2.3.0...v2.4.0) (2026-11-11)
+
+
+### Features
+
+* play live airings from the video's live source ([#28](https://github.com/Frikanalen/playout/issues/28)) ([28d164d](https://github.com/Frikanalen/playout/commit/28d164d0ede9779052f336e9c3db4db901632a83))
+* show graphics in every gap and a notice for a missing file ([#25](https://github.com/Frikanalen/playout/issues/25)) ([8498e20](https://github.com/Frikanalen/playout/commit/8498e2006ce4379a90232a5d2094a5ce96304e5c))
+
+
+### Bug Fixes
+
+* show the notice when CasparCG can't play a video ([#27](https://github.com/Frikanalen/playout/issues/27)) ([9de7161](https://github.com/Frikanalen/playout/commit/9de71612d304ce4a40d6b78e1864ee1a6079d352))
+
 ## [2.3.0](https://github.com/Frikanalen/playout/compare/v2.2.0...v2.3.0) (2026-11-08)
 
 
