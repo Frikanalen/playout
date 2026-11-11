@@ -16005,7 +16005,6 @@ components:
           nullable: true
       required:
       - defaultName
-      - displaceable
       - duration
       - endtime
       - id
@@ -16013,7 +16012,6 @@ components:
       - schedulereason
       - starttime
       - video
-      - weeklySlot
     ScheduleitemVideo:
       type: object
       properties:

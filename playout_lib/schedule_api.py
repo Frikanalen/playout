@@ -63,15 +63,20 @@ class ScheduleFetcher:
 
             # Extract the URL from the response
 
+            failure = None
             if response.status_code != 200:
-                logger.error(f"HTTP {response.status_code} fetching schedule at offset {offset}. ")
-                break
-
-            if response.parsed is None:
-                logger.error(f"Failed to parse response at offset {offset}.")
+                failure = f"HTTP {response.status_code} fetching schedule at offset {offset}"
+            elif response.parsed is None:
+                failure = f"Failed to parse the schedule at offset {offset}"
                 logger.debug(
                     f"Response content: {response.content[:500] if response.content else 'None'}"
                 )
+            if failure:
+                # Without the first page we know nothing, and an empty list
+                # would mean "nothing is scheduled": graphics all day.
+                if offset == 0:
+                    raise RuntimeError(failure)
+                logger.error(f"{failure}, keeping the {len(all_items)} items fetched so far")
                 break
 
             paginated_result = response.parsed
@@ -88,8 +93,9 @@ class ScheduleFetcher:
 
             offset += limit
 
-        if len(all_items) == 0:
-            logger.error("No schedule items retrieved from API!")
-            raise RuntimeError("No schedule items retrieved from API!")
+        # Nothing scheduled is a real answer since the jukebox stopped filling
+        # every gap: playout shows graphics for the whole stretch.
+        if not all_items:
+            logger.warning(f"Nothing is scheduled around {date_str}")
         logger.info(f"Successfully fetched {len(all_items)} schedule items for {date_str}")
         return all_items

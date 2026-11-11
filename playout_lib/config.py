@@ -6,6 +6,10 @@ from distutils.util import strtobool
 # Layer definitions for CasparCG
 VIDEO_LAYER = "1-50"
 GRAPHICS_LAYER = "1-60"
+# A scheduled programme whose file never arrived shows a notice instead, on
+# its own layer: it can sit right next to a gap graphic, and two graphics on
+# one layer would clear each other at the handover.
+NOTICE_LAYER = "1-58"
 CHANNELBUG_LAYER = "1-100"
 
 # Stills CasparCG keeps on CHANNELBUG_LAYER: the channel bug, and the same

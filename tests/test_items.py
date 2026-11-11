@@ -40,6 +40,33 @@ class TestGraphic:
         assert graphic.url == "https://example.com/graphics/?duration=5000"
         assert graphic.has_been_prepared is False
 
+    def test_a_graphic_cued_on_time_asks_for_its_whole_gap(self):
+        graphic = items.Graphic(
+            "https://example.com/graphics/?duration=60000",
+            "1-60",
+            NOW + timedelta(seconds=5),
+            NOW + timedelta(seconds=65),
+        )
+
+        assert graphic.timed_url() == "https://example.com/graphics/?duration=60000"
+
+    def test_a_graphic_cued_late_asks_for_what_is_left(self):
+        graphic = items.Graphic(
+            "https://example.com/graphics/?duration=7200000&unavailable=Ukeslutt",
+            "1-60",
+            NOW - timedelta(hours=1, minutes=30),
+            NOW + timedelta(minutes=30),
+        )
+
+        assert graphic.timed_url() == (
+            "https://example.com/graphics/?duration=1800000&unavailable=Ukeslutt"
+        )
+
+    def test_a_url_without_a_duration_is_left_alone(self):
+        graphic = items.Graphic("https://example.com/x/", "1-60", NOW, NOW + timedelta(seconds=30))
+
+        assert graphic.timed_url() == "https://example.com/x/"
+
     def test_repr_includes_time_range_and_duration(self):
         graphic = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=30))
 

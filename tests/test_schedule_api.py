@@ -3,7 +3,7 @@ from http import HTTPStatus
 
 import pytest
 
-from frikanalen_django_api_client.models import PaginatedScheduleitemReadList
+from frikanalen_django_api_client.models import PaginatedScheduleitemReadList, ScheduleitemRead
 from frikanalen_django_api_client.types import UNSET
 from playout_lib import schedule_api
 from playout_lib.schedule_api import ScheduleFetcher
@@ -86,14 +86,14 @@ class TestGetSchedule:
         with pytest.raises(RuntimeError):
             await ScheduleFetcher(client=None).get_schedule()
 
-    async def test_raises_when_results_are_empty(self, monkeypatch):
+    async def test_an_empty_schedule_is_an_empty_list(self, monkeypatch):
+        # Unprogrammed time airs graphics, so nothing scheduled is no error.
         async def fake_call(**kwargs):
             return make_response(page([]))
 
         monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
 
-        with pytest.raises(RuntimeError):
-            await ScheduleFetcher(client=None).get_schedule()
+        assert await ScheduleFetcher(client=None).get_schedule() == []
 
     async def test_passes_date_days_and_surrounding_through(self, monkeypatch):
         captured = {}
@@ -143,3 +143,28 @@ class TestGetSchedule:
         await ScheduleFetcher(client=None).get_schedule()
 
         assert captured["date"] is UNSET
+
+
+class TestScheduleitemShape:
+    """Playout must not depend on fields the scheduling refactor removes."""
+
+    ITEM = {
+        "id": 1,
+        "defaultName": "",
+        "video": None,
+        "schedulereason": 1,
+        "starttime": "2026-01-01T10:00:00+01:00",
+        "endtime": "2026-01-01T10:30:00+01:00",
+        "duration": "00:30:00",
+        "liveTransmission": None,
+    }
+
+    def test_parses_an_item_without_displaceable_or_weekly_slot(self):
+        item = ScheduleitemRead.from_dict(dict(self.ITEM, grant=7))
+
+        assert item.endtime == datetime.datetime.fromisoformat("2026-01-01T10:30:00+01:00")
+
+    def test_still_parses_the_old_shape(self):
+        item = ScheduleitemRead.from_dict(dict(self.ITEM, displaceable=False, weeklySlot=None))
+
+        assert item.id == 1

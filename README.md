@@ -37,6 +37,25 @@ against the running tasks: an unchanged booking keeps playing, a new one is
 added, and one that moved or was removed is cancelled. The item on air is kept
 and only its end time moves, unless it was replaced by something else.
 
+### Unprogrammed time
+
+The schedule has real holes: nothing fills the time between programmes, so
+playout does. Every stretch with nothing scheduled shows the broadcast
+graphics (`GRAPHICS_URL?duration=<ms>`) on the graphics layer: between
+programmes, before the first, after the last, and the whole day when nothing
+is scheduled at all. A graphic with nothing after it runs to two days past
+the start of today, and the next load moves its end once something is
+booked. Gaps under 30 seconds loop the filler reel instead. A graphic cued
+late, after a restart say, is told only the time that is left.
+
+A scheduled video with no file yet (an entry listed before its upload) gets
+a notice for the length of its slot instead:
+`GRAPHICS_URL?duration=<ms>&unavailable=<title>`, on its own layer
+(`1-58`), so it can sit right next to a gap graphic. Back-to-back missing
+programmes share one notice with an empty title. A video whose details could
+not be fetched is tried anyway. When the file arrives, the next load swaps
+the notice for the video.
+
 ### Live transmissions
 
 A schedule item with a `liveTransmission` plays its MediaMTX source,

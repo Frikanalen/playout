@@ -5,7 +5,7 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from playout_lib import api
-from playout_lib.items import FillerLoop, Graphic
+from playout_lib.items import FillerLoop, Graphic, ProgrammeUnavailable
 from playout_lib.live import LiveTransmission
 from playout_lib.video import PrerecordedVideo
 
@@ -40,6 +40,17 @@ def install_video_details(monkeypatch, videos_by_id, calls=None):
         return videos_by_id.get(video_id)
 
     monkeypatch.setattr(api, "get_video_details", fake_get_video_details)
+
+
+@pytest.fixture(autouse=True)
+def today(monkeypatch):
+    """Load the schedule as if it were 1 January, the day the tests book."""
+    monkeypatch.setattr(api, "localtime", lambda: at(0))
+
+
+def between(schedule, start, end):
+    """The items that start inside [start, end)."""
+    return [i for i in schedule if start <= i.start_time < end]
 
 
 @pytest.fixture(autouse=True)
@@ -90,7 +101,7 @@ class TestLoadSchedule:
 
         schedule = await api.load_schedule()
 
-        graphics = [i for i in schedule if isinstance(i, Graphic)]
+        graphics = [i for i in between(schedule, at(0), at(65)) if isinstance(i, Graphic)]
         assert len(graphics) == 1
         assert graphics[0].start_time == at(30)
         assert graphics[0].end_time == at(35)
@@ -111,7 +122,7 @@ class TestLoadSchedule:
 
         schedule = await api.load_schedule()
 
-        graphic = next(i for i in schedule if isinstance(i, Graphic))
+        graphic = next(i for i in between(schedule, at(0), at(65)) if isinstance(i, Graphic))
         assert graphic.url == "https://staging.frikanalen.tv/graphics/?duration=300000"
 
     async def test_uses_filler_loop_for_gaps_under_30_seconds(self, monkeypatch):
@@ -128,11 +139,12 @@ class TestLoadSchedule:
 
         schedule = await api.load_schedule()
 
-        fillers = [i for i in schedule if isinstance(i, FillerLoop)]
+        middle = between(schedule, at(0), at(65))
+        fillers = [i for i in middle if isinstance(i, FillerLoop)]
         assert len(fillers) == 1
         assert fillers[0].start_time == at(30)
         assert fillers[0].end_time == at(30) + timedelta(seconds=20)
-        assert not any(isinstance(i, Graphic) for i in schedule)
+        assert not any(isinstance(i, Graphic) for i in middle)
 
     async def test_uses_graphic_for_gap_of_exactly_30_seconds(self, monkeypatch):
         items = [
@@ -200,7 +212,7 @@ class TestLiveTransmissions:
         install_fetcher(monkeypatch, items)
         install_video_details(monkeypatch, {})
 
-        schedule = await api.load_schedule()
+        schedule = between(await api.load_schedule(), at(0), at(30))
 
         assert len(schedule) == 1
         assert isinstance(schedule[0], LiveTransmission)
@@ -229,7 +241,7 @@ class TestLiveTransmissions:
         install_fetcher(monkeypatch, items)
         install_video_details(monkeypatch, {2: make_video(2, broadcast="v.mp4")})
 
-        schedule = await api.load_schedule()
+        schedule = between(await api.load_schedule(), at(0), at(65))
 
         assert [type(i) for i in schedule] == [LiveTransmission, Graphic, PrerecordedVideo]
 
@@ -241,7 +253,7 @@ class TestLiveTransmissions:
 
         schedule = await api.load_schedule()
 
-        assert [i.video_id for i in schedule] == [2]
+        assert [i.video_id for i in schedule if hasattr(i, "video_id")] == [2]
 
 
 class TestLoudnessRecords:
@@ -267,3 +279,128 @@ class TestLoudnessRecords:
         video_item = next(i for i in schedule if hasattr(i, "video_id"))
         assert video_item.filename == "video1.mp4"
         assert video_item.gain_db is None
+
+
+MIDNIGHT = datetime(2026, 1, 1, tzinfo=TZ)
+
+
+class TestUnprogrammedTime:
+    """Graphics cover everything the schedule leaves empty."""
+
+    async def test_a_day_with_nothing_scheduled_is_all_graphics(self, monkeypatch):
+        install_fetcher(monkeypatch, [])
+        install_video_details(monkeypatch, {})
+
+        schedule = await api.load_schedule()
+
+        assert len(schedule) == 1
+        assert isinstance(schedule[0], Graphic)
+        assert schedule[0].start_time == MIDNIGHT
+        assert schedule[0].end_time == MIDNIGHT + api.LOOKAHEAD
+
+    async def test_graphics_before_the_first_and_after_the_last_programme(self, monkeypatch):
+        install_fetcher(monkeypatch, [make_scheduleitem(1, 1, at(0), at(30))])
+        install_video_details(monkeypatch, {1: make_video(1, broadcast="v.mp4")})
+
+        schedule = await api.load_schedule()
+
+        assert [type(i) for i in schedule] == [Graphic, PrerecordedVideo, Graphic]
+        assert (schedule[0].start_time, schedule[0].end_time) == (MIDNIGHT, at(0))
+        assert (schedule[2].start_time, schedule[2].end_time) == (at(30), MIDNIGHT + api.LOOKAHEAD)
+
+    async def test_the_gap_after_yesterdays_last_programme_starts_where_it_ended(self, monkeypatch):
+        # The item before today comes along, so the overnight graphic keeps
+        # its start across the midnight reload and stays on air.
+        yesterday = make_scheduleitem(1, 1, at(-14 * 60), at(-13 * 60))
+        install_fetcher(monkeypatch, [yesterday, make_scheduleitem(2, 2, at(0), at(30))])
+        install_video_details(
+            monkeypatch,
+            {1: make_video(1, broadcast="a.mp4"), 2: make_video(2, broadcast="b.mp4")},
+        )
+
+        schedule = await api.load_schedule()
+
+        overnight = schedule[1]
+        assert isinstance(overnight, Graphic)
+        assert (overnight.start_time, overnight.end_time) == (at(-13 * 60), at(0))
+
+    async def test_back_to_back_programmes_leave_no_gap(self, monkeypatch):
+        install_fetcher(
+            monkeypatch,
+            [make_scheduleitem(1, 1, at(0), at(30)), make_scheduleitem(2, 2, at(30), at(60))],
+        )
+        install_video_details(
+            monkeypatch,
+            {1: make_video(1, broadcast="a.mp4"), 2: make_video(2, broadcast="b.mp4")},
+        )
+
+        schedule = between(await api.load_schedule(), at(0), at(60))
+
+        assert [type(i) for i in schedule] == [PrerecordedVideo, PrerecordedVideo]
+
+
+class TestMissingFiles:
+    """A listed video whose file never arrived airs a notice for its slot."""
+
+    async def test_a_video_without_a_file_shows_a_notice(self, monkeypatch):
+        install_fetcher(monkeypatch, [make_scheduleitem(1, 1, at(0), at(30))])
+        install_video_details(monkeypatch, {1: make_video(1)})
+
+        schedule = between(await api.load_schedule(), at(0), at(30))
+
+        assert len(schedule) == 1
+        notice = schedule[0]
+        assert isinstance(notice, ProgrammeUnavailable)
+        assert notice.layer == api.NOTICE_LAYER
+        assert (notice.start_time, notice.end_time) == (at(0), at(30))
+        assert (
+            notice.url == "https://frikanalen.tv/graphics/?duration=1800000&unavailable=Test+Video"
+        )
+
+    async def test_unknown_files_are_tried_rather_than_given_up(self, monkeypatch):
+        # Details that failed to load say nothing about the file.
+        install_fetcher(monkeypatch, [make_scheduleitem(1, 1, at(0), at(30))])
+        install_video_details(monkeypatch, {})
+
+        schedule = between(await api.load_schedule(), at(0), at(30))
+
+        assert [type(i) for i in schedule] == [PrerecordedVideo]
+
+    async def test_a_file_in_the_records_counts(self, monkeypatch):
+        install_fetcher(monkeypatch, [make_scheduleitem(1, 1, at(0), at(30))])
+        install_video_details(monkeypatch, {1: make_video(1)})
+        install_file_records(monkeypatch, {1: make_video_file_records(broadcast=(-23.0, -3.0))})
+
+        schedule = between(await api.load_schedule(), at(0), at(30))
+
+        assert [type(i) for i in schedule] == [PrerecordedVideo]
+
+    async def test_back_to_back_missing_programmes_share_one_notice(self, monkeypatch):
+        install_fetcher(
+            monkeypatch,
+            [
+                make_scheduleitem(1, 1, at(0), at(30)),
+                make_scheduleitem(2, 2, at(30), at(60)),
+                make_scheduleitem(3, 3, at(60), at(90)),
+            ],
+        )
+        install_video_details(monkeypatch, {n: make_video(n) for n in (1, 2, 3)})
+
+        schedule = between(await api.load_schedule(), at(0), at(90))
+
+        assert len(schedule) == 1
+        assert isinstance(schedule[0], ProgrammeUnavailable)
+        assert schedule[0].end_time == at(90)
+        assert schedule[0].url.endswith("duration=5400000&unavailable=")
+
+    async def test_gaps_around_a_notice_get_graphics(self, monkeypatch):
+        install_fetcher(
+            monkeypatch,
+            [make_scheduleitem(1, 1, at(0), at(30)), make_scheduleitem(2, 2, at(35), at(65))],
+        )
+        install_video_details(monkeypatch, {1: make_video(1, broadcast="a.mp4"), 2: make_video(2)})
+
+        schedule = between(await api.load_schedule(), at(0), at(65))
+
+        assert [type(i) for i in schedule] == [PrerecordedVideo, Graphic, ProgrammeUnavailable]
+        assert schedule[1].layer != schedule[2].layer
