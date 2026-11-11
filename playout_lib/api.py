@@ -43,9 +43,9 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
     async with client:
         schedule_items = await fetcher.get_schedule(date="today", days=1, surrounding=True)
 
-        # A live slot plays its source, not its video, so it needs no files
+        # A live airing plays its video's source, not a file, so it needs no files
         video_ids = list(
-            {item.video.id for item in schedule_items if item.video and not item.live_transmission}
+            {item.video.id for item in schedule_items if item.video and not item.live_source}
         )
 
         # Fetch full video details (including files and framerate) for all videos in
@@ -80,10 +80,10 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
 
     # Convert API items to PrerecordedVideo instances with pre-fetched details
     for item in schedule_items:
-        if item.live_transmission:
+        if item.live_source:
             schedule.append(
                 LiveTransmission(
-                    item.live_transmission.stream_id, VIDEO_LAYER, item.starttime, item.endtime
+                    item.live_source.stream_id, VIDEO_LAYER, item.starttime, item.endtime
                 )
             )
             continue
