@@ -7,6 +7,8 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import pytz
 from loguru import logger
 
+from .config import FILLER_MUSIC, FILLER_MUSIC_VOLUME
+
 
 def localtime():
     """Get current time in Oslo timezone."""
@@ -95,6 +97,7 @@ class Graphic(PlannedItem):
     def __init__(self, url, layer, start_time, end_time):
         super().__init__(layer, start_time, end_time)
         self.has_been_prepared = False
+        self.music_preloaded = False
         self.url = url
 
     def timed_url(self):
@@ -112,6 +115,32 @@ class Graphic(PlannedItem):
         query = [(k, str(duration_ms) if k == "duration" else v) for k, v in query]
         return urlunsplit(parts._replace(query=urlencode(query)))
 
+    @property
+    def music_layer(self):
+        """The music's sub-layer, next to the template's ("1-601" for "1-60").
+
+        Each graphic has its own, so a notice and a gap graphic back to back
+        can't stop each other's music at the handover.
+        """
+        return f"{self.layer}2"
+
+    async def _start_music(self, preloaded):
+        """Loop the filler music, with the filler reel's own sound muted."""
+        from .caspar_player import current_player
+
+        if not FILLER_MUSIC:
+            return
+        await current_player.issue(f"MIXER {self.layer} VOLUME 0")
+        await current_player.issue(f"MIXER {self.music_layer} VOLUME {FILLER_MUSIC_VOLUME:.4f}")
+        try:
+            if preloaded:
+                await current_player.issue(f"PLAY {self.music_layer}")
+            else:
+                await current_player.issue(f"PLAY {self.music_layer} {FILLER_MUSIC} LOOP")
+        except ValueError:
+            # A missing file must not take the graphic off air with it.
+            logger.exception(f"CasparCG can't play the filler music {FILLER_MUSIC}")
+
     async def cue(self):
         """Start displaying the graphic."""
         from .caspar_player import current_player
@@ -123,40 +152,52 @@ class Graphic(PlannedItem):
             else:
                 await current_player.issue(f'CG {self.layer}1 ADD 0 "{self.timed_url()}" 1')
                 await current_player.issue(f"PLAY {self.layer}")
+            await self._start_music(preloaded=self.music_preloaded)
 
             # If we have time for it, do a nice and steady fade to black
             # two seconds before the next programme, just like the old
-            # NRK clock used to do it! ^_^
+            # NRK clock used to do it! ^_^ The music fades out with it.
             if self._seconds_left() >= 5.0:
                 await self._wait_until_end(margin=2.0)
                 await current_player.issue(f"MIXER {self.layer}1 OPACITY 0 50 easeinsine")
                 await current_player.issue(f"MIXER {self.layer} OPACITY 0 50 easeinsine")
+                if FILLER_MUSIC:
+                    await current_player.issue(f"MIXER {self.music_layer} VOLUME 0 50 easeinsine")
 
             await self._completion()
             await self.clear()
-            await current_player.issue(f"MIXER {self.layer}1 CLEAR")
-            await current_player.issue(f"MIXER {self.layer} CLEAR")
 
         except asyncio.CancelledError:
             await self.clear()
 
     async def clear(self):
-        """Clear the graphic and reset mixer settings."""
+        """Clear the graphic and its music, and reset mixer settings."""
         from .caspar_player import current_player
 
         await current_player.issue(f"CLEAR {self.layer}")
         await current_player.issue(f"CG {self.layer}1 CLEAR")
         await current_player.issue(f"MIXER {self.layer}1 CLEAR")
         await current_player.issue(f"MIXER {self.layer} CLEAR")
+        if FILLER_MUSIC:
+            await current_player.issue(f"CLEAR {self.music_layer}")
+            await current_player.issue(f"MIXER {self.music_layer} CLEAR")
 
     async def prepare(self):
-        """Preload the graphic into CasparCG."""
+        """Preload the graphic and its music into CasparCG."""
         from .caspar_player import current_player
 
         try:
             await current_player.issue(f'CG {self.layer}1 ADD 0 "{self.timed_url()}" 0')
             await current_player.issue(f"LOADBG {self.layer} filler/FrikanalenLoop loop 0")
             self.has_been_prepared = True
+            if FILLER_MUSIC:
+                try:
+                    await current_player.issue(f"LOADBG {self.music_layer} {FILLER_MUSIC} LOOP")
+                except ValueError:
+                    logger.exception(f"CasparCG can't load the filler music {FILLER_MUSIC}")
+                    self.music_preloaded = False
+                else:
+                    self.music_preloaded = True
         except asyncio.CancelledError:
             pass
 
