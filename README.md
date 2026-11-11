@@ -54,7 +54,9 @@ a notice for the length of its slot instead:
 (`1-58`), so it can sit right next to a gap graphic. Back-to-back missing
 programmes share one notice with an empty title. A video whose details could
 not be fetched is tried anyway. When the file arrives, the next load swaps
-the notice for the video.
+the notice for the video. A video CasparCG can't play (`404` when the
+file isn't where it looks) shows the same notice for the rest of its slot,
+instead of leaving whatever was on air.
 
 ### Live transmissions
 
