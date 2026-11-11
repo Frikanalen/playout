@@ -17,6 +17,14 @@ CHANNELBUG_LAYER = "1-100"
 CHANNELBUG = "stills/screenbug"
 CHANNELBUG_LIVE = "stills/screenbug_live"
 
+# Music looped under the graphics, as CasparCG names it in its media path
+# (/mnt/media, file01's /archive/media), on the sub-layer above the graphic's
+# template. Empty plays the graphics silent. The graphics template credits it.
+FILLER_MUSIC = os.environ.get("FILLER_MUSIC", "filler/deep_relaxation")
+# Linear gain for the music. It has not been loudness-measured like
+# programmes have, so this is set by ear against the programmes either side.
+FILLER_MUSIC_VOLUME = float(os.environ.get("FILLER_MUSIC_VOLUME", "1.0"))
+
 # API endpoints
 API_URL = os.environ.get("API_URL", "https://frikanalen.tv/")
 GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.tv/graphics/")

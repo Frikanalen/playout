@@ -72,6 +72,78 @@ class TestGraphic:
 
         assert "30.0s" in repr(graphic)
 
+    @staticmethod
+    def _record(monkeypatch, fail_on=()):
+        issued = []
+
+        # The clock is frozen, so let every graphic end as soon as it waits.
+        async def ends_now(self, margin=0.0):
+            pass
+
+        monkeypatch.setattr(items.PlannedItem, "_wait_until_end", ends_now)
+
+        async def fake_issue(cmd):
+            issued.append(cmd)
+            if any(cmd.startswith(prefix) for prefix in fail_on):
+                raise ValueError("CasparCG command failed: 404 PLAY FAILED")
+
+        monkeypatch.setattr(caspar_player.current_player, "issue", fake_issue)
+        return issued
+
+    async def test_a_prepared_graphic_loops_the_music_and_stops_it_at_the_end(self, monkeypatch):
+        issued = self._record(monkeypatch)
+        graphic = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=3))
+
+        # Item.__init__ shadows prepare() with None, so call it off the class.
+        await items.Graphic.prepare(graphic)
+        await graphic.cue()
+
+        assert "LOADBG 1-602 filler/deep_relaxation LOOP" in issued
+        assert "MIXER 1-60 VOLUME 0" in issued
+        assert "MIXER 1-602 VOLUME 1.0000" in issued
+        assert issued.index("PLAY 1-602") > issued.index("CG 1-601 PLAY 0")
+        assert issued[-2:] == ["CLEAR 1-602", "MIXER 1-602 CLEAR"]
+
+    async def test_a_graphic_cued_unprepared_plays_the_music_by_name(self, monkeypatch):
+        issued = self._record(monkeypatch)
+        graphic = items.Graphic("url", "1-58", NOW, NOW + timedelta(seconds=3))
+
+        await graphic.cue()
+
+        assert "PLAY 1-582 filler/deep_relaxation LOOP" in issued
+        assert "CLEAR 1-582" in issued
+
+    async def test_the_music_fades_out_with_the_graphic(self, monkeypatch):
+        issued = self._record(monkeypatch)
+        graphic = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=10))
+
+        await graphic.cue()
+
+        assert "MIXER 1-602 VOLUME 0 50 easeinsine" in issued
+
+    async def test_missing_music_leaves_the_graphic_on_air(self, monkeypatch):
+        issued = self._record(monkeypatch, fail_on=("LOADBG 1-602", "PLAY 1-602"))
+        graphic = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=3))
+
+        # Item.__init__ shadows prepare() with None, so call it off the class.
+        await items.Graphic.prepare(graphic)
+        await graphic.cue()
+
+        assert graphic.has_been_prepared is True
+        assert "CG 1-601 PLAY 0" in issued
+        assert "PLAY 1-602 filler/deep_relaxation LOOP" in issued
+
+    async def test_no_music_configured_plays_the_graphic_silent(self, monkeypatch):
+        issued = self._record(monkeypatch)
+        monkeypatch.setattr(items, "FILLER_MUSIC", "")
+        graphic = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=3))
+
+        # Item.__init__ shadows prepare() with None, so call it off the class.
+        await items.Graphic.prepare(graphic)
+        await graphic.cue()
+
+        assert not any("1-602" in cmd or "VOLUME" in cmd for cmd in issued)
+
 
 class TestFillerLoop:
     def test_repr_includes_time_range_and_duration(self):
