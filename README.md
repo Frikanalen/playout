@@ -60,8 +60,10 @@ instead of leaving whatever was on air.
 
 ### Live transmissions
 
-A schedule item with a `liveTransmission` plays its MediaMTX source,
-`contrib/live/<stream UUID>`, instead of a video file. CasparCG reads it from
+A live programme is a video with a live source. A schedule item that airs it
+live (`isLive`, with the video's `liveSource`) plays the MediaMTX source,
+`contrib/live/<stream UUID>`, instead of a video file; once the video has a
+file, later airings play the file. CasparCG reads it from
 `LIVE_INPUT_URL` (for example `rtsp://192.0.2.10:8554`), so that address must
 be reachable from the CasparCG host, not just from the playout pod.
 

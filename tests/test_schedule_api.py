@@ -146,33 +146,32 @@ class TestGetSchedule:
 
 
 class TestScheduleitemShape:
-    """Playout must not depend on fields the scheduling refactor removes."""
+    """The schedule item as the API sends it since live moved onto videos."""
 
     ITEM = {
         "id": 1,
         "defaultName": "",
         "video": None,
-        "schedulereason": 1,
+        "schedulereason": None,
         "starttime": "2026-01-01T10:00:00+01:00",
         "endtime": "2026-01-01T10:30:00+01:00",
         "duration": "00:30:00",
-        "liveTransmission": None,
+        "grant": 7,
+        "isLive": False,
+        "liveSource": None,
     }
 
-    def test_parses_an_item_without_displaceable_or_weekly_slot(self):
-        item = ScheduleitemRead.from_dict(dict(self.ITEM, grant=7))
+    def test_parses_a_compiled_item(self):
+        item = ScheduleitemRead.from_dict(self.ITEM)
 
         assert item.endtime == datetime.datetime.fromisoformat("2026-01-01T10:30:00+01:00")
+        assert item.live_source is None
 
-    def test_parses_a_compiled_item_with_no_schedule_reason(self):
-        # Rows the grant compiler writes carry no schedulereason.
+    def test_parses_a_live_airing_with_its_source(self):
+        stream_id = "1b4e28ba-2fa1-11d2-883f-0016d3cca427"
         item = ScheduleitemRead.from_dict(
-            dict(self.ITEM, schedulereason=None, displaceable=False, weeklySlot=None, grant=7)
+            dict(self.ITEM, isLive=True, liveSource={"id": 3, "streamId": stream_id})
         )
 
-        assert item.endtime == datetime.datetime.fromisoformat("2026-01-01T10:30:00+01:00")
-
-    def test_still_parses_the_old_shape(self):
-        item = ScheduleitemRead.from_dict(dict(self.ITEM, displaceable=False, weeklySlot=None))
-
-        assert item.id == 1
+        assert item.is_live
+        assert str(item.live_source.stream_id) == stream_id
