@@ -51,7 +51,12 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
         # Fetch full video details (including files and framerate) for all videos in
         # parallel, along with the file records that carry the loudness measurements
         logger.info(f"Fetching video details for {len(video_ids)} videos")
-        video_details_task = asyncio.gather(*[get_video_details(vid, client) for vid in video_ids])
+        video_details_task = asyncio.gather(
+            *[get_video_details(vid, client) for vid in video_ids],
+            # One video playout can't read must not cost the whole schedule:
+            # it is tried anyway from its file records, or shows the notice.
+            return_exceptions=True,
+        )
         file_records_task = asyncio.gather(
             *[get_video_file_records(vid, client) for vid in video_ids],
             # Loudness is a nicety; never let a failed lookup take the channel
@@ -63,7 +68,13 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
         )
 
         # Create mapping of video_id -> Video object
-        video_details_map = dict(zip(video_ids, video_details_results, strict=True))
+        video_details_map = {}
+        for vid, result in zip(video_ids, video_details_results, strict=True):
+            if isinstance(result, BaseException):
+                logger.error(f"Could not read details of video {vid} ({result!r})")
+                video_details_map[vid] = None
+            else:
+                video_details_map[vid] = result
 
         file_records_map = {}
         for vid, result in zip(video_ids, file_records_results, strict=True):

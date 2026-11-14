@@ -203,6 +203,23 @@ class TestLoadSchedule:
         video_items = [i for i in schedule if hasattr(i, "video_id")]
         assert video_items[0].framerate == 25.0  # 25000 / 1000 default
 
+    async def test_one_unreadable_video_does_not_sink_the_schedule(self, monkeypatch):
+        items = [make_scheduleitem(1, 1, at(0), at(30)), make_scheduleitem(2, 2, at(30), at(60))]
+        install_fetcher(monkeypatch, items)
+
+        async def fake_get_video_details(video_id, client):
+            if video_id == 1:
+                raise ValueError("'hls' is not a valid VideoFileVariantEnum")
+            return make_video(video_id, broadcast=f"video{video_id}.mp4")
+
+        monkeypatch.setattr(api, "get_video_details", fake_get_video_details)
+
+        schedule = await api.load_schedule()
+
+        videos = {i.video_id: i for i in schedule if isinstance(i, PrerecordedVideo)}
+        assert set(videos) == {1, 2}
+        assert videos[2].filename == "video2.mp4"
+
 
 class TestLiveTransmissions:
     STREAM_ID = UUID("6f1c2d6e-8a1b-4c3d-9e2f-0a1b2c3d4e5f")
