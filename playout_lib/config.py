@@ -10,6 +10,9 @@ GRAPHICS_LAYER = "1-60"
 # its own layer: it can sit right next to a gap graphic, and two graphics on
 # one layer would clear each other at the handover.
 NOTICE_LAYER = "1-58"
+# Members' text posters. Two layers, taken in turn by posters back to
+# back, so one clearing at its end can't take the next one with it.
+POSTER_LAYERS = ("1-56", "1-57")
 CHANNELBUG_LAYER = "1-100"
 
 # Stills CasparCG keeps on CHANNELBUG_LAYER: the channel bug, and the same

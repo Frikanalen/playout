@@ -6,6 +6,7 @@ from http import HTTPStatus
 from frikanalen_django_api_client.models import (
     ScheduleitemLiveSource,
     ScheduleitemOrganization,
+    ScheduleitemPoster,
     ScheduleitemRead,
     ScheduleitemVideo,
     SchedulereasonEnum,
@@ -36,6 +37,7 @@ def make_scheduleitem(item_id, video_id, start_time, end_time, live_stream_id=No
         id=item_id,
         default_name="Test Video",
         video=make_scheduleitem_video(video_id),
+        poster=None,
         schedulereason=SchedulereasonEnum.VALUE_3,
         starttime=start_time,
         endtime=end_time,
@@ -45,6 +47,32 @@ def make_scheduleitem(item_id, video_id, start_time, end_time, live_stream_id=No
         live_source=(
             ScheduleitemLiveSource(id=1, stream_id=live_stream_id) if live_stream_id else None
         ),
+    )
+
+
+def make_poster_item(
+    item_id, start_time, end_time, heading="Neste: debatt", text="Klokka 20.", template="standard"
+):
+    """A schedule item for a member's text poster."""
+    return ScheduleitemRead(
+        id=item_id,
+        default_name="",
+        video=None,
+        poster=ScheduleitemPoster(
+            id=item_id,
+            template=template,
+            heading=heading,
+            text=text,
+            organization=make_org(),
+            updated_at=datetime(2026, 1, 1, tzinfo=UTC),
+        ),
+        schedulereason=None,
+        starttime=start_time,
+        endtime=end_time,
+        duration="00:00:30",
+        grant=7,
+        is_live=False,
+        live_source=None,
     )
 
 

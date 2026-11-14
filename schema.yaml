@@ -6989,6 +6989,639 @@ paths:
           description: The entity has been deleted from the register.
         '503':
           description: Enhetsregisteret did not answer.
+  /api/posters:
+    get:
+      operationId: posters_list
+      description: |-
+        Text posters: a heading and a few lines of text on one of the on-air
+        graphics templates, which an organization lists in its airtime like a
+        video. Members see and edit their organizations' posters; staff see
+        every one.
+      parameters:
+      - name: limit
+        required: false
+        in: query
+        description: Number of results to return per page.
+        schema:
+          type: integer
+      - name: offset
+        required: false
+        in: query
+        description: The initial index from which to return the results.
+        schema:
+          type: integer
+      - name: ordering
+        required: false
+        in: query
+        description: Which field to use when ordering the results.
+        schema:
+          type: string
+      - in: query
+        name: organization
+        schema:
+          type: integer
+      tags:
+      - posters
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostersListErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PaginatedPosterList'
+          description: ''
+    post:
+      operationId: posters_create
+      description: |-
+        Text posters: a heading and a few lines of text on one of the on-air
+        graphics templates, which an organization lists in its airtime like a
+        video. Members see and edit their organizations' posters; staff see
+        every one.
+      tags:
+      - posters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PosterRequest'
+        required: true
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostersCreateErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '201':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poster'
+          description: ''
+  /api/posters/{id}:
+    get:
+      operationId: posters_retrieve
+      description: |-
+        Text posters: a heading and a few lines of text on one of the on-air
+        graphics templates, which an organization lists in its airtime like a
+        video. Members see and edit their organizations' posters; staff see
+        every one.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this poster.
+        required: true
+      tags:
+      - posters
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostersRetrieveErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poster'
+          description: ''
+    patch:
+      operationId: posters_partial_update
+      description: |-
+        Text posters: a heading and a few lines of text on one of the on-air
+        graphics templates, which an organization lists in its airtime like a
+        video. Members see and edit their organizations' posters; staff see
+        every one.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this poster.
+        required: true
+      tags:
+      - posters
+      requestBody:
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/PatchedPosterUpdateRequest'
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostersPartialUpdateErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '200':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/Poster'
+          description: ''
+    delete:
+      operationId: posters_destroy
+      description: |-
+        Text posters: a heading and a few lines of text on one of the on-air
+        graphics templates, which an organization lists in its airtime like a
+        video. Members see and edit their organizations' posters; staff see
+        every one.
+      parameters:
+      - in: path
+        name: id
+        schema:
+          type: integer
+        description: A unique integer value identifying this poster.
+        required: true
+      tags:
+      - posters
+      security:
+      - tokenAuth: []
+      - cookieAuth: []
+      responses:
+        '400':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PostersDestroyErrorResponse400'
+          description: ''
+        '401':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse401'
+              examples:
+                AuthenticationFailed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: authentication_failed
+                      detail: Incorrect authentication credentials.
+                      attr: null
+                NotAuthenticated:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_authenticated
+                      detail: Authentication credentials were not provided.
+                      attr: null
+          description: ''
+        '404':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse404'
+              examples:
+                NotFound:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_found
+                      detail: Not found.
+                      attr: null
+          description: ''
+        '405':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse405'
+              examples:
+                MethodNotAllowed:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: method_not_allowed
+                      detail: Method "get" not allowed.
+                      attr: null
+          description: ''
+        '406':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse406'
+              examples:
+                NotAcceptable:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: not_acceptable
+                      detail: Could not satisfy the request Accept header.
+                      attr: null
+          description: ''
+        '415':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse415'
+              examples:
+                UnsupportedMediaType:
+                  value:
+                    type: client_error
+                    errors:
+                    - code: unsupported_media_type
+                      detail: Unsupported media type "application/json" in request.
+                      attr: null
+          description: ''
+        '500':
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse500'
+              examples:
+                APIException:
+                  value:
+                    type: server_error
+                    errors:
+                    - code: error
+                      detail: A server error occurred.
+                      attr: null
+          description: ''
+        '204':
+          description: No response body
   /api/recurring-slot-requests:
     get:
       operationId: recurring_slot_requests_list
@@ -8493,6 +9126,8 @@ paths:
 
         `surrounding`: Include event before and after the window.
 
+        `include_posters`: Include members' text posters (for playout).
+
         `ordering`: Field to order by. Prefix '-' for desc. Defaults to 'starttime'.
       parameters:
       - in: query
@@ -8504,6 +9139,12 @@ paths:
         name: days
         schema:
           type: number
+      - in: query
+        name: include_posters
+        schema:
+          type: boolean
+        description: 'Include members'' text posters, which playout airs in the gaps
+          between programmes. Left out by default: they are not programmes.'
       - name: limit
         required: false
         in: query
@@ -8664,6 +9305,8 @@ paths:
 
         `surrounding`: Include event before and after the window.
 
+        `include_posters`: Include members' text posters (for playout).
+
         `ordering`: Field to order by. Prefix '-' for desc. Defaults to 'starttime'.
       tags:
       - scheduleitems
@@ -8810,6 +9453,8 @@ paths:
 
         `surrounding`: Include event before and after the window.
 
+        `include_posters`: Include members' text posters (for playout).
+
         `ordering`: Field to order by. Prefix '-' for desc. Defaults to 'starttime'.
       parameters:
       - in: path
@@ -8955,6 +9600,8 @@ paths:
         `days`: Number of days. Defaults to 1.
 
         `surrounding`: Include event before and after the window.
+
+        `include_posters`: Include members' text posters (for playout).
 
         `ordering`: Field to order by. Prefix '-' for desc. Defaults to 'starttime'.
       parameters:
@@ -9108,6 +9755,8 @@ paths:
 
         `surrounding`: Include event before and after the window.
 
+        `include_posters`: Include members' text posters (for playout).
+
         `ordering`: Field to order by. Prefix '-' for desc. Defaults to 'starttime'.
       parameters:
       - in: path
@@ -9258,6 +9907,8 @@ paths:
         `days`: Number of days. Defaults to 1.
 
         `surrounding`: Include event before and after the window.
+
+        `include_posters`: Include members' text posters (for playout).
 
         `ordering`: Field to order by. Prefix '-' for desc. Defaults to 'starttime'.
       parameters:
@@ -17447,6 +18098,14 @@ components:
         itemsDuration:
           type: string
           readOnly: true
+          description: From the grant's start to the end of the list, with the gaps
+            that start each programme on the five-minute grid.
+        padded:
+          type: boolean
+          readOnly: true
+          description: Whether programmes start on the five-minute grid, at least
+            30 s after the programme before. Posters follow whatever is before them.
+            False for a jukebox grant, which plays back to back.
         canEdit:
           type: boolean
           description: Whether the requesting user may replace the list right now.
@@ -17461,6 +18120,7 @@ components:
       - locksAt
       - organization
       - originSlot
+      - padded
       - recipe
       - starttime
       - state
@@ -19508,6 +20168,13 @@ components:
           allOf:
           - $ref: '#/components/schemas/GrantItemVideo'
           readOnly: true
+          nullable: true
+        poster:
+          allOf:
+          - $ref: '#/components/schemas/GrantItemPoster'
+          readOnly: true
+          nullable: true
+          description: Set instead of `video` for a text poster.
         pinned:
           type: boolean
           readOnly: true
@@ -19516,6 +20183,7 @@ components:
       required:
       - pinned
       - position
+      - poster
       - video
     GrantItemLiveSource:
       type: object
@@ -19529,6 +20197,32 @@ components:
       required:
       - id
       - name
+    GrantItemPoster:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        template:
+          allOf:
+          - $ref: '#/components/schemas/TemplateEnum'
+          readOnly: true
+        heading:
+          type: string
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        duration:
+          type: string
+          readOnly: true
+          description: How long it is on screen each time it airs.
+      required:
+      - duration
+      - heading
+      - id
+      - template
+      - text
     GrantItemVideo:
       type: object
       properties:
@@ -19565,11 +20259,12 @@ components:
       - pendingUpload
     GrantItemWriteRequest:
       type: object
+      description: 'A video or a text poster: exactly one of the two.'
       properties:
         video:
           type: integer
-      required:
-      - video
+        poster:
+          type: integer
     GrantItemsWriteRequest:
       type: object
       description: |-
@@ -20182,6 +20877,7 @@ components:
       - $ref: '#/components/schemas/GrantsCreateItemsNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/GrantsCreateItemsINDEXNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/GrantsCreateItemsINDEXVideoErrorComponent'
+      - $ref: '#/components/schemas/GrantsCreateItemsINDEXPosterErrorComponent'
       discriminator:
         propertyName: attr
         mapping:
@@ -20203,6 +20899,7 @@ components:
           items.non_field_errors: '#/components/schemas/GrantsCreateItemsNonFieldErrorsErrorComponent'
           items.INDEX.non_field_errors: '#/components/schemas/GrantsCreateItemsINDEXNonFieldErrorsErrorComponent'
           items.INDEX.video: '#/components/schemas/GrantsCreateItemsINDEXVideoErrorComponent'
+          items.INDEX.poster: '#/components/schemas/GrantsCreateItemsINDEXPosterErrorComponent'
     GrantsCreateErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/GrantsCreateValidationError'
@@ -20234,6 +20931,30 @@ components:
       - attr
       - code
       - detail
+    GrantsCreateItemsINDEXPosterErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - items.INDEX.poster
+          type: string
+          description: '* `items.INDEX.poster` - items.INDEX.poster'
+        code:
+          enum:
+          - does_not_exist
+          - incorrect_type
+          - 'null'
+          type: string
+          description: |-
+            * `does_not_exist` - does_not_exist
+            * `incorrect_type` - incorrect_type
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
     GrantsCreateItemsINDEXVideoErrorComponent:
       type: object
       properties:
@@ -20247,13 +20968,11 @@ components:
           - does_not_exist
           - incorrect_type
           - 'null'
-          - required
           type: string
           description: |-
             * `does_not_exist` - does_not_exist
             * `incorrect_type` - incorrect_type
             * `null` - null
-            * `required` - required
         detail:
           type: string
       required:
@@ -20655,6 +21374,7 @@ components:
       - $ref: '#/components/schemas/GrantsItemsUpdateItemsNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/GrantsItemsUpdateItemsINDEXNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/GrantsItemsUpdateItemsINDEXVideoErrorComponent'
+      - $ref: '#/components/schemas/GrantsItemsUpdateItemsINDEXPosterErrorComponent'
       - $ref: '#/components/schemas/GrantsItemsUpdateAutomaticErrorComponent'
       - $ref: '#/components/schemas/GrantsItemsUpdateRecipeNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/GrantsItemsUpdateRecipeKindErrorComponent'
@@ -20673,6 +21393,7 @@ components:
           items.non_field_errors: '#/components/schemas/GrantsItemsUpdateItemsNonFieldErrorsErrorComponent'
           items.INDEX.non_field_errors: '#/components/schemas/GrantsItemsUpdateItemsINDEXNonFieldErrorsErrorComponent'
           items.INDEX.video: '#/components/schemas/GrantsItemsUpdateItemsINDEXVideoErrorComponent'
+          items.INDEX.poster: '#/components/schemas/GrantsItemsUpdateItemsINDEXPosterErrorComponent'
           automatic: '#/components/schemas/GrantsItemsUpdateAutomaticErrorComponent'
           recipe.non_field_errors: '#/components/schemas/GrantsItemsUpdateRecipeNonFieldErrorsErrorComponent'
           recipe.kind: '#/components/schemas/GrantsItemsUpdateRecipeKindErrorComponent'
@@ -20717,6 +21438,30 @@ components:
       - attr
       - code
       - detail
+    GrantsItemsUpdateItemsINDEXPosterErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - items.INDEX.poster
+          type: string
+          description: '* `items.INDEX.poster` - items.INDEX.poster'
+        code:
+          enum:
+          - does_not_exist
+          - incorrect_type
+          - 'null'
+          type: string
+          description: |-
+            * `does_not_exist` - does_not_exist
+            * `incorrect_type` - incorrect_type
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
     GrantsItemsUpdateItemsINDEXVideoErrorComponent:
       type: object
       properties:
@@ -20730,13 +21475,11 @@ components:
           - does_not_exist
           - incorrect_type
           - 'null'
-          - required
           type: string
           description: |-
             * `does_not_exist` - does_not_exist
             * `incorrect_type` - incorrect_type
             * `null` - null
-            * `required` - required
         detail:
           type: string
       required:
@@ -23890,6 +24633,29 @@ components:
           type: array
           items:
             $ref: '#/components/schemas/Organization'
+    PaginatedPosterList:
+      type: object
+      required:
+      - count
+      - results
+      properties:
+        count:
+          type: integer
+          example: 123
+        next:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=400&limit=100
+        previous:
+          type: string
+          nullable: true
+          format: uri
+          example: http://api.example.org/accounts/?offset=200&limit=100
+        results:
+          type: array
+          items:
+            $ref: '#/components/schemas/Poster'
     PaginatedProgramImageList:
       type: object
       required:
@@ -24260,6 +25026,21 @@ components:
           nullable: true
           title: Street address for organization.
           maxLength: 2048
+    PatchedPosterUpdateRequest:
+      type: object
+      properties:
+        template:
+          $ref: '#/components/schemas/TemplateEnum'
+        heading:
+          type: string
+          minLength: 1
+          maxLength: 80
+        text:
+          type: string
+          maxLength: 2412
+        duration:
+          type: string
+          description: How long it is on screen each time it airs.
     PatchedProgramImageRequest:
       type: object
       properties:
@@ -24486,6 +25267,490 @@ components:
           format: date-time
           nullable: true
           description: Time the original video for the program was uploaded
+    Poster:
+      type: object
+      description: A text poster made from an on-air graphics template.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        organization:
+          allOf:
+          - $ref: '#/components/schemas/GrantOrganization'
+          readOnly: true
+        template:
+          $ref: '#/components/schemas/TemplateEnum'
+        heading:
+          type: string
+          maxLength: 80
+        text:
+          type: string
+          maxLength: 2412
+        duration:
+          type: string
+          description: How long it is on screen each time it airs.
+        minimumDuration:
+          type: string
+          readOnly: true
+          description: 'The time it takes to read every slide once: the shortest `duration`
+            allowed. A blank line in `text` starts a new slide.'
+        createdAt:
+          type: string
+          format: date-time
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - createdAt
+      - heading
+      - id
+      - minimumDuration
+      - organization
+      - updatedAt
+    PosterRequest:
+      type: object
+      description: A text poster made from an on-air graphics template.
+      properties:
+        organizationId:
+          type: integer
+          writeOnly: true
+          description: The organization the poster is for. Only when creating one.
+        template:
+          $ref: '#/components/schemas/TemplateEnum'
+        heading:
+          type: string
+          minLength: 1
+          maxLength: 80
+        text:
+          type: string
+          maxLength: 2412
+        duration:
+          type: string
+          description: How long it is on screen each time it airs.
+      required:
+      - heading
+      - organizationId
+    PostersCreateDurationErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - duration
+          type: string
+          description: '* `duration` - duration'
+        code:
+          enum:
+          - invalid
+          - max_value
+          - min_value
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `max_value` - max_value
+            * `min_value` - min_value
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersCreateError:
+      oneOf:
+      - $ref: '#/components/schemas/PostersCreateNonFieldErrorsErrorComponent'
+      - $ref: '#/components/schemas/PostersCreateOrganizationIdErrorComponent'
+      - $ref: '#/components/schemas/PostersCreateTemplateErrorComponent'
+      - $ref: '#/components/schemas/PostersCreateHeadingErrorComponent'
+      - $ref: '#/components/schemas/PostersCreateTextErrorComponent'
+      - $ref: '#/components/schemas/PostersCreateDurationErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          non_field_errors: '#/components/schemas/PostersCreateNonFieldErrorsErrorComponent'
+          organization_id: '#/components/schemas/PostersCreateOrganizationIdErrorComponent'
+          template: '#/components/schemas/PostersCreateTemplateErrorComponent'
+          heading: '#/components/schemas/PostersCreateHeadingErrorComponent'
+          text: '#/components/schemas/PostersCreateTextErrorComponent'
+          duration: '#/components/schemas/PostersCreateDurationErrorComponent'
+    PostersCreateErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/PostersCreateValidationError'
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          validation_error: '#/components/schemas/PostersCreateValidationError'
+          client_error: '#/components/schemas/ParseErrorResponse'
+    PostersCreateHeadingErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - heading
+          type: string
+          description: '* `heading` - heading'
+        code:
+          enum:
+          - blank
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - required
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `blank` - blank
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `required` - required
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersCreateNonFieldErrorsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - non_field_errors
+          type: string
+          description: '* `non_field_errors` - non_field_errors'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersCreateOrganizationIdErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - organization_id
+          type: string
+          description: '* `organization_id` - organization_id'
+        code:
+          enum:
+          - does_not_exist
+          - incorrect_type
+          - 'null'
+          - required
+          type: string
+          description: |-
+            * `does_not_exist` - does_not_exist
+            * `incorrect_type` - incorrect_type
+            * `null` - null
+            * `required` - required
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersCreateTemplateErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - template
+          type: string
+          description: '* `template` - template'
+        code:
+          enum:
+          - invalid_choice
+          - 'null'
+          type: string
+          description: |-
+            * `invalid_choice` - invalid_choice
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersCreateTextErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - text
+          type: string
+          description: '* `text` - text'
+        code:
+          enum:
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersCreateValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostersCreateError'
+      required:
+      - errors
+      - type
+    PostersDestroyErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
+    PostersListError:
+      oneOf:
+      - $ref: '#/components/schemas/PostersListOrganizationErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          organization: '#/components/schemas/PostersListOrganizationErrorComponent'
+    PostersListErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/PostersListValidationError'
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          validation_error: '#/components/schemas/PostersListValidationError'
+          client_error: '#/components/schemas/ParseErrorResponse'
+    PostersListOrganizationErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - organization
+          type: string
+          description: '* `organization` - organization'
+        code:
+          enum:
+          - invalid_choice
+          type: string
+          description: '* `invalid_choice` - invalid_choice'
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersListValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostersListError'
+      required:
+      - errors
+      - type
+    PostersPartialUpdateDurationErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - duration
+          type: string
+          description: '* `duration` - duration'
+        code:
+          enum:
+          - invalid
+          - max_value
+          - min_value
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `max_value` - max_value
+            * `min_value` - min_value
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersPartialUpdateError:
+      oneOf:
+      - $ref: '#/components/schemas/PostersPartialUpdateNonFieldErrorsErrorComponent'
+      - $ref: '#/components/schemas/PostersPartialUpdateTemplateErrorComponent'
+      - $ref: '#/components/schemas/PostersPartialUpdateHeadingErrorComponent'
+      - $ref: '#/components/schemas/PostersPartialUpdateTextErrorComponent'
+      - $ref: '#/components/schemas/PostersPartialUpdateDurationErrorComponent'
+      discriminator:
+        propertyName: attr
+        mapping:
+          non_field_errors: '#/components/schemas/PostersPartialUpdateNonFieldErrorsErrorComponent'
+          template: '#/components/schemas/PostersPartialUpdateTemplateErrorComponent'
+          heading: '#/components/schemas/PostersPartialUpdateHeadingErrorComponent'
+          text: '#/components/schemas/PostersPartialUpdateTextErrorComponent'
+          duration: '#/components/schemas/PostersPartialUpdateDurationErrorComponent'
+    PostersPartialUpdateErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/PostersPartialUpdateValidationError'
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          validation_error: '#/components/schemas/PostersPartialUpdateValidationError'
+          client_error: '#/components/schemas/ParseErrorResponse'
+    PostersPartialUpdateHeadingErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - heading
+          type: string
+          description: '* `heading` - heading'
+        code:
+          enum:
+          - blank
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `blank` - blank
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersPartialUpdateNonFieldErrorsErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - non_field_errors
+          type: string
+          description: '* `non_field_errors` - non_field_errors'
+        code:
+          enum:
+          - invalid
+          - 'null'
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersPartialUpdateTemplateErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - template
+          type: string
+          description: '* `template` - template'
+        code:
+          enum:
+          - invalid_choice
+          - 'null'
+          type: string
+          description: |-
+            * `invalid_choice` - invalid_choice
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersPartialUpdateTextErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - text
+          type: string
+          description: '* `text` - text'
+        code:
+          enum:
+          - invalid
+          - max_length
+          - 'null'
+          - null_characters_not_allowed
+          - surrogate_characters_not_allowed
+          type: string
+          description: |-
+            * `invalid` - invalid
+            * `max_length` - max_length
+            * `null` - null
+            * `null_characters_not_allowed` - null_characters_not_allowed
+            * `surrogate_characters_not_allowed` - surrogate_characters_not_allowed
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
+    PostersPartialUpdateValidationError:
+      type: object
+      properties:
+        type:
+          $ref: '#/components/schemas/ValidationErrorEnum'
+        errors:
+          type: array
+          items:
+            $ref: '#/components/schemas/PostersPartialUpdateError'
+      required:
+      - errors
+      - type
+    PostersRetrieveErrorResponse400:
+      oneOf:
+      - $ref: '#/components/schemas/ParseErrorResponse'
+      discriminator:
+        propertyName: type
+        mapping:
+          client_error: '#/components/schemas/ParseErrorResponse'
     PreviewToken:
       type: object
       properties:
@@ -27493,6 +28758,38 @@ components:
       - description
       - id
       - name
+    ScheduleitemPoster:
+      type: object
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        template:
+          type: string
+          readOnly: true
+          description: 'The on-air graphics template it is shown with: standard or
+            notice, or one added since. Anything unknown is shown as standard.'
+        heading:
+          type: string
+          readOnly: true
+        text:
+          type: string
+          readOnly: true
+        organization:
+          allOf:
+          - $ref: '#/components/schemas/ScheduleitemOrganization'
+          readOnly: true
+        updatedAt:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - heading
+      - id
+      - organization
+      - template
+      - text
+      - updatedAt
     ScheduleitemRead:
       type: object
       properties:
@@ -27506,6 +28803,12 @@ components:
           allOf:
           - $ref: '#/components/schemas/ScheduleitemVideo'
           nullable: true
+        poster:
+          allOf:
+          - $ref: '#/components/schemas/ScheduleitemPoster'
+          nullable: true
+          description: 'Set for a member''s text poster (only with include_posters):
+            playout airs it with the graphics template.'
         schedulereason:
           readOnly: true
           nullable: true
@@ -28918,6 +30221,14 @@ components:
           maxLength: 255
       required:
       - name
+    TemplateEnum:
+      enum:
+      - standard
+      - notice
+      type: string
+      description: |-
+        * `standard` - Vanlig
+        * `notice` - Viktig melding
     TvanytimeDateRetrieveErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/ParseErrorResponse'
@@ -31391,7 +32702,7 @@ components:
         uploadUrl:
           type: string
           readOnly: true
-          default: https://frikanalen.tv/upload
+          default: http://localhost:1080/files/
       required:
       - uploadUrl
     VideofilesCreateError:

@@ -7,6 +7,7 @@ from frikanalen_django_api_client import Client
 from frikanalen_django_api_client.api.scheduleitems import scheduleitems_list
 from frikanalen_django_api_client.models import (
     ScheduleitemLiveSource,
+    ScheduleitemPoster,
     ScheduleitemRead,
     ScheduleitemVideo,
 )
@@ -65,7 +66,13 @@ class ScheduleFetcher:
             # client-templates/README.md.
             # Here such an item is dropped and the rest still plays.
             kwargs = scheduleitems_list._get_kwargs(
-                date=date_param, days=days, limit=limit, offset=offset, surrounding=surrounding
+                date=date_param,
+                days=days,
+                limit=limit,
+                offset=offset,
+                surrounding=surrounding,
+                # Members' text posters, which the public schedule leaves out.
+                include_posters=True,
             )
             try:
                 response = await self.client.get_async_httpx_client().request(**kwargs)
@@ -131,6 +138,8 @@ def parse_item(raw) -> ScheduleitemRead | None:
             item.live_source, ScheduleitemLiveSource
         ):
             raise ValueError(f"unreadable live source {item.live_source!r}")
+        if item.poster and not isinstance(item.poster, ScheduleitemPoster):
+            raise ValueError(f"unreadable poster {item.poster!r}")
         return item
     except Exception as error:
         start = raw.get("starttime") if isinstance(raw, dict) else None

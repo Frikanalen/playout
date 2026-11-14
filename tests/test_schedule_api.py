@@ -144,6 +144,15 @@ class TestGetSchedule:
         assert [item.id for item in result] == [1]
         assert result[0].schedulereason.value == 99
 
+    async def test_skips_a_poster_it_cannot_read(self):
+        poster = item_json(2)
+        poster["video"] = None
+        poster["poster"] = {"id": 4, "template": "standard"}  # no heading, text, ...
+
+        result = await fetcher(answering(page([item_json(1), poster]))).get_schedule()
+
+        assert [item.id for item in result] == [1]
+
     async def test_passes_date_days_and_surrounding_through(self):
         requests = []
         handler = answering(page([item_json(1)]), requests=requests)
@@ -154,6 +163,7 @@ class TestGetSchedule:
         assert params["date"] == "2026-01-01"
         assert params["days"] == "2"
         assert params["surrounding"] == "true"
+        assert params["include_posters"] == "true"
 
     async def test_omits_date_when_asking_for_today(self):
         # The schema types `date` as a date, so the 'today' the API documents
@@ -202,3 +212,21 @@ class TestScheduleitemShape:
 
         assert item.is_live
         assert str(item.live_source.stream_id) == stream_id
+
+    def test_an_api_from_before_posters_has_none(self):
+        # ITEM has no "poster" key at all, as an older API sends it.
+        assert not ScheduleitemRead.from_dict(self.ITEM).poster
+
+    def test_parses_a_poster_and_a_template_it_does_not_know(self):
+        poster = {
+            "id": 4,
+            "template": "a-template-added-later",
+            "heading": "Neste: debatt",
+            "text": "",
+            "organization": {"id": 1, "name": "Org", "description": ""},
+            "updatedAt": "2026-01-01T09:00:00+01:00",
+        }
+        item = ScheduleitemRead.from_dict(dict(self.ITEM, poster=poster))
+
+        assert item.poster.heading == "Neste: debatt"
+        assert item.poster.template == "a-template-added-later"
