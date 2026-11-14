@@ -430,7 +430,7 @@ class TestPosters:
         assert poster.layer == api.POSTER_LAYERS[0]
         assert (poster.start_time, poster.end_time) == (at(20), at(21))
         assert poster.url == (
-            "https://frikanalen.tv/graphics/?duration=60000&poster=paper"
+            "https://frikanalen.tv/graphics/?duration=60000&poster=standard"
             "&heading=Neste%3A+debatt&text=Kl.+20+%26+21&from=Test+Org"
         )
         # No video details are fetched for a poster.

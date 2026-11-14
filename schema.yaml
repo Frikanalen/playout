@@ -25037,7 +25037,7 @@ components:
           maxLength: 80
         text:
           type: string
-          maxLength: 400
+          maxLength: 2412
         duration:
           type: string
           description: How long it is on screen each time it airs.
@@ -25285,10 +25285,15 @@ components:
           maxLength: 80
         text:
           type: string
-          maxLength: 400
+          maxLength: 2412
         duration:
           type: string
           description: How long it is on screen each time it airs.
+        minimumDuration:
+          type: string
+          readOnly: true
+          description: 'The time it takes to read every slide once: the shortest `duration`
+            allowed. A blank line in `text` starts a new slide.'
         createdAt:
           type: string
           format: date-time
@@ -25301,6 +25306,7 @@ components:
       - createdAt
       - heading
       - id
+      - minimumDuration
       - organization
       - updatedAt
     PosterRequest:
@@ -25319,7 +25325,7 @@ components:
           maxLength: 80
         text:
           type: string
-          maxLength: 400
+          maxLength: 2412
         duration:
           type: string
           description: How long it is on screen each time it airs.
@@ -28761,8 +28767,8 @@ components:
         template:
           type: string
           readOnly: true
-          description: 'The on-air graphics template it is shown with: paper, stage
-            or notice, or one added since. Anything unknown is shown as paper.'
+          description: 'The on-air graphics template it is shown with: standard or
+            notice, or one added since. Anything unknown is shown as standard.'
         heading:
           type: string
           readOnly: true
@@ -30217,14 +30223,12 @@ components:
       - name
     TemplateEnum:
       enum:
-      - paper
-      - stage
+      - standard
       - notice
       type: string
       description: |-
-        * `paper` - Lys
-        * `stage` - Mørk
-        * `notice` - Viktig
+        * `standard` - Vanlig
+        * `notice` - Viktig melding
     TvanytimeDateRetrieveErrorResponse400:
       oneOf:
       - $ref: '#/components/schemas/ParseErrorResponse'

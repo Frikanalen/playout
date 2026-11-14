@@ -51,7 +51,7 @@ def make_scheduleitem(item_id, video_id, start_time, end_time, live_stream_id=No
 
 
 def make_poster_item(
-    item_id, start_time, end_time, heading="Neste: debatt", text="Klokka 20.", template="paper"
+    item_id, start_time, end_time, heading="Neste: debatt", text="Klokka 20.", template="standard"
 ):
     """A schedule item for a member's text poster."""
     return ScheduleitemRead(
