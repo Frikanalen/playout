@@ -5,11 +5,12 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from playout_lib import api
-from playout_lib.items import FillerLoop, Graphic, ProgrammeUnavailable
+from playout_lib.items import FillerLoop, Graphic, Poster, ProgrammeUnavailable
 from playout_lib.live import LiveTransmission
+from playout_lib.scheduler import item_key
 from playout_lib.video import PrerecordedVideo
 
-from .factories import make_scheduleitem, make_video, make_video_file_records
+from .factories import make_poster_item, make_scheduleitem, make_video, make_video_file_records
 
 TZ = ZoneInfo("Europe/Oslo")
 
@@ -404,3 +405,56 @@ class TestMissingFiles:
 
         assert [type(i) for i in schedule] == [PrerecordedVideo, Graphic, ProgrammeUnavailable]
         assert schedule[1].layer != schedule[2].layer
+
+
+class TestPosters:
+    """A member's text poster airs the graphics template with its text."""
+
+    async def test_a_poster_shows_its_text_for_its_slot(self, monkeypatch):
+        install_fetcher(
+            monkeypatch,
+            [
+                make_scheduleitem(1, 1, at(0), at(20)),
+                make_poster_item(2, at(20), at(21), heading="Neste: debatt", text="Kl. 20 & 21"),
+                make_scheduleitem(3, 3, at(25), at(55)),
+            ],
+        )
+        videos = {n: make_video(n, broadcast=f"{n}.mp4") for n in (1, 3)}
+        calls = []
+        install_video_details(monkeypatch, videos, calls)
+
+        schedule = between(await api.load_schedule(), at(0), at(55))
+
+        assert [type(i) for i in schedule] == [PrerecordedVideo, Poster, Graphic, PrerecordedVideo]
+        poster = schedule[1]
+        assert poster.layer == api.POSTER_LAYERS[0]
+        assert (poster.start_time, poster.end_time) == (at(20), at(21))
+        assert poster.url == (
+            "https://frikanalen.tv/graphics/?duration=60000&poster=standard"
+            "&heading=Neste%3A+debatt&text=Kl.+20+%26+21&from=Test+Org"
+        )
+        # No video details are fetched for a poster.
+        assert sorted(calls) == [1, 3]
+
+    async def test_back_to_back_posters_take_turns_on_two_layers(self, monkeypatch):
+        install_fetcher(
+            monkeypatch,
+            [make_poster_item(n, at(n), at(n + 1)) for n in (0, 1, 2)]
+            + [make_poster_item(9, at(5), at(6))],
+        )
+        install_video_details(monkeypatch, {})
+
+        schedule = between(await api.load_schedule(), at(0), at(6))
+        posters = [i for i in schedule if isinstance(i, Poster)]
+
+        first, second = api.POSTER_LAYERS
+        assert [p.layer for p in posters] == [first, second, first, first]
+
+    async def test_a_corrected_poster_is_a_new_item(self, monkeypatch):
+        install_fetcher(monkeypatch, [make_poster_item(1, at(0), at(1), text="Feil")])
+        install_video_details(monkeypatch, {})
+        [before] = [i for i in await api.load_schedule() if isinstance(i, Poster)]
+        install_fetcher(monkeypatch, [make_poster_item(1, at(0), at(1), text="Riktig")])
+        [after] = [i for i in await api.load_schedule() if isinstance(i, Poster)]
+
+        assert item_key(before) != item_key(after)

@@ -111,6 +111,7 @@ class TestGetSchedule:
         assert captured["date"] == datetime.date(2026, 1, 1)
         assert captured["days"] == 2
         assert captured["surrounding"] is True
+        assert captured["include_posters"] is True
 
     async def test_omits_date_when_asking_for_today(self, monkeypatch):
         # The schema types `date` as a date, so the 'today' the API documents
@@ -175,3 +176,21 @@ class TestScheduleitemShape:
 
         assert item.is_live
         assert str(item.live_source.stream_id) == stream_id
+
+    def test_an_api_from_before_posters_has_none(self):
+        # ITEM has no "poster" key at all, as an older API sends it.
+        assert not ScheduleitemRead.from_dict(self.ITEM).poster
+
+    def test_parses_a_poster_and_a_template_it_does_not_know(self):
+        poster = {
+            "id": 4,
+            "template": "a-template-added-later",
+            "heading": "Neste: debatt",
+            "text": "",
+            "organization": {"id": 1, "name": "Org", "description": ""},
+            "updatedAt": "2026-01-01T09:00:00+01:00",
+        }
+        item = ScheduleitemRead.from_dict(dict(self.ITEM, poster=poster))
+
+        assert item.poster.heading == "Neste: debatt"
+        assert item.poster.template == "a-template-added-later"

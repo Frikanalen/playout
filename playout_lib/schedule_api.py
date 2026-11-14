@@ -57,6 +57,8 @@ class ScheduleFetcher:
                 limit=limit,
                 offset=offset,
                 surrounding=surrounding,
+                # Members' text posters, which the public schedule leaves out.
+                include_posters=True,
             )
 
             logger.debug(f"Response status: {response.status_code}")

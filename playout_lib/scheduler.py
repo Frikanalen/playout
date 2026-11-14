@@ -41,7 +41,11 @@ def item_key(item: PlannedItem) -> tuple:
     Graphics are told their duration in their URL, so the URL is left out:
     a gap that shrinks keeps its graphic on air and just ends it sooner.
     """
-    identity = getattr(item, "video_id", None) or getattr(item, "stream_id", None)
+    identity = (
+        getattr(item, "video_id", None)
+        or getattr(item, "stream_id", None)
+        or getattr(item, "content_key", None)
+    )
     return (type(item).__name__, item.layer, item.start_time, identity)
 
 

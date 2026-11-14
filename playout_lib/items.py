@@ -247,3 +247,23 @@ class ProgrammeUnavailable(Graphic):
     def __repr__(self):
         time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
         return f"[{time_range} Unavailable: {self.title[:15]}]"
+
+
+class Poster(Graphic):
+    """A member's text poster, listed in their airtime like a programme.
+
+    It is the graphics template showing the poster's text for the length
+    of its slot. Back-to-back posters alternate between two layers, since
+    one clears its layer as the next starts.
+    """
+
+    def __init__(self, url, layer, start_time, end_time, poster_id, content_key):
+        super().__init__(url, layer, start_time, end_time)
+        self.poster_id = poster_id
+        # The text is in the URL, which item_key leaves out; this makes a
+        # corrected poster a new item rather than the old one with an old URL.
+        self.content_key = content_key
+
+    def __repr__(self):
+        time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+        return f"[{time_range} Poster {self.poster_id}]"
