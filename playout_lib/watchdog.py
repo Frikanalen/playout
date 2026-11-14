@@ -9,10 +9,14 @@ the programme layer with the video that should be on it.
 It acts on one case only, the unambiguous one: a video that should be
 playing, well inside its slot, whose layer is empty for several seconds in a
 row. It recovers the same way as after a lost connection, by restarting
-playout, which cues everything that should be on air at the right point. A
-restart is allowed at most once per RESTART_SPACING, across restarts, so a
-misreading can never put playout in a restart loop. Anything else odd (the
-wrong file, a frozen clock) is logged for a person to look at, not acted on.
+playout, which cues everything that should be on air at the right point.
+
+Restarts back off: the first comes at once, then each one waits twice as
+long after the one before (30 s, 60 s, ... up to 5 min), and the count resets
+after a quiet spell. That brings air back quickly from a CasparCG that keeps
+failing, while a misreading costs at most one re-cue every 5 minutes. The
+count survives the re-exec in the environment. Anything else odd (the wrong
+file, a frozen clock) is logged for a person to look at, not acted on.
 """
 
 import asyncio
@@ -37,10 +41,21 @@ EDGE = timedelta(seconds=10)
 CONFIRM_SECONDS = 5.0
 # A clip that reached its end may leave the layer; that is not a failure.
 END_SLACK = 2.0
-# At most one restart per this many seconds, carried across the re-exec in
-# the environment, so a wrong reading can't keep restarting playout.
-RESTART_SPACING = 600.0
+# Wait between restarts: FIRST_BACKOFF after the first, doubling up to
+# MAX_BACKOFF. After QUIET_RESET without one, the next comes at once again.
+# Carried across the re-exec in the environment.
+FIRST_BACKOFF = 30.0
+MAX_BACKOFF = 300.0
+QUIET_RESET = 900.0
 LAST_RESTART_ENV = "PLAYOUT_WATCHDOG_LAST_RESTART"
+RESTART_COUNT_ENV = "PLAYOUT_WATCHDOG_RESTARTS"
+
+
+def backoff(restarts: int) -> float:
+    """How long after the last restart the next may come, given how many in a row."""
+    if restarts <= 0:
+        return 0.0
+    return min(FIRST_BACKOFF * 2 ** (restarts - 1), MAX_BACKOFF)
 
 
 @dataclass
@@ -182,17 +197,25 @@ class AirWatchdog:
     def _recover(self, reason):
         if self.restart.is_set():
             return
-        last = float(os.environ.get(LAST_RESTART_ENV, "0") or 0)
         wall = time.time()
-        if wall - last < RESTART_SPACING:
+        try:
+            last = float(os.environ.get(LAST_RESTART_ENV) or 0)
+            restarts = int(os.environ.get(RESTART_COUNT_ENV) or 0)
+        except ValueError:
+            last, restarts = wall, 1  # Unreadable: assume a restart just happened.
+        if wall - last >= QUIET_RESET:
+            restarts = 0
+        wait = backoff(restarts)
+        if wall - last < wait:
             self._warn_once(
-                ("spacing", self._watching and id(self._watching)),
+                ("backoff", last),
                 f"Air doesn't match the plan ({reason}), but playout restarted for that "
-                f"{wall - last:.0f} s ago; not restarting again so soon",
+                f"{wall - last:.0f} s ago; trying again {wait - (wall - last):.0f} s from now",
             )
             return
         logger.error(f"Air doesn't match the plan: {reason}; restarting playout")
         os.environ[LAST_RESTART_ENV] = str(wall)
+        os.environ[RESTART_COUNT_ENV] = str(restarts + 1)
         self.restart.set()
 
     async def run(self):

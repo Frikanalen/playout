@@ -82,6 +82,7 @@ def now(monkeypatch):
 @pytest.fixture(autouse=True)
 def no_recent_restart(monkeypatch):
     monkeypatch.delenv(watchdog.LAST_RESTART_ENV, raising=False)
+    monkeypatch.delenv(watchdog.RESTART_COUNT_ENV, raising=False)
 
 
 def run_checks(dog, clock, infos, step=1.0):
@@ -191,10 +192,43 @@ class TestWatchdog:
 
         assert not dog.restart.is_set()
 
-    def test_restarts_at_most_once_per_spacing_across_restarts(self, now, monkeypatch):
-        # The time of the last restart survives the re-exec in the environment.
+    def restart_after(self, monkeypatch, now, seconds_since_last, restarts):
         monkeypatch.setattr(watchdog.time, "time", lambda: 10_000.0)
-        monkeypatch.setenv(watchdog.LAST_RESTART_ENV, str(10_000.0 - 60))
+        monkeypatch.setenv(watchdog.LAST_RESTART_ENV, str(10_000.0 - seconds_since_last))
+        monkeypatch.setenv(watchdog.RESTART_COUNT_ENV, str(restarts))
+        dog, clock = self.make(video_on_air())
+        run_checks(dog, clock, [channel({})] * 10)
+        return dog.restart.is_set()
+
+    def test_backs_off_between_restarts(self, now, monkeypatch):
+        # The restart history survives the re-exec in the environment.
+        assert not self.restart_after(monkeypatch, now, 20, restarts=1)
+        assert self.restart_after(monkeypatch, now, 31, restarts=1)
+        assert not self.restart_after(monkeypatch, now, 50, restarts=2)
+        assert self.restart_after(monkeypatch, now, 61, restarts=2)
+        assert not self.restart_after(monkeypatch, now, 299, restarts=10)
+        assert self.restart_after(monkeypatch, now, 301, restarts=10)
+
+    def test_a_quiet_spell_resets_the_back_off(self, now, monkeypatch):
+        assert self.restart_after(monkeypatch, now, 901, restarts=10)
+        assert watchdog.os.environ[watchdog.RESTART_COUNT_ENV] == "1"
+
+    def test_retries_once_the_back_off_has_passed(self, now, monkeypatch):
+        # A layer that stays empty is retried, not given up on.
+        clock_time = {"t": 10_000.0}
+        monkeypatch.setattr(watchdog.time, "time", lambda: clock_time["t"])
+        monkeypatch.setenv(watchdog.LAST_RESTART_ENV, str(10_000.0 - 10))
+        monkeypatch.setenv(watchdog.RESTART_COUNT_ENV, "1")
+        dog, clock = self.make(video_on_air())
+
+        run_checks(dog, clock, [channel({})] * 10)
+        assert not dog.restart.is_set()
+        clock_time["t"] += 25
+        run_checks(dog, clock, [channel({})])
+        assert dog.restart.is_set()
+
+    def test_an_unreadable_history_counts_as_a_recent_restart(self, now, monkeypatch):
+        monkeypatch.setenv(watchdog.LAST_RESTART_ENV, "garbage")
         dog, clock = self.make(video_on_air())
 
         run_checks(dog, clock, [channel({})] * 10)
@@ -203,12 +237,14 @@ class TestWatchdog:
 
     def test_records_its_restart_for_the_next_process(self, now, monkeypatch):
         monkeypatch.setattr(watchdog.time, "time", lambda: 10_000.0)
+        monkeypatch.delenv(watchdog.RESTART_COUNT_ENV, raising=False)
         dog, clock = self.make(video_on_air())
 
         run_checks(dog, clock, [channel({})] * 10)
 
         assert dog.restart.is_set()
         assert float(watchdog.os.environ[watchdog.LAST_RESTART_ENV]) == 10_000.0
+        assert watchdog.os.environ[watchdog.RESTART_COUNT_ENV] == "1"
 
 
 class FakePlayer:
