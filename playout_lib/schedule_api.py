@@ -9,7 +9,6 @@ from frikanalen_django_api_client.models import (
     ScheduleitemLiveSource,
     ScheduleitemRead,
     ScheduleitemVideo,
-    VideoFileVariantEnum,
 )
 from frikanalen_django_api_client.types import UNSET
 
@@ -60,8 +59,10 @@ class ScheduleFetcher:
             page = None
             # Fetched and parsed by hand rather than through
             # scheduleitems_list.asyncio_detailed: the generated parser takes
-            # the page as a whole, so one item it can't read (a file variant
-            # newer than our pinned schema, say) would sink the whole schedule.
+            # the page as a whole, so one item it can't read (a field missing
+            # or of the wrong type, say) would sink the whole schedule. Enum
+            # values newer than our pinned schema parse fine: see
+            # client-templates/README.md.
             # Here such an item is dropped and the rest still plays.
             kwargs = scheduleitems_list._get_kwargs(
                 date=date_param, days=days, limit=limit, offset=offset, surrounding=surrounding
@@ -112,9 +113,6 @@ class ScheduleFetcher:
         return all_items
 
 
-KNOWN_VARIANTS = {variant.value for variant in VideoFileVariantEnum}
-
-
 def parse_item(raw) -> ScheduleitemRead | None:
     """One schedule item from the API, or None if playout can't read it.
 
@@ -124,7 +122,6 @@ def parse_item(raw) -> ScheduleitemRead | None:
     """
     item_id = raw.get("id") if isinstance(raw, dict) else None
     try:
-        raw = _without_unknown_variants(raw)
         item = ScheduleitemRead.from_dict(raw)
         # The generated parser hands back the raw dict, not an error, when a
         # nullable nested object fails to parse.
@@ -139,26 +136,3 @@ def parse_item(raw) -> ScheduleitemRead | None:
         start = raw.get("starttime") if isinstance(raw, dict) else None
         logger.error(f"Skipping schedule item {item_id} at {start}, can't read it: {error!r}")
         return None
-
-
-def _without_unknown_variants(raw):
-    """raw minus video files of variants newer than our pinned schema.
-
-    Playout plays files it looks up separately, so a schedule item's file
-    list is information only, and a variant it doesn't know is no reason to
-    drop the programme. This is what kept everything new off air on
-    2026-11-14, when the API started listing HLS files.
-    """
-    video = raw.get("video")
-    if not isinstance(video, dict) or not isinstance(video.get("files"), list):
-        return raw
-    files = [
-        f for f in video["files"] if not isinstance(f, dict) or f.get("variant") in KNOWN_VARIANTS
-    ]
-    if len(files) == len(video["files"]):
-        return raw
-    unknown = sorted({f.get("variant") for f in video["files"] if f not in files})
-    logger.warning(
-        f"Schedule item {raw.get('id')} lists file variants playout doesn't know: {unknown}"
-    )
-    return {**raw, "video": {**video, "files": files}}

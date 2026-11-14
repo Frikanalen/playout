@@ -209,7 +209,7 @@ class TestLoadSchedule:
 
         async def fake_get_video_details(video_id, client):
             if video_id == 1:
-                raise ValueError("'hls' is not a valid VideoFileVariantEnum")
+                raise ValueError("unreadable video details")
             return make_video(video_id, broadcast=f"video{video_id}.mp4")
 
         monkeypatch.setattr(api, "get_video_details", fake_get_video_details)

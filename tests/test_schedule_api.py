@@ -4,7 +4,7 @@ import httpx
 import pytest
 
 from frikanalen_django_api_client import Client
-from frikanalen_django_api_client.models import ScheduleitemRead
+from frikanalen_django_api_client.models import ScheduleitemRead, VideoFileVariantEnum
 from playout_lib.schedule_api import ScheduleFetcher
 
 
@@ -119,8 +119,8 @@ class TestGetSchedule:
         assert [item.id for item in result] == [1, 4]
 
     async def test_keeps_an_item_listing_a_file_variant_it_does_not_know(self):
-        # Exactly what happened on 2026-11-14 with "hls": the files listed on
-        # a schedule item are informational, so the programme still airs.
+        # Exactly what happened on 2026-11-14 with "hls": a value newer than
+        # the pinned schema must not cost the programme.
         item = item_json(1)
         item["video"]["files"] = [
             {"id": 1, "variant": "broadcast", "filename": "a.mxf"},
@@ -130,7 +130,19 @@ class TestGetSchedule:
         result = await fetcher(answering(page([item]))).get_schedule()
 
         assert [item.id for item in result] == [1]
-        assert [f.filename for f in result[0].video.files] == ["a.mxf"]
+        files = result[0].video.files
+        assert [f.filename for f in files] == ["a.mxf", "b.m3u8"]
+        assert files[0].variant is VideoFileVariantEnum.BROADCAST
+        assert files[1].variant.value == "from-the-future"
+
+    async def test_keeps_an_item_with_a_schedule_reason_it_does_not_know(self):
+        item = item_json(1)
+        item["schedulereason"] = 99
+
+        result = await fetcher(answering(page([item]))).get_schedule()
+
+        assert [item.id for item in result] == [1]
+        assert result[0].schedulereason.value == 99
 
     async def test_passes_date_days_and_surrounding_through(self):
         requests = []
