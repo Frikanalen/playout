@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.5.1](https://github.com/Frikanalen/playout/compare/v2.5.0...v2.5.1) (2026-11-14)
+
+
+### Bug Fixes
+
+* accept the hls file variant in schedule items ([#31](https://github.com/Frikanalen/playout/issues/31)) ([1fd5c45](https://github.com/Frikanalen/playout/commit/1fd5c45c2c9f9c41fd7897d4b4bf456b7418d872))
+
 ## [2.5.0](https://github.com/Frikanalen/playout/compare/v2.4.0...v2.5.0) (2026-11-11)
 
 
