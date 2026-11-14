@@ -237,3 +237,38 @@ class TestRun:
         dog = AirWatchdog(FakeScheduler(), FakePlayer([]), clock=Clock())
 
         await asyncio.wait_for(dog.run(), 1.0)
+
+
+# Captured from caspar-sw1 (CasparCG 2.5.0) on 2026-11-14 with a video on
+# 1-50, 22 s into its slot.
+CAPTURED = (
+    '<?xml version="1.0" encoding="utf-8"?>\r\n<channel><stage><layer>'
+    "<layer_50><background><producer>empty</producer></background>\n"
+    "<foreground><file>\n<clip>0</clip><clip>1433</clip>\n"
+    "<name>628124/original/(3) Nytt lys � kollaps.mp4</name>\n"
+    "<path>/mnt/media/628124/original/(3) Nytt lys � kollaps.mp4</path>\n"
+    "<streams><file><streams_0><fps>25</fps><fps>1</fps></streams_0><streams_1><fps>0</fps>"
+    "<fps>0</fps></streams_1></file></streams>\n"
+    "<time>22.219999999999999</time><time>1433</time>\n"
+    "</file><loop>false</loop><paused>false</paused><producer>ffmpeg</producer></foreground>"
+    "</layer_50>"
+    "<layer_601><background><producer>empty</producer></background><foreground><file><path>"
+    "https://staging.frikanalen.tv/graphics/?duration=9444502</path></file>"
+    "<paused>false</paused><producer>html</producer></foreground></layer_601>"
+    "</layer></stage></channel>\n\r\n"
+)
+
+
+def test_reads_the_state_caspar_2_5_sends():
+    fg = read_foreground(CAPTURED, "1-50")
+
+    assert (fg.producer, fg.time, fg.duration, fg.paused) == ("ffmpeg", 22.22, 1433.0, False)
+    assert watchdog.same_file("628124/original/(3) Nytt lys � kollaps.mp4", fg.path)
+
+
+def test_a_cleared_layer_can_be_an_empty_element():
+    # What CasparCG 2.5 reports for a layer right after CLEAR or STOP.
+    assert (
+        read_foreground(channel({}).replace("<layer>", "<layer><layer_50></layer_50>"), "1-50")
+        is None
+    )
