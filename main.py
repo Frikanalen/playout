@@ -9,8 +9,9 @@ import sys
 from loguru import logger
 
 from playout_lib.caspar_player import current_player
-from playout_lib.config import CASPAR_HOST
+from playout_lib.config import AIR_WATCHDOG, CASPAR_HOST
 from playout_lib.scheduler import Scheduler
+from playout_lib.watchdog import AirWatchdog
 
 # Configure loguru for the playout system
 logger.remove()  # Remove default handler
@@ -37,11 +38,17 @@ class Playout:
         scheduler = Scheduler()
         await current_player.connect()
         playing = asyncio.create_task(scheduler.run())
-        lost = asyncio.create_task(current_player.connection_lost.wait())
-        await asyncio.wait({playing, lost}, return_when=asyncio.FIRST_COMPLETED)
+        stops = {asyncio.create_task(current_player.connection_lost.wait())}
+        if AIR_WATCHDOG:
+            # Also restart when CasparCG stays connected but airs nothing.
+            watchdog = AirWatchdog(scheduler, current_player)
+            asyncio.create_task(watchdog.run())
+            stops.add(asyncio.create_task(watchdog.restart.wait()))
+        await asyncio.wait({playing, *stops}, return_when=asyncio.FIRST_COMPLETED)
+        for stop in stops:
+            stop.cancel()
         if playing.done():
             # The scheduler never returns on its own; surface why it did.
-            lost.cancel()
             playing.result()
             raise RuntimeError("The scheduler stopped")
         playing.cancel()
@@ -54,7 +61,7 @@ def main():
     loop.add_signal_handler(signal.SIGTERM, loop.stop)
     loop.add_signal_handler(signal.SIGINT, loop.stop)
     loop.run_until_complete(Playout().run())
-    logger.error("Lost CasparCG, restarting playout to cue what should be on air")
+    logger.error("Restarting playout to cue what should be on air")
     # Exec rather than exit: Kubernetes would restart the container too, but
     # after a crash-loop back-off of up to minutes if CasparCG fails twice.
     os.execv(sys.executable, [sys.executable, *sys.argv])

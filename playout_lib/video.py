@@ -57,6 +57,9 @@ class PrerecordedVideo(PlannedItem):
         self._variant: str | None = None
         # The notice standing in for this video if CasparCG can't play it.
         self.notice: ProgrammeUnavailable | None = None
+        # True while CasparCG has accepted PLAY for this video and its slot
+        # runs: what the air watchdog compares the programme layer with.
+        self.on_air = False
 
     def _resolve_file(self) -> tuple[str | None, str]:
         """Pick the file to play, honouring the USE_ORIGINAL setting.
@@ -217,13 +220,16 @@ class PrerecordedVideo(PlannedItem):
                 logger.error(f"Could not play video {self.video_id} ({error}), showing a notice")
                 await self._show_unavailable()
                 return
+            self.on_air = True
             await self._completion()
+            self.on_air = False
             print("I would have cleared here if it weren't for debugging")
             await current_player.issue(f"STOP {self.layer}")
             # await self.clear()
         except asyncio.CancelledError:
             # Cancelled on air: the schedule replaced this item, so it has to
             # leave the air for whatever comes in its place.
+            self.on_air = False
             logger.warning(f"{self!r} was taken off the schedule, stopping it")
             await current_player.issue(f"STOP {self.layer}")
 

@@ -75,6 +75,9 @@ USE_ORIGINAL = strtobool(os.getenv("USE_ORIGINAL", "false"))
 # The upload pipeline measures integrated loudness and true peak and stores
 # them on the video file record. Files that have been measured are played
 # back through a compensating gain; files that have not are played as-is.
+# Restart playout when the programme layer is empty while a video should be
+# playing (see playout_lib/watchdog.py). A kill switch, on by default.
+AIR_WATCHDOG = strtobool(os.getenv("AIR_WATCHDOG", "true"))
 LOUDNESS_NORMALIZATION = strtobool(os.getenv("LOUDNESS_NORMALIZATION", "true"))
 LOUDNESS_TARGET_LUFS = float(os.getenv("LOUDNESS_TARGET_LUFS", "-23.0"))
 # Cap on how much a quiet file may be lifted. Guards against a bogus
