@@ -2,7 +2,13 @@ import asyncio
 
 from loguru import logger
 
-from playout_lib.config import CASPAR_HOST, CHANNELBUG, CHANNELBUG_LAYER
+from playout_lib.config import (
+    CASPAR_HOST,
+    CHANNELBUG,
+    CHANNELBUG_LAYER,
+    HTML_KEEPALIVE_LAYER,
+    HTML_KEEPALIVE_URL,
+)
 
 # How long to wait for CasparCG to answer a command. A reply that comes later
 # than this would be read as the answer to the next command, so a timeout is
@@ -81,8 +87,20 @@ class CasparPlayer:
                 await asyncio.sleep(CONNECT_RETRY_INTERVAL)
         logger.warning(f"Connected to CasparCG at {CASPAR_HOST}")
         await self.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG}")
+        await self._keep_html_alive()
         await self._query_framerate()
         self._heartbeat = asyncio.create_task(self._keep_checking())
+
+    async def _keep_html_alive(self):
+        """Keep one blank, transparent HTML page loaded (see HTML_KEEPALIVE_LAYER)."""
+        if not HTML_KEEPALIVE_LAYER:
+            return
+        try:
+            await self.issue(f"MIXER {HTML_KEEPALIVE_LAYER} OPACITY 0")
+            await self.issue(f'PLAY {HTML_KEEPALIVE_LAYER} [HTML] "{HTML_KEEPALIVE_URL}"')
+        except ValueError:
+            # Only a mitigation: never let it keep playout off air.
+            logger.exception("CasparCG refused the HTML keep-alive page")
 
     async def _keep_checking(self):
         """Ask CasparCG for its version every few seconds, to notice it going away."""

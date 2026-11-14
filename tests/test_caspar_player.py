@@ -166,3 +166,19 @@ class SilentWriter:
 
     async def drain(self):
         pass
+
+
+async def test_keeps_a_blank_html_page_loaded(fast, monkeypatch):
+    caspar, player = await connected(monkeypatch)
+
+    assert "MIXER 1-1 OPACITY 0" in caspar.commands
+    assert 'PLAY 1-1 [HTML] "about:blank#width=16&height=16"' in caspar.commands
+    await caspar.crash()
+
+
+async def test_the_keep_alive_page_can_be_switched_off(fast, monkeypatch):
+    monkeypatch.setattr(caspar_player, "HTML_KEEPALIVE_LAYER", "")
+    caspar, player = await connected(monkeypatch)
+
+    assert not any("[HTML]" in c for c in caspar.commands)
+    await caspar.crash()

@@ -15,6 +15,15 @@ CHANNELBUG_LAYER = "1-100"
 # Stills CasparCG keeps on CHANNELBUG_LAYER: the channel bug, and the same
 # bug with a DIREKTE tag for while a live source is on air.
 CHANNELBUG = "stills/screenbug"
+# A blank HTML page kept loaded for as long as CasparCG runs, under all
+# else and fully transparent. On caspar1, CasparCG 2.5's embedded Chromium
+# crashed ten times between 2026-11-01 and 11-14, always at the same
+# instruction and always with no HTML page loaded (or just after the last one
+# closed); it ran 8.8 days without a crash while the protest page stayed on a
+# layer. Empty disables it. CasparCG takes width/height from anywhere in the
+# URL, so the fragment keeps the page a 16x16 render, costing next to nothing.
+HTML_KEEPALIVE_LAYER = os.environ.get("HTML_KEEPALIVE_LAYER", "1-1")
+HTML_KEEPALIVE_URL = os.environ.get("HTML_KEEPALIVE_URL", "about:blank#width=16&height=16")
 CHANNELBUG_LIVE = "stills/screenbug_live"
 
 # Music looped under the graphics, as CasparCG names it in its media path
