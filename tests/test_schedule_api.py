@@ -1,148 +1,163 @@
 import datetime
-from http import HTTPStatus
 
+import httpx
 import pytest
 
-from frikanalen_django_api_client.models import PaginatedScheduleitemReadList, ScheduleitemRead
-from frikanalen_django_api_client.types import UNSET
-from playout_lib import schedule_api
+from frikanalen_django_api_client import Client
+from frikanalen_django_api_client.models import ScheduleitemRead
 from playout_lib.schedule_api import ScheduleFetcher
 
-from .factories import make_response, make_scheduleitem
+
+def item_json(item_id, video_id=1, start="2026-01-01T10:00:00+01:00"):
+    """A schedule item as the API sends it."""
+    return {
+        "id": item_id,
+        "defaultName": "Test Video",
+        "video": {
+            "id": video_id,
+            "name": "Test Video",
+            "organization": {"id": 1, "name": "Test Org", "description": ""},
+            "categories": [],
+            "files": [],
+        },
+        "schedulereason": 3,
+        "starttime": start,
+        "endtime": "2026-01-01T12:00:00+01:00",
+        "duration": "00:30:00",
+        "grant": None,
+        "isLive": False,
+        "liveSource": None,
+    }
 
 
 def page(results, next_=None):
-    return PaginatedScheduleitemReadList(count=len(results), results=results, next_=next_)
+    return {"count": len(results), "next": next_, "previous": None, "results": results}
+
+
+def fetcher(handler):
+    """A ScheduleFetcher whose HTTP requests are answered by handler."""
+    client = Client("http://api.test/", httpx_args={"transport": httpx.MockTransport(handler)})
+    return ScheduleFetcher(client)
+
+
+def answering(*pages, requests=None):
+    """A handler returning pages in turn; an int is answered as that HTTP status."""
+    remaining = list(pages)
+
+    def handler(request):
+        if requests is not None:
+            requests.append(request)
+        answer = remaining.pop(0)
+        if isinstance(answer, int):
+            return httpx.Response(answer)
+        if isinstance(answer, bytes):
+            return httpx.Response(200, content=answer)
+        return httpx.Response(200, json=answer)
+
+    return handler
 
 
 class TestGetSchedule:
-    async def test_single_page_returns_all_items(self, monkeypatch):
-        items = [make_scheduleitem(1, 1, "2026-01-01T10:00:00+01:00", "2026-01-01T10:30:00+01:00")]
+    async def test_single_page_returns_all_items(self):
+        result = await fetcher(answering(page([item_json(1)]))).get_schedule()
 
-        async def fake_call(**kwargs):
-            return make_response(page(items))
+        assert [item.id for item in result] == [1]
+        assert isinstance(result[0], ScheduleitemRead)
 
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
+    async def test_follows_pagination_until_next_is_none(self):
+        requests = []
+        handler = answering(
+            page([item_json(1)], next_="http://api.test/?offset=100"),
+            page([item_json(2)]),
+            requests=requests,
+        )
 
-        result = await ScheduleFetcher(client=None).get_schedule()
+        result = await fetcher(handler).get_schedule()
 
-        assert result == items
+        assert [item.id for item in result] == [1, 2]
+        assert [r.url.params["offset"] for r in requests] == ["0", "100"]
 
-    async def test_follows_pagination_until_next_is_none(self, monkeypatch):
-        first_page_items = [
-            make_scheduleitem(1, 1, "2026-01-01T10:00:00+01:00", "2026-01-01T10:30:00+01:00")
-        ]
-        second_page_items = [
-            make_scheduleitem(2, 2, "2026-01-01T11:00:00+01:00", "2026-01-01T11:30:00+01:00")
-        ]
-        calls = []
+    async def test_returns_partial_results_when_a_later_page_fails(self):
+        handler = answering(page([item_json(1)], next_="http://api.test/?offset=100"), 500)
 
-        async def fake_call(**kwargs):
-            calls.append(kwargs["offset"])
-            if kwargs["offset"] == 0:
-                return make_response(page(first_page_items, next_="http://example.com/?offset=100"))
-            return make_response(page(second_page_items, next_=None))
+        result = await fetcher(handler).get_schedule()
 
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
+        assert [item.id for item in result] == [1]
 
-        result = await ScheduleFetcher(client=None).get_schedule()
+    async def test_raises_when_first_page_fails(self):
+        with pytest.raises(RuntimeError):
+            await fetcher(answering(500)).get_schedule()
 
-        assert result == first_page_items + second_page_items
-        assert calls == [0, 100]
+    async def test_raises_when_the_first_page_is_not_a_schedule(self):
+        with pytest.raises(RuntimeError):
+            await fetcher(answering(b"<html>gateway error</html>")).get_schedule()
 
-    async def test_returns_partial_results_when_a_later_page_fails(self, monkeypatch):
-        first_page_items = [
-            make_scheduleitem(1, 1, "2026-01-01T10:00:00+01:00", "2026-01-01T10:30:00+01:00")
-        ]
-        calls = {"n": 0}
-
-        async def fake_call(**kwargs):
-            calls["n"] += 1
-            if calls["n"] == 1:
-                return make_response(page(first_page_items, next_="http://example.com/?offset=100"))
-            return make_response(None, status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
-
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
-
-        result = await ScheduleFetcher(client=None).get_schedule()
-
-        assert result == first_page_items
-
-    async def test_raises_when_first_page_fails(self, monkeypatch):
-        async def fake_call(**kwargs):
-            return make_response(None, status_code=HTTPStatus.INTERNAL_SERVER_ERROR)
-
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
+    async def test_raises_when_the_api_is_unreachable(self):
+        def handler(request):
+            raise httpx.ConnectError("refused")
 
         with pytest.raises(RuntimeError):
-            await ScheduleFetcher(client=None).get_schedule()
+            await fetcher(handler).get_schedule()
 
-    async def test_raises_when_parsed_is_none(self, monkeypatch):
-        async def fake_call(**kwargs):
-            return make_response(None, status_code=HTTPStatus.OK)
-
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
-
-        with pytest.raises(RuntimeError):
-            await ScheduleFetcher(client=None).get_schedule()
-
-    async def test_an_empty_schedule_is_an_empty_list(self, monkeypatch):
+    async def test_an_empty_schedule_is_an_empty_list(self):
         # Unprogrammed time airs graphics, so nothing scheduled is no error.
-        async def fake_call(**kwargs):
-            return make_response(page([]))
+        assert await fetcher(answering(page([]))).get_schedule() == []
 
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
+    async def test_skips_an_item_it_cannot_read_and_keeps_the_rest(self):
+        # 2026-11-14: a file variant newer than playout's pinned schema made
+        # the generated parser reject the whole page, so nothing new aired
+        # for six hours. One unreadable item must cost only its own slot.
+        bad_video = item_json(2, start="2026-01-01T11:00:00+01:00")
+        del bad_video["video"]["organization"]
+        bad_shape = item_json(3)
+        del bad_shape["starttime"]
 
-        assert await ScheduleFetcher(client=None).get_schedule() == []
+        result = await fetcher(
+            answering(page([item_json(1), bad_video, bad_shape, item_json(4)]))
+        ).get_schedule()
 
-    async def test_passes_date_days_and_surrounding_through(self, monkeypatch):
-        captured = {}
+        assert [item.id for item in result] == [1, 4]
 
-        item = make_scheduleitem(1, 1, "2026-01-01T10:00:00+01:00", "2026-01-01T10:30:00+01:00")
+    async def test_keeps_an_item_listing_a_file_variant_it_does_not_know(self):
+        # Exactly what happened on 2026-11-14 with "hls": the files listed on
+        # a schedule item are informational, so the programme still airs.
+        item = item_json(1)
+        item["video"]["files"] = [
+            {"id": 1, "variant": "broadcast", "filename": "a.mxf"},
+            {"id": 2, "variant": "from-the-future", "filename": "b.m3u8"},
+        ]
 
-        async def fake_call(**kwargs):
-            captured.update(kwargs)
-            return make_response(page([item]))
+        result = await fetcher(answering(page([item]))).get_schedule()
 
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
+        assert [item.id for item in result] == [1]
+        assert [f.filename for f in result[0].video.files] == ["a.mxf"]
 
-        await ScheduleFetcher(client=None).get_schedule(date="2026-01-01", days=2, surrounding=True)
+    async def test_passes_date_days_and_surrounding_through(self):
+        requests = []
+        handler = answering(page([item_json(1)]), requests=requests)
 
-        assert captured["date"] == datetime.date(2026, 1, 1)
-        assert captured["days"] == 2
-        assert captured["surrounding"] is True
+        await fetcher(handler).get_schedule(date="2026-01-01", days=2, surrounding=True)
 
-    async def test_omits_date_when_asking_for_today(self, monkeypatch):
+        params = requests[0].url.params
+        assert params["date"] == "2026-01-01"
+        assert params["days"] == "2"
+        assert params["surrounding"] == "true"
+
+    async def test_omits_date_when_asking_for_today(self):
         # The schema types `date` as a date, so the 'today' the API documents
         # cannot be sent as a string. Leaving it unset selects today instead.
-        captured = {}
+        requests = []
 
-        item = make_scheduleitem(1, 1, "2026-01-01T10:00:00+01:00", "2026-01-01T10:30:00+01:00")
+        await fetcher(answering(page([item_json(1)]), requests=requests)).get_schedule(date="today")
 
-        async def fake_call(**kwargs):
-            captured.update(kwargs)
-            return make_response(page([item]))
+        assert "date" not in requests[0].url.params
 
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
+    async def test_omits_date_when_none_given(self):
+        requests = []
 
-        await ScheduleFetcher(client=None).get_schedule(date="today")
+        await fetcher(answering(page([item_json(1)]), requests=requests)).get_schedule()
 
-        assert captured["date"] is UNSET
-
-    async def test_omits_date_when_none_given(self, monkeypatch):
-        captured = {}
-
-        item = make_scheduleitem(1, 1, "2026-01-01T10:00:00+01:00", "2026-01-01T10:30:00+01:00")
-
-        async def fake_call(**kwargs):
-            captured.update(kwargs)
-            return make_response(page([item]))
-
-        monkeypatch.setattr(schedule_api.scheduleitems_list, "asyncio_detailed", fake_call)
-
-        await ScheduleFetcher(client=None).get_schedule()
-
-        assert captured["date"] is UNSET
+        assert "date" not in requests[0].url.params
 
 
 class TestScheduleitemShape:
