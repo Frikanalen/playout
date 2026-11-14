@@ -58,6 +58,17 @@ the notice for the video. A video CasparCG can't play (`404` when the
 file isn't where it looks) shows the same notice for the rest of its slot,
 instead of leaving whatever was on air.
 
+### Text posters
+
+Members can list text posters in their airtime, between or around their
+programmes. Playout asks the schedule API for them (`include_posters=true`;
+the public schedule leaves them out) and shows each for its slot with the
+graphics template:
+`GRAPHICS_URL?duration=<ms>&poster=<template>&heading=<…>&text=<…>&from=<organization>`.
+Posters back to back take turns on two layers (`1-56` and `1-57`), so one
+clearing at its end can't take the next with it. A poster whose text is
+corrected is a new item: the next load takes the old one off and cues the new.
+
 ### Live transmissions
 
 A live programme is a video with a live source. A schedule item that airs it
