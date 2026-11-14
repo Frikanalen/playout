@@ -1,0 +1,28 @@
+import logging
+from enum import IntEnum
+
+_warned: set[int] = set()
+
+
+class {{ enum.class_info.name }}(IntEnum):
+    {% for key, value in enum.values.items() %}
+    {{ key }} = {{ value }}
+    {% endfor %}
+
+    def __str__(self) -> str:
+        return str(self.value)
+
+    @classmethod
+    def _missing_(cls, value: object) -> "{{ enum.class_info.name }} | None":
+        # See client-templates/str_enum.py.jinja: an unknown value is kept, not fatal.
+        if not isinstance(value, int) or isinstance(value, bool):
+            return None
+        if value not in _warned:
+            _warned.add(value)
+            logging.getLogger(__name__).warning(
+                "%s got %r, which the pinned schema doesn't list; keeping it", cls.__name__, value
+            )
+        member = int.__new__(cls, value)
+        member._name_ = f"UNKNOWN_{value}"
+        member._value_ = value
+        return member

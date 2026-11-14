@@ -112,6 +112,8 @@ This fetches the current schema from `http://localhost:8000/api/schema` and over
 
 This runs `openapi-python-client` to generate the Python client code from `schema.yaml` into `frikanalen_django_api_client/`.
 
+The enum templates in `client-templates/` make the generated enums tolerate values the pinned schema doesn't list yet. A new file variant, say, parses as an unnamed member and logs a warning, so the rest of the response still reads. Code that needs a particular value still checks for the members it knows.
+
 For local development, run both scripts in sequence. CI only runs `generate-client.sh` to ensure the client matches the committed schema.
 
 ### Running tests
