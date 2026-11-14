@@ -9,6 +9,9 @@ OUTPUT="frikanalen_django_api_client"
 # Stale modules that only exist locally hide breakage until it reaches CI.
 rm -rf "$OUTPUT"
 
+# client-templates/ makes enums accept values newer than the schema; see its
+# README.md.
+#
 # --meta none emits the package flat at --output-path, which is what
 # [tool.hatch.build.targets.wheel] packages expects. The client's runtime
 # dependencies (httpx, attrs) are declared in our own pyproject.toml, since
@@ -18,6 +21,7 @@ uv run --group dev openapi-python-client generate \
   --output-path "$OUTPUT" \
   --meta none \
   --config openapi-python-client.yaml \
+  --custom-template-path client-templates \
   --fail-on-warning
 
 # --meta none skips py.typed, so restore it to keep the installed package typed.
