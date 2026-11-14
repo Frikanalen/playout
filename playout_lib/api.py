@@ -10,8 +10,8 @@ from loguru import logger
 from frikanalen_django_api_client import Client
 from playout_lib.get_video_files import get_video_details, get_video_file_records
 
-from .config import GRAPHICS_LAYER, GRAPHICS_URL, NOTICE_LAYER, VIDEO_LAYER
-from .items import FillerLoop, Graphic, ProgrammeUnavailable, localtime
+from .config import GRAPHICS_LAYER, GRAPHICS_URL, NOTICE_LAYER, POSTER_LAYERS, VIDEO_LAYER
+from .items import FillerLoop, Graphic, Poster, ProgrammeUnavailable, localtime
 from .live import LiveTransmission
 from .schedule_api import ScheduleFetcher
 from .video import PrerecordedVideo
@@ -45,7 +45,11 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
 
         # A live airing plays its video's source, not a file, so it needs no files
         video_ids = list(
-            {item.video.id for item in schedule_items if item.video and not item.live_source}
+            {
+                item.video.id
+                for item in schedule_items
+                if item.video and not item.live_source and not item.poster
+            }
         )
 
         # Fetch full video details (including files and framerate) for all videos in
@@ -80,6 +84,9 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
 
     # Convert API items to PrerecordedVideo instances with pre-fetched details
     for item in schedule_items:
+        if item.poster:
+            schedule.append(poster_item(schedule, item))
+            continue
         if item.live_source:
             schedule.append(
                 LiveTransmission(
@@ -158,6 +165,29 @@ def unavailable_notice(schedule, title, video_id, item):
         video_id,
         title,
     )
+
+
+def poster_item(schedule, item):
+    """The graphics template showing a member's poster for its slot.
+
+    It takes the poster layer the poster right before it (if one ends
+    where it starts) is not on.
+    """
+    poster = item.poster
+    previous = schedule[-1] if schedule else None
+    layer = POSTER_LAYERS[0]
+    if isinstance(previous, Poster) and previous.end_time == item.starttime:
+        layer = POSTER_LAYERS[1] if previous.layer == POSTER_LAYERS[0] else POSTER_LAYERS[0]
+    content = {
+        "poster": poster.template,
+        "heading": poster.heading,
+        "text": poster.text,
+        "from": poster.organization.name,
+    }
+    duration_ms = int((item.endtime - item.starttime).total_seconds() * 1000)
+    url = f"{GRAPHICS_URL}?{urlencode({'duration': duration_ms, **content})}"
+    content_key = (poster.id, tuple(content.values()))
+    return Poster(url, layer, item.starttime, item.endtime, poster.id, content_key)
 
 
 def notice_url(start, end, title):
