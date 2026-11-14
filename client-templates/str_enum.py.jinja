@@ -1,4 +1,8 @@
 from enum import Enum
+import logging
+
+# Values already reported, so a schedule reload doesn't log them again.
+_reported: set[object] = set()
 
 class {{ enum.class_info.name }}(str, Enum):
     {% for key, value in enum.values|dictsort(true) %}
@@ -18,4 +22,11 @@ class {{ enum.class_info.name }}(str, Enum):
         member = str.__new__(cls, value)
         member._name_ = "UNKNOWN"
         member._value_ = value
+        if value not in _reported:
+            _reported.add(value)
+            logging.getLogger(__name__).warning(
+                "%s got %r, which playout's pinned schema doesn't list; keeping it",
+                cls.__name__,
+                value,
+            )
         return member

@@ -18,5 +18,8 @@ back as an extra member named `UNKNOWN` whose `.value` is what the API sent.
 Known values are unchanged, so code that compares against the members keeps
 working, and an unknown value simply never matches.
 
+Each new value is logged once ("... which playout's pinned schema doesn't
+list; keeping it"), and the infra repo's Loki rules alert on that line.
+
 Values of the wrong type (a number where a string belongs) still fail: that
 is a real change to the API, not a new choice.

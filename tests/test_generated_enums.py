@@ -55,3 +55,13 @@ def test_a_model_with_a_new_value_parses_and_round_trips():
 
     assert record.variant.value == "from-the-future"
     assert record.to_dict()["variant"] == "from-the-future"
+
+
+def test_a_new_value_is_reported_once(caplog):
+    with caplog.at_level("WARNING"):
+        VideoFileVariantEnum("reported-once")
+        VideoFileVariantEnum("reported-once")
+
+    reports = [r for r in caplog.records if "reported-once" in r.getMessage()]
+    assert len(reports) == 1
+    assert "pinned schema doesn't list" in reports[0].getMessage()
