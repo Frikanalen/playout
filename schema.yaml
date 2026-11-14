@@ -20512,6 +20512,7 @@ components:
     VideoFileVariantEnum:
       enum:
       - large_thumb
+      - hls
       - broadcast
       - vc1
       - med_thumb
@@ -20537,6 +20538,7 @@ components:
         * `dash` - MPEG-DASH manifest
         * `dash_preview` - Transient low-quality MPEG-DASH manifest
         * `webm_med` - Medium-quality WebM
+        * `hls` - HLS stream
     VideoFiles:
       type: object
       properties:
