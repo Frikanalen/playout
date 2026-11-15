@@ -7,7 +7,13 @@ from urllib.parse import parse_qsl, urlencode, urlsplit, urlunsplit
 import pytz
 from loguru import logger
 
-from .config import FILLER_MUSIC, FILLER_MUSIC_VOLUME
+from .config import CHANNELBUG_LAYER, FILLER_MUSIC, FILLER_MUSIC_VOLUME
+
+# The channel bug fades over this many frames around a full-frame graphic.
+BUG_FADE_FRAMES = 12
+# The graphics hiding the bug right now. A notice and a gap graphic can sit
+# back to back, and the first to clear must not show the bug over the second.
+_hiding_bug: set[int] = set()
 
 
 def localtime():
@@ -94,6 +100,9 @@ class PlannedItem(Item):
 class Graphic(PlannedItem):
     """A scheduled graphic/image overlay to be displayed."""
 
+    # Whether the channel bug fades out while this graphic is up.
+    hides_bug = True
+
     def __init__(self, url, layer, start_time, end_time):
         super().__init__(layer, start_time, end_time)
         self.has_been_prepared = False
@@ -141,11 +150,31 @@ class Graphic(PlannedItem):
             # A missing file must not take the graphic off air with it.
             logger.exception(f"CasparCG can't play the filler music {FILLER_MUSIC}")
 
+    async def _hide_bug(self):
+        """Fade the channel bug out: a full-frame graphic carries its own logo."""
+        from .caspar_player import current_player
+
+        if not self.hides_bug:
+            return
+        _hiding_bug.add(id(self))
+        await current_player.issue(f"MIXER {CHANNELBUG_LAYER} OPACITY 0 {BUG_FADE_FRAMES}")
+
+    async def _show_bug(self):
+        """Bring the bug back, unless another graphic that hides it has taken over."""
+        from .caspar_player import current_player
+
+        if id(self) not in _hiding_bug:
+            return
+        _hiding_bug.discard(id(self))
+        if not _hiding_bug:
+            await current_player.issue(f"MIXER {CHANNELBUG_LAYER} OPACITY 1 {BUG_FADE_FRAMES}")
+
     async def cue(self):
         """Start displaying the graphic."""
         from .caspar_player import current_player
 
         try:
+            await self._hide_bug()
             if self.has_been_prepared:
                 await current_player.issue(f"CG {self.layer}1 PLAY 0")
                 await current_player.issue(f"PLAY {self.layer} filler/FrikanalenLoop loop 0")
@@ -181,6 +210,7 @@ class Graphic(PlannedItem):
         if FILLER_MUSIC:
             await current_player.issue(f"CLEAR {self.music_layer}")
             await current_player.issue(f"MIXER {self.music_layer} CLEAR")
+        await self._show_bug()
 
     async def prepare(self):
         """Preload the graphic and its music into CasparCG."""
@@ -256,6 +286,10 @@ class Poster(Graphic):
     of its slot. Back-to-back posters alternate between two layers, since
     one clears its layer as the next starts.
     """
+
+    # A member's poster carries no Frikanalen logo, so the bug stays up to
+    # say which channel this is.
+    hides_bug = False
 
     def __init__(self, url, layer, start_time, end_time, poster_id, content_key):
         super().__init__(url, layer, start_time, end_time)
