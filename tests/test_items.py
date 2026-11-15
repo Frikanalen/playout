@@ -90,6 +90,27 @@ class TestGraphic:
         monkeypatch.setattr(caspar_player.current_player, "issue", fake_issue)
         return issued
 
+    async def test_the_channel_bug_is_hidden_while_a_graphic_fills_the_frame(self, monkeypatch):
+        issued = self._record(monkeypatch)
+        graphic = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=3))
+
+        await graphic.cue()
+
+        assert issued[0] == "MIXER 1-100 OPACITY 0 12"
+        assert issued[-1] == "MIXER 1-100 OPACITY 1 12"
+
+    async def test_the_bug_stays_hidden_while_another_graphic_has_taken_over(self, monkeypatch):
+        issued = self._record(monkeypatch)
+        notice = items.Graphic("url", "1-58", NOW, NOW + timedelta(seconds=3))
+        gap = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=3))
+
+        await gap._hide_bug()
+        await notice.cue()
+        assert "MIXER 1-100 OPACITY 1 12" not in issued
+
+        await gap.clear()
+        assert issued[-1] == "MIXER 1-100 OPACITY 1 12"
+
     async def test_a_prepared_graphic_loops_the_music_and_stops_it_at_the_end(self, monkeypatch):
         issued = self._record(monkeypatch)
         graphic = items.Graphic("url", "1-60", NOW, NOW + timedelta(seconds=3))
@@ -102,7 +123,7 @@ class TestGraphic:
         assert "MIXER 1-60 VOLUME 0" in issued
         assert "MIXER 1-602 VOLUME 1.0000" in issued
         assert issued.index("PLAY 1-602") > issued.index("CG 1-601 PLAY 0")
-        assert issued[-2:] == ["CLEAR 1-602", "MIXER 1-602 CLEAR"]
+        assert issued[-3:-1] == ["CLEAR 1-602", "MIXER 1-602 CLEAR"]
 
     async def test_a_graphic_cued_unprepared_plays_the_music_by_name(self, monkeypatch):
         issued = self._record(monkeypatch)
