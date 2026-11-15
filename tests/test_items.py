@@ -99,6 +99,14 @@ class TestGraphic:
         assert issued[0] == "MIXER 1-100 OPACITY 0 12"
         assert issued[-1] == "MIXER 1-100 OPACITY 1 12"
 
+    async def test_the_channel_bug_stays_up_over_a_members_poster(self, monkeypatch):
+        issued = self._record(monkeypatch)
+        poster = items.Poster("url", "1-56", NOW, NOW + timedelta(seconds=3), 7, "key")
+
+        await poster.cue()
+
+        assert not [cmd for cmd in issued if cmd.startswith("MIXER 1-100")]
+
     async def test_the_bug_stays_hidden_while_another_graphic_has_taken_over(self, monkeypatch):
         issued = self._record(monkeypatch)
         notice = items.Graphic("url", "1-58", NOW, NOW + timedelta(seconds=3))

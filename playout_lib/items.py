@@ -100,6 +100,9 @@ class PlannedItem(Item):
 class Graphic(PlannedItem):
     """A scheduled graphic/image overlay to be displayed."""
 
+    # Whether the channel bug fades out while this graphic is up.
+    hides_bug = True
+
     def __init__(self, url, layer, start_time, end_time):
         super().__init__(layer, start_time, end_time)
         self.has_been_prepared = False
@@ -151,6 +154,8 @@ class Graphic(PlannedItem):
         """Fade the channel bug out: a full-frame graphic carries its own logo."""
         from .caspar_player import current_player
 
+        if not self.hides_bug:
+            return
         _hiding_bug.add(id(self))
         await current_player.issue(f"MIXER {CHANNELBUG_LAYER} OPACITY 0 {BUG_FADE_FRAMES}")
 
@@ -281,6 +286,10 @@ class Poster(Graphic):
     of its slot. Back-to-back posters alternate between two layers, since
     one clears its layer as the next starts.
     """
+
+    # A member's poster carries no Frikanalen logo, so the bug stays up to
+    # say which channel this is.
+    hides_bug = False
 
     def __init__(self, url, layer, start_time, end_time, poster_id, content_key):
         super().__init__(url, layer, start_time, end_time)
