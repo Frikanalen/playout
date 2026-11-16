@@ -157,18 +157,34 @@ class LiveTransmission(PlannedItem):
 
         MediaMTX authenticates every read against Django. Playout's reader
         credential covers every enabled source, so the path alone picks it.
+
+        LIVE_INPUT_URL may be rtsp:// or srt://. Prefer SRT: MediaMTX's RTSP
+        output stamps each track's timing on arrival, which can put picture
+        and sound hundreds of milliseconds apart, while SRT (MPEG-TS) keeps
+        the source's shared timestamps. SRT carries the path and credential
+        in the stream ID, read:<path>:<user>:<password>, URL-encoded, which
+        FFmpeg decodes before handing it to libsrt.
         """
         if not LIVE_INPUT_URL:
             return None
+        username, _, password = LIVE_READER_CREDENTIAL.partition(":")
+        if not LIVE_READER_CREDENTIAL:
+            logger.warning("LIVE_READER_CREDENTIAL is not set; MediaMTX will refuse the read")
+        if redact:
+            password = "***"
+        base = urlsplit(LIVE_INPUT_URL.rstrip("/"))
+        if base.scheme == "srt":
+            stream_id = f"read:{self.path}"
+            if LIVE_READER_CREDENTIAL:
+                stream_id += f":{username}:{password}"
+            query = f"streamid={quote(stream_id, safe='/:')}"
+            if base.query:
+                query = f"{base.query}&{query}"
+            return urlunsplit(base._replace(path="", query=query))
         parts = urlsplit(f"{LIVE_INPUT_URL.rstrip('/')}/{self.path}")
         if LIVE_READER_CREDENTIAL:
-            username, _, password = LIVE_READER_CREDENTIAL.partition(":")
-            if redact:
-                password = "***"
             netloc = f"{quote(username, safe='')}:{quote(password, safe='')}@{parts.netloc}"
             parts = parts._replace(netloc=netloc)
-        else:
-            logger.warning("LIVE_READER_CREDENTIAL is not set; MediaMTX will refuse the read")
         return urlunsplit(parts)
 
     async def _start(self):

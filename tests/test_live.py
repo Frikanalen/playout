@@ -210,6 +210,33 @@ class TestUrl:
 
         assert make_live()._url() == f"rtsp://192.0.2.10:8554/contrib/live/{STREAM_ID}"
 
+    def test_reads_over_srt_with_the_credential_in_the_stream_id(self, configured, monkeypatch):
+        monkeypatch.setattr(live, "LIVE_INPUT_URL", "srt://192.0.2.10:8890")
+
+        assert make_live()._url() == (
+            f"srt://192.0.2.10:8890?streamid=read:contrib/live/{STREAM_ID}:{KEY_ID}:s3cr/t"
+        )
+
+    def test_srt_keeps_its_own_options_and_encodes_the_stream_id(self, configured, monkeypatch):
+        monkeypatch.setattr(live, "LIVE_INPUT_URL", "srt://192.0.2.10:8890?latency=200000")
+        monkeypatch.setattr(live, "LIVE_READER_CREDENTIAL", f"{KEY_ID}:a&b=c")
+
+        assert make_live()._url() == (
+            "srt://192.0.2.10:8890?latency=200000&streamid="
+            f"read:contrib/live/{STREAM_ID}:{KEY_ID}:a%26b%3Dc"
+        )
+
+    def test_srt_redacts_the_password(self, configured, monkeypatch):
+        monkeypatch.setattr(live, "LIVE_INPUT_URL", "srt://192.0.2.10:8890")
+
+        assert "s3cr" not in make_live()._url(redact=True)
+
+    def test_srt_without_credential(self, configured, monkeypatch):
+        monkeypatch.setattr(live, "LIVE_INPUT_URL", "srt://192.0.2.10:8890")
+        monkeypatch.setattr(live, "LIVE_READER_CREDENTIAL", "")
+
+        assert make_live()._url() == f"srt://192.0.2.10:8890?streamid=read:contrib/live/{STREAM_ID}"
+
     def test_is_none_without_an_input_url(self, monkeypatch):
         monkeypatch.setattr(live, "LIVE_INPUT_URL", "")
 

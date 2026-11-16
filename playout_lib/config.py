@@ -34,8 +34,9 @@ GRAPHICS_URL = os.environ.get("GRAPHICS_URL", "https://frikanalen.tv/graphics/")
 
 # Live transmissions
 #
-# Base URL CasparCG reads MediaMTX from, e.g. rtsp://192.0.2.10:8554. Live
-# slots are covered with filler while this is unset.
+# Base URL CasparCG reads MediaMTX from: srt://192.0.2.10:8890 (preferred,
+# keeps picture and sound in step) or rtsp://192.0.2.10:8554. Live slots are
+# covered with filler while this is unset.
 LIVE_INPUT_URL = os.environ.get("LIVE_INPUT_URL", "")
 # The playout reader credential from Django admin, "<key UUID>:<password>".
 # It reads any enabled source, so new sources need no change here. Keep it
