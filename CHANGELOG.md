@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.6.1](https://github.com/Frikanalen/playout/compare/v2.6.0...v2.6.1) (2026-11-16)
+
+
+### Bug Fixes
+
+* **live:** count SRT readers when watching a live source ([#38](https://github.com/Frikanalen/playout/issues/38)) ([3a8ebfa](https://github.com/Frikanalen/playout/commit/3a8ebfa7ec56c1d1f3d1a0f1a22cfbcc3f435fe9))
+
 ## [2.6.0](https://github.com/Frikanalen/playout/compare/v2.5.1...v2.6.0) (2026-11-16)
 
 
