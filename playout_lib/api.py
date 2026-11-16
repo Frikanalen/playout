@@ -2,7 +2,7 @@
 
 from datetime import datetime, time, timedelta
 from itertools import pairwise
-from urllib.parse import urlencode
+from urllib.parse import parse_qsl, urlencode, urljoin, urlsplit, urlunsplit
 
 import pytz
 from loguru import logger
@@ -10,8 +10,15 @@ from loguru import logger
 from frikanalen_django_api_client import Client
 from playout_lib.get_video_files import get_video_details, get_video_file_records
 
-from .config import GRAPHICS_LAYER, GRAPHICS_URL, NOTICE_LAYER, POSTER_LAYERS, VIDEO_LAYER
-from .items import FillerLoop, Graphic, Poster, ProgrammeUnavailable, localtime
+from .config import (
+    GRAPHICS_LAYER,
+    GRAPHICS_URL,
+    NOTICE_LAYER,
+    POSTER_LAYERS,
+    STAFF_GRAPHIC_LAYERS,
+    VIDEO_LAYER,
+)
+from .items import FillerLoop, Graphic, Poster, ProgrammeUnavailable, StaffGraphic, localtime
 from .live import LiveTransmission
 from .schedule_api import ScheduleFetcher
 from .video import PrerecordedVideo
@@ -48,7 +55,7 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
             {
                 item.video.id
                 for item in schedule_items
-                if item.video and not item.live_source and not item.poster
+                if item.video and not item.live_source and not item.poster and not item.graphic
             }
         )
 
@@ -97,6 +104,9 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
     for item in schedule_items:
         if item.poster:
             schedule.append(poster_item(schedule, item))
+            continue
+        if item.graphic:
+            schedule.append(staff_graphic_item(schedule, item))
             continue
         if item.live_source:
             schedule.append(
@@ -199,6 +209,31 @@ def poster_item(schedule, item):
     url = f"{GRAPHICS_URL}?{urlencode({'duration': duration_ms, **content})}"
     content_key = (poster.id, tuple(content.values()))
     return Poster(url, layer, item.starttime, item.endtime, poster.id, content_key)
+
+
+def staff_graphic_item(schedule, item):
+    """A staff graphic's page for its slot.
+
+    Its address may be a path on the site (/infographics/), taken from
+    where the graphics are served. It takes the layer the graphic right
+    before it (if one ends where it starts) is not on.
+    """
+    graphic = item.graphic
+    previous = schedule[-1] if schedule else None
+    layer = STAFF_GRAPHIC_LAYERS[0]
+    if isinstance(previous, StaffGraphic) and previous.end_time == item.starttime:
+        layer = (
+            STAFF_GRAPHIC_LAYERS[1]
+            if previous.layer == STAFF_GRAPHIC_LAYERS[0]
+            else STAFF_GRAPHIC_LAYERS[0]
+        )
+    page = urljoin(GRAPHICS_URL, graphic.url)
+    parts = urlsplit(page)
+    duration_ms = int((item.endtime - item.starttime).total_seconds() * 1000)
+    query = [(k, v) for k, v in parse_qsl(parts.query, keep_blank_values=True) if k != "duration"]
+    query.append(("duration", str(duration_ms)))
+    url = urlunsplit(parts._replace(query=urlencode(query)))
+    return StaffGraphic(url, layer, item.starttime, item.endtime, graphic.id, (graphic.id, page))
 
 
 def notice_url(start, end, title):

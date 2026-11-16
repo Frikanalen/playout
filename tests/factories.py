@@ -4,6 +4,7 @@ from datetime import UTC, datetime
 from http import HTTPStatus
 
 from frikanalen_django_api_client.models import (
+    ScheduleitemGraphic,
     ScheduleitemLiveSource,
     ScheduleitemOrganization,
     ScheduleitemPoster,
@@ -70,6 +71,23 @@ def make_poster_item(
         starttime=start_time,
         endtime=end_time,
         duration="00:00:30",
+        grant=7,
+        is_live=False,
+        live_source=None,
+    )
+
+
+def make_graphic_item(item_id, start_time, end_time, url="/infographics/", graphic_id=1):
+    """A schedule item for a staff graphic."""
+    return ScheduleitemRead(
+        id=item_id,
+        default_name="",
+        video=None,
+        graphic=ScheduleitemGraphic(id=graphic_id, name="Infografikk", url=url),
+        schedulereason=None,
+        starttime=start_time,
+        endtime=end_time,
+        duration="01:00:00",
         grant=7,
         is_live=False,
         live_source=None,

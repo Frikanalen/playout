@@ -301,3 +301,22 @@ class Poster(Graphic):
     def __repr__(self):
         time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
         return f"[{time_range} Poster {self.poster_id}]"
+
+
+class StaffGraphic(Graphic):
+    """An HTML page staff put on air, such as the infographics.
+
+    Played like the gap graphics, filler music and all, for the length of
+    its slot. Back-to-back ones alternate between two layers, like posters.
+    """
+
+    def __init__(self, url, layer, start_time, end_time, graphic_id, content_key):
+        super().__init__(url, layer, start_time, end_time)
+        self.graphic_id = graphic_id
+        # A changed address makes a new item rather than the old one with
+        # the old page.
+        self.content_key = content_key
+
+    def __repr__(self):
+        time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
+        return f"[{time_range} Graphic {self.graphic_id}]"
