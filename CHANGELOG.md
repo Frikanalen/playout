@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.7.0](https://github.com/Frikanalen/playout/compare/v2.6.1...v2.7.0) (2026-11-16)
+
+
+### Features
+
+* air staff graphics such as the infographics from the schedule ([#40](https://github.com/Frikanalen/playout/issues/40)) ([bf5046e](https://github.com/Frikanalen/playout/commit/bf5046e6a542c5df3def4e2397a77b8906579872))
+
 ## [2.6.1](https://github.com/Frikanalen/playout/compare/v2.6.0...v2.6.1) (2026-11-16)
 
 
