@@ -266,6 +266,9 @@ rtsp_sessions{{id="a1",{LIVE},remoteAddr="192.0.2.101:51000",state="read"}} 1
 rtsp_sessions_outbound_bytes{{id="a1",{LIVE},remoteAddr="192.0.2.101:51000",state="read"}} 123456
 rtsp_sessions_outbound_bytes{{id="b2",path="contrib/live/other",state="read"}} 999
 srt_conns{{id="c3",{LIVE},state="publish"}} 1
+srt_conns_bytes_sent{{id="c3",{LIVE},state="publish"}} 0
+srt_conns_bytes_sent{{id="d4",{LIVE},remoteAddr="192.0.2.100:40000",state="read"}} 654321
+srt_conns_bytes_sent{{id="e5",path="contrib/live/other",state="read"}} 777
 """
 
 
@@ -274,7 +277,16 @@ class TestPathState:
         state = live.path_state(METRICS, f"contrib/live/{STREAM_ID}")
 
         assert state.ready
-        assert state.readers == {"a1": 123456.0}
+        assert state.readers == {"a1": 123456.0, "d4": 654321.0}
+
+    def test_an_srt_reader_alone_counts(self):
+        metrics = f"""paths{{name="contrib/live/{STREAM_ID}",state="ready"}} 1
+srt_conns_bytes_sent{{id="d4",{LIVE},state="read"}} 10
+"""
+        state = live.path_state(metrics, f"contrib/live/{STREAM_ID}")
+
+        assert state.readers == {"d4": 10.0}
+        assert live.still_flowing(live.PathState(True, {"d4": 5.0}), state)
 
     def test_an_unknown_path_is_not_ready(self):
         assert live.path_state(METRICS, "contrib/live/gone") == live.PathState()

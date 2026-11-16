@@ -42,6 +42,19 @@ WATCH_INTERVAL = 2.0
 # missed check rides out a slow metrics scrape.
 STALL_CHECKS = 2
 
+# Bytes MediaMTX has sent to each reader of a path, per protocol. CasparCG
+# reads over RTSP or SRT depending on LIVE_INPUT_URL; counting only RTSP made
+# every SRT read look like "no readers", so the watch called it a stall.
+# MediaMTX names these differently per protocol and version, so accept each.
+READER_BYTES = (
+    "rtsp_sessions_outbound_bytes",
+    "rtsp_sessions_bytes_sent",
+    "srt_conns_outbound_bytes",
+    "srt_conns_bytes_sent",
+    "rtmp_conns_outbound_bytes",
+    "rtmp_conns_bytes_sent",
+)
+
 _SAMPLE = re.compile(r"^(\w+)(?:\{(.*)\})?\s+(\S+)")
 _LABEL = re.compile(r'(\w+)="((?:[^"\\]|\\.)*)"')
 
@@ -52,7 +65,7 @@ class PathState:
 
     # Whether a publisher is connected and sending.
     ready: bool = False
-    # Bytes sent so far to each RTSP reader of the path, by session id.
+    # Bytes sent so far to each RTSP or SRT reader of the path, by session id.
     readers: dict[str, float] = field(default_factory=dict)
 
 
@@ -71,11 +84,7 @@ def path_state(metrics: str, path: str) -> PathState:
             continue
         if name == "paths" and labels.get("name") == path and labels.get("state") == "ready":
             state.ready = value > 0
-        elif (
-            name == "rtsp_sessions_outbound_bytes"
-            and labels.get("path") == path
-            and labels.get("state") == "read"
-        ):
+        elif name in READER_BYTES and labels.get("path") == path and labels.get("state") == "read":
             state.readers[labels.get("id", "")] = value
     return state
 
