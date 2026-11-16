@@ -163,7 +163,7 @@ class TestGetSchedule:
         assert params["date"] == "2026-01-01"
         assert params["days"] == "2"
         assert params["surrounding"] == "true"
-        assert params["include_posters"] == "true"
+        assert params["include_fillers"] == "true"
 
     async def test_omits_date_when_asking_for_today(self):
         # The schema types `date` as a date, so the 'today' the API documents

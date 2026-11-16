@@ -5,12 +5,18 @@ from zoneinfo import ZoneInfo
 import pytest
 
 from playout_lib import api
-from playout_lib.items import FillerLoop, Graphic, Poster, ProgrammeUnavailable
+from playout_lib.items import FillerLoop, Graphic, Poster, ProgrammeUnavailable, StaffGraphic
 from playout_lib.live import LiveTransmission
 from playout_lib.scheduler import item_key
 from playout_lib.video import PrerecordedVideo
 
-from .factories import make_poster_item, make_scheduleitem, make_video, make_video_file_records
+from .factories import (
+    make_graphic_item,
+    make_poster_item,
+    make_scheduleitem,
+    make_video,
+    make_video_file_records,
+)
 
 TZ = ZoneInfo("Europe/Oslo")
 
@@ -475,3 +481,48 @@ class TestPosters:
         [after] = [i for i in await api.load_schedule() if isinstance(i, Poster)]
 
         assert item_key(before) != item_key(after)
+
+
+class TestStaffGraphics:
+    """A staff graphic airs its page for its slot, with filler music."""
+
+    async def test_a_site_path_is_taken_from_where_the_graphics_are_served(self, monkeypatch):
+        install_fetcher(
+            monkeypatch,
+            [
+                make_scheduleitem(1, 1, at(0), at(20)),
+                make_graphic_item(2, at(20), at(80), url="/infographics/?page=vaer"),
+            ],
+        )
+        calls = []
+        install_video_details(monkeypatch, {1: make_video(1, broadcast="1.mp4")}, calls)
+
+        schedule = between(await api.load_schedule(), at(0), at(80))
+
+        assert [type(i) for i in schedule] == [PrerecordedVideo, StaffGraphic]
+        graphic = schedule[1]
+        assert graphic.layer == api.STAFF_GRAPHIC_LAYERS[0]
+        assert (graphic.start_time, graphic.end_time) == (at(20), at(80))
+        assert graphic.url == "https://frikanalen.tv/infographics/?page=vaer&duration=3600000"
+        assert graphic.hides_bug
+        assert sorted(calls) == [1]
+
+    async def test_a_full_address_is_kept(self, monkeypatch):
+        install_fetcher(
+            monkeypatch, [make_graphic_item(1, at(0), at(1), url="https://example.test/x?a=1")]
+        )
+        install_video_details(monkeypatch, {})
+
+        [graphic] = [i for i in await api.load_schedule() if isinstance(i, StaffGraphic)]
+
+        assert graphic.url == "https://example.test/x?a=1&duration=60000"
+
+    async def test_back_to_back_graphics_take_turns_on_two_layers(self, monkeypatch):
+        install_fetcher(
+            monkeypatch, [make_graphic_item(n, at(n), at(n + 1), graphic_id=n) for n in (0, 1)]
+        )
+        install_video_details(monkeypatch, {})
+
+        graphics = [i for i in await api.load_schedule() if isinstance(i, StaffGraphic)]
+
+        assert [g.layer for g in graphics] == list(api.STAFF_GRAPHIC_LAYERS)

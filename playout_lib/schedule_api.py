@@ -6,6 +6,7 @@ from loguru import logger
 from frikanalen_django_api_client import Client
 from frikanalen_django_api_client.api.scheduleitems import scheduleitems_list
 from frikanalen_django_api_client.models import (
+    ScheduleitemGraphic,
     ScheduleitemLiveSource,
     ScheduleitemPoster,
     ScheduleitemRead,
@@ -71,8 +72,9 @@ class ScheduleFetcher:
                 limit=limit,
                 offset=offset,
                 surrounding=surrounding,
-                # Members' text posters, which the public schedule leaves out.
-                include_posters=True,
+                # Members' text posters and staff graphics, which the public
+                # schedule leaves out.
+                include_fillers=True,
             )
             try:
                 response = await self.client.get_async_httpx_client().request(**kwargs)
@@ -140,6 +142,8 @@ def parse_item(raw) -> ScheduleitemRead | None:
             raise ValueError(f"unreadable live source {item.live_source!r}")
         if item.poster and not isinstance(item.poster, ScheduleitemPoster):
             raise ValueError(f"unreadable poster {item.poster!r}")
+        if item.graphic and not isinstance(item.graphic, ScheduleitemGraphic):
+            raise ValueError(f"unreadable graphic {item.graphic!r}")
         return item
     except Exception as error:
         start = raw.get("starttime") if isinstance(raw, dict) else None
