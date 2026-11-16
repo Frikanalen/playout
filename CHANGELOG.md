@@ -1,5 +1,21 @@
 # Changelog
 
+## [2.6.0](https://github.com/Frikanalen/playout/compare/v2.5.1...v2.6.0) (2026-11-16)
+
+
+### Features
+
+* air members' text posters, and catch the API schema up ([#34](https://github.com/Frikanalen/playout/issues/34)) ([e7ea56e](https://github.com/Frikanalen/playout/commit/e7ea56e6d92e9d24ba835837e82ae2f5d4d9ff06))
+* fade the channel bug out while a graphic fills the frame ([533893d](https://github.com/Frikanalen/playout/commit/533893dab885a91ad9e79ef92d745e1a6e51b564))
+* fade the channel bug out while a graphic fills the frame ([7ad688e](https://github.com/Frikanalen/playout/commit/7ad688e40ebabcf155f308e5ccd3f57963297f48))
+* **live:** read live sources over SRT when LIVE_INPUT_URL is srt:// ([#37](https://github.com/Frikanalen/playout/issues/37)) ([2949a92](https://github.com/Frikanalen/playout/commit/2949a922e4f67eafd9d726a9b3ec68bc2b2de0d1))
+
+
+### Bug Fixes
+
+* keep the channel bug up over a member's text poster ([15890a8](https://github.com/Frikanalen/playout/commit/15890a862ee612b6e29e52240d3dcdad3c84c9b6))
+* recover from CasparCG crashes and empty layers, survive unreadable schedule items ([#33](https://github.com/Frikanalen/playout/issues/33)) ([192258f](https://github.com/Frikanalen/playout/commit/192258f9af648257412b62d91bd02ba82f38219b))
+
 ## [2.5.1](https://github.com/Frikanalen/playout/compare/v2.5.0...v2.5.1) (2026-11-14)
 
 
