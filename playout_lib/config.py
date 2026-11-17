@@ -23,19 +23,14 @@ CHANNELBUG_LAYER = "1-100"
 CHANNELBUG = "stills/screenbug"
 CHANNELBUG_LIVE = "stills/screenbug_live"
 
-# Where a live source can ask the bug to sit, for a feed with its own
-# graphics in the bug's top right corner (Stortinget's clock). The stills are
-# full frames with the bug at x 1073-1213, y 38-90 of 1280x720, so each
-# position is a MIXER FILL offset of the whole layer, in frame widths and
-# heights. Anything not listed sits in the usual place.
-CHANNELBUG_OFFSETS = {
-    "top-right": (0.0, 0.0),
-    # Just under a clock in the top right corner, which ends about y 57.
-    "below-clock": (0.0, 36 / 720),
-    # The same margins as at the top, mirrored.
-    "bottom-right": (0.0, 592 / 720),
-    "top-left": (-1006 / 1280, 0.0),
-    "bottom-left": (-1006 / 1280, 592 / 720),
+# A live source whose feed has its own graphics where the bug goes airs with
+# a layout of its own, by its logoPosition. Stortinget's feed has a clock in
+# the top right corner (digits at x 1162-1237, y 43-55 of 1280x720), so its
+# still puts DIREKTE under the clock and the logo to its left. The stills
+# are in the repository's stills/ folder; CasparCG has them in its media
+# path. Anything not listed airs with CHANNELBUG_LIVE.
+CHANNELBUG_LIVE_LAYOUTS = {
+    "stortinget-clock": "stills/screenbug_live_stortinget",
 }
 
 # Music looped under the graphics, as CasparCG names it in its media path

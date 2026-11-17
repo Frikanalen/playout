@@ -23467,17 +23467,11 @@ components:
     LogoPositionEnum:
       enum:
       - top-right
-      - below-clock
-      - bottom-right
-      - top-left
-      - bottom-left
+      - stortinget-clock
       type: string
       description: |-
         * `top-right` - Øverst til høyre
-        * `below-clock` - Øverst til høyre, under kildens klokke
-        * `bottom-right` - Nederst til høyre
-        * `top-left` - Øverst til venstre
-        * `bottom-left` - Nederst til venstre
+        * `stortinget-clock` - Rundt Stortingets klokke
     Logout:
       type: object
       description: 'Representation for the logout response: a short human-readable
@@ -29647,9 +29641,9 @@ components:
         logoPosition:
           type: string
           readOnly: true
-          description: 'Where the channel logo sits while the source is on air: top-right,
-            below-clock (top right, under the source''s own clock), bottom-right,
-            top-left or bottom-left, or one added since. Anything unknown is shown
+          description: 'How the channel logo sits while the source is on air: top-right
+            (the usual bug) or stortinget-clock (DIREKTE under the clock in Stortinget''s
+            feed, the logo to its left), or one added since. Anything unknown is shown
             top-right.'
       required:
       - id
