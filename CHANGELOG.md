@@ -1,5 +1,18 @@
 # Changelog
 
+## [2.8.0](https://github.com/Frikanalen/playout/compare/v2.7.0...v2.8.0) (2026-11-17)
+
+
+### Features
+
+* **live:** move the channel bug clear of a live feed's own graphics ([#42](https://github.com/Frikanalen/playout/issues/42)) ([97f232b](https://github.com/Frikanalen/playout/commit/97f232b43cae9c5772cb0b94dc9f54b869f6eae5))
+* **live:** Stortinget's feed airs with DIREKTE under its clock ([#44](https://github.com/Frikanalen/playout/issues/44)) ([12831c7](https://github.com/Frikanalen/playout/commit/12831c7e157e8f00ea458e681e99b4a7d94f9037))
+
+
+### Bug Fixes
+
+* **chart:** default image tag to v&lt;Chart.Version&gt; ([#45](https://github.com/Frikanalen/playout/issues/45)) ([ea449ec](https://github.com/Frikanalen/playout/commit/ea449ec46bd574366c82b43d463a47a1bf9f81bc))
+
 ## [2.7.0](https://github.com/Frikanalen/playout/compare/v2.6.1...v2.7.0) (2026-11-16)
 
 
