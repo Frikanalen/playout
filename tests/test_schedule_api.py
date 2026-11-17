@@ -210,13 +210,13 @@ class TestScheduleitemShape:
             dict(
                 self.ITEM,
                 isLive=True,
-                liveSource={"id": 3, "streamId": stream_id, "logoPosition": "below-clock"},
+                liveSource={"id": 3, "streamId": stream_id, "logoPosition": "stortinget-clock"},
             )
         )
 
         assert item.is_live
         assert str(item.live_source.stream_id) == stream_id
-        assert item.live_source.logo_position == "below-clock"
+        assert item.live_source.logo_position == "stortinget-clock"
 
     def test_an_api_from_before_posters_has_none(self):
         # ITEM has no "poster" key at all, as an older API sends it.

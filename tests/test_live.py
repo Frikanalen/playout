@@ -448,31 +448,25 @@ class TestCue:
 
 
 class TestLogoPosition:
-    async def test_the_bug_moves_under_the_sources_clock_while_live_airs(self, configured, caspar):
+    async def test_stortingets_feed_airs_with_direkte_under_its_clock(self, configured, caspar):
         caspar.stall_after = 30
         slot = make_live(minutes=2)
-        slot.logo_position = "below-clock"
+        slot.logo_position = "stortinget-clock"
 
         await slot.cue()
 
-        fills = [c for c in caspar.commands if c.startswith("MIXER 1-100 FILL")]
-        show = caspar.commands.index("PLAY 1-100 stills/screenbug_live")
-        assert caspar.commands[show - 1] == "MIXER 1-100 FILL 0.000000 0.050000 1 1"
-        # Back in its usual place with the filler after the stall, and at the end.
-        assert fills[1] == "MIXER 1-100 FILL 0.000000 0.000000 1 1"
-        assert fills[-1] == "MIXER 1-100 FILL 0.000000 0.000000 1 1"
-        assert len(fills) >= 3
+        bugs = [c for c in caspar.commands if c.startswith("PLAY 1-100 ")]
+        show = caspar.commands.index("MIXER 1-55 OPACITY 1")
+        assert caspar.commands[show + 1] == "PLAY 1-100 stills/screenbug_live_stortinget"
+        # The plain bug with the filler after the stall, and at the end.
+        assert bugs[-1] == "PLAY 1-100 stills/screenbug"
+        assert "PLAY 1-100 stills/screenbug_live" not in bugs
 
-    async def test_the_usual_position_leaves_the_bug_layer_alone(self, configured, caspar):
-        await make_live(minutes=1).cue()
-
-        assert not any(c.startswith("MIXER 1-100 FILL") for c in caspar.commands)
-
-    async def test_an_unknown_position_keeps_the_bug_top_right(self, configured, caspar):
+    async def test_an_unknown_position_airs_the_usual_bug(self, configured, caspar):
         slot = make_live(minutes=1)
         slot.logo_position = "somewhere-new"
 
         await slot.cue()
 
         assert "PLAY 1-100 stills/screenbug_live" in caspar.commands
-        assert not any(c.startswith("MIXER 1-100 FILL") for c in caspar.commands)
+        assert not any(c.startswith("MIXER 1-100") for c in caspar.commands)
