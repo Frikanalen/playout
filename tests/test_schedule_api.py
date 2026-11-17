@@ -207,11 +207,16 @@ class TestScheduleitemShape:
     def test_parses_a_live_airing_with_its_source(self):
         stream_id = "1b4e28ba-2fa1-11d2-883f-0016d3cca427"
         item = ScheduleitemRead.from_dict(
-            dict(self.ITEM, isLive=True, liveSource={"id": 3, "streamId": stream_id})
+            dict(
+                self.ITEM,
+                isLive=True,
+                liveSource={"id": 3, "streamId": stream_id, "logoPosition": "below-clock"},
+            )
         )
 
         assert item.is_live
         assert str(item.live_source.stream_id) == stream_id
+        assert item.live_source.logo_position == "below-clock"
 
     def test_an_api_from_before_posters_has_none(self):
         # ITEM has no "poster" key at all, as an older API sends it.

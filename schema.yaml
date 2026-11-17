@@ -23040,6 +23040,25 @@ components:
       - lastUsedAt
       - password
       - revokedAt
+    LiveAiring:
+      type: object
+      description: One coming live airing of a video, in the channel's own time zone.
+      properties:
+        id:
+          type: integer
+          readOnly: true
+        starttime:
+          type: string
+          format: date-time
+          readOnly: true
+        endtime:
+          type: string
+          format: date-time
+          readOnly: true
+      required:
+      - endtime
+      - id
+      - starttime
     LiveSource:
       type: object
       properties:
@@ -23051,6 +23070,8 @@ components:
           maxLength: 100
         enabled:
           type: boolean
+        logoPosition:
+          $ref: '#/components/schemas/LogoPositionEnum'
         isPulled:
           type: boolean
           readOnly: true
@@ -23103,6 +23124,8 @@ components:
           maxLength: 100
         enabled:
           type: boolean
+        logoPosition:
+          $ref: '#/components/schemas/LogoPositionEnum'
         pullUrl:
           type: string
           writeOnly: true
@@ -23251,6 +23274,7 @@ components:
       - $ref: '#/components/schemas/LiveSourcesPartialUpdateNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/LiveSourcesPartialUpdateNameErrorComponent'
       - $ref: '#/components/schemas/LiveSourcesPartialUpdateEnabledErrorComponent'
+      - $ref: '#/components/schemas/LiveSourcesPartialUpdateLogoPositionErrorComponent'
       - $ref: '#/components/schemas/LiveSourcesPartialUpdatePullUrlErrorComponent'
       discriminator:
         propertyName: attr
@@ -23258,6 +23282,7 @@ components:
           non_field_errors: '#/components/schemas/LiveSourcesPartialUpdateNonFieldErrorsErrorComponent'
           name: '#/components/schemas/LiveSourcesPartialUpdateNameErrorComponent'
           enabled: '#/components/schemas/LiveSourcesPartialUpdateEnabledErrorComponent'
+          logo_position: '#/components/schemas/LiveSourcesPartialUpdateLogoPositionErrorComponent'
           pull_url: '#/components/schemas/LiveSourcesPartialUpdatePullUrlErrorComponent'
     LiveSourcesPartialUpdateErrorResponse400:
       oneOf:
@@ -23268,6 +23293,28 @@ components:
         mapping:
           validation_error: '#/components/schemas/LiveSourcesPartialUpdateValidationError'
           client_error: '#/components/schemas/ParseErrorResponse'
+    LiveSourcesPartialUpdateLogoPositionErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - logo_position
+          type: string
+          description: '* `logo_position` - logo_position'
+        code:
+          enum:
+          - invalid_choice
+          - 'null'
+          type: string
+          description: |-
+            * `invalid_choice` - invalid_choice
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
     LiveSourcesPartialUpdateNameErrorComponent:
       type: object
       properties:
@@ -23417,6 +23464,20 @@ components:
       required:
       - email
       - password
+    LogoPositionEnum:
+      enum:
+      - top-right
+      - below-clock
+      - bottom-right
+      - top-left
+      - bottom-left
+      type: string
+      description: |-
+        * `top-right` - Øverst til høyre
+        * `below-clock` - Øverst til høyre, under kildens klokke
+        * `bottom-right` - Nederst til høyre
+        * `top-left` - Øverst til venstre
+        * `bottom-left` - Nederst til venstre
     Logout:
       type: object
       description: 'Representation for the logout response: a short human-readable
@@ -24696,6 +24757,7 @@ components:
       - $ref: '#/components/schemas/OrganizationLiveSourcesCreateNonFieldErrorsErrorComponent'
       - $ref: '#/components/schemas/OrganizationLiveSourcesCreateNameErrorComponent'
       - $ref: '#/components/schemas/OrganizationLiveSourcesCreateEnabledErrorComponent'
+      - $ref: '#/components/schemas/OrganizationLiveSourcesCreateLogoPositionErrorComponent'
       - $ref: '#/components/schemas/OrganizationLiveSourcesCreatePullUrlErrorComponent'
       discriminator:
         propertyName: attr
@@ -24703,6 +24765,7 @@ components:
           non_field_errors: '#/components/schemas/OrganizationLiveSourcesCreateNonFieldErrorsErrorComponent'
           name: '#/components/schemas/OrganizationLiveSourcesCreateNameErrorComponent'
           enabled: '#/components/schemas/OrganizationLiveSourcesCreateEnabledErrorComponent'
+          logo_position: '#/components/schemas/OrganizationLiveSourcesCreateLogoPositionErrorComponent'
           pull_url: '#/components/schemas/OrganizationLiveSourcesCreatePullUrlErrorComponent'
     OrganizationLiveSourcesCreateErrorResponse400:
       oneOf:
@@ -24713,6 +24776,28 @@ components:
         mapping:
           validation_error: '#/components/schemas/OrganizationLiveSourcesCreateValidationError'
           client_error: '#/components/schemas/ParseErrorResponse'
+    OrganizationLiveSourcesCreateLogoPositionErrorComponent:
+      type: object
+      properties:
+        attr:
+          enum:
+          - logo_position
+          type: string
+          description: '* `logo_position` - logo_position'
+        code:
+          enum:
+          - invalid_choice
+          - 'null'
+          type: string
+          description: |-
+            * `invalid_choice` - invalid_choice
+            * `null` - null
+        detail:
+          type: string
+      required:
+      - attr
+      - code
+      - detail
     OrganizationLiveSourcesCreateNameErrorComponent:
       type: object
       properties:
@@ -25841,6 +25926,8 @@ components:
           maxLength: 100
         enabled:
           type: boolean
+        logoPosition:
+          $ref: '#/components/schemas/LogoPositionEnum'
         pullUrl:
           type: string
           writeOnly: true
@@ -29557,8 +29644,16 @@ components:
           type: string
           format: uuid
           readOnly: true
+        logoPosition:
+          type: string
+          readOnly: true
+          description: 'Where the channel logo sits while the source is on air: top-right,
+            below-clock (top right, under the source''s own clock), bottom-right,
+            top-left or bottom-left, or one added since. Anything unknown is shown
+            top-right.'
       required:
       - id
+      - logoPosition
       - streamId
     ScheduleitemModify:
       type: object
@@ -33095,6 +33190,14 @@ components:
           nullable: true
           description: 'Makes the video a live programme: it airs from this live source,
             one of the organization''s own, until it has a file. Null for none.'
+        liveAirings:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveAiring'
+          readOnly: true
+          description: 'The live airings of a live programme that have not ended yet,
+            soonest first: when it goes out, and whether it is on air now. Empty for
+            a video without a live source, and once it has a file.'
         createdTime:
           type: string
           format: date-time
@@ -33117,6 +33220,7 @@ components:
       - durationSec
       - files
       - id
+      - liveAirings
       - name
       - organization
       - series
@@ -33221,6 +33325,14 @@ components:
           nullable: true
           description: 'Makes the video a live programme: it airs from this live source,
             one of the organization''s own, until it has a file. Null for none.'
+        liveAirings:
+          type: array
+          items:
+            $ref: '#/components/schemas/LiveAiring'
+          readOnly: true
+          description: 'The live airings of a live programme that have not ended yet,
+            soonest first: when it goes out, and whether it is on air now. Empty for
+            a video without a live source, and once it has a file.'
         createdTime:
           type: string
           format: date-time
@@ -33243,6 +33355,7 @@ components:
       - durationSec
       - files
       - id
+      - liveAirings
       - name
       - series
       - updatedTime

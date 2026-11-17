@@ -111,7 +111,11 @@ async def load_schedule(api_url="https://frikanalen.tv/"):
         if item.live_source:
             schedule.append(
                 LiveTransmission(
-                    item.live_source.stream_id, VIDEO_LAYER, item.starttime, item.endtime
+                    item.live_source.stream_id,
+                    VIDEO_LAYER,
+                    item.starttime,
+                    item.endtime,
+                    logo_position=item.live_source.logo_position,
                 )
             )
             continue

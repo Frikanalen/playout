@@ -445,3 +445,34 @@ class TestCue:
 
         assert "PLAY 1-50 filler/FrikanalenLoop loop 0" in caspar.commands
         assert not any("rtsp://" in c for c in caspar.commands)
+
+
+class TestLogoPosition:
+    async def test_the_bug_moves_under_the_sources_clock_while_live_airs(self, configured, caspar):
+        caspar.stall_after = 30
+        slot = make_live(minutes=2)
+        slot.logo_position = "below-clock"
+
+        await slot.cue()
+
+        fills = [c for c in caspar.commands if c.startswith("MIXER 1-100 FILL")]
+        show = caspar.commands.index("PLAY 1-100 stills/screenbug_live")
+        assert caspar.commands[show - 1] == "MIXER 1-100 FILL 0.000000 0.050000 1 1"
+        # Back in its usual place with the filler after the stall, and at the end.
+        assert fills[1] == "MIXER 1-100 FILL 0.000000 0.000000 1 1"
+        assert fills[-1] == "MIXER 1-100 FILL 0.000000 0.000000 1 1"
+        assert len(fills) >= 3
+
+    async def test_the_usual_position_leaves_the_bug_layer_alone(self, configured, caspar):
+        await make_live(minutes=1).cue()
+
+        assert not any(c.startswith("MIXER 1-100 FILL") for c in caspar.commands)
+
+    async def test_an_unknown_position_keeps_the_bug_top_right(self, configured, caspar):
+        slot = make_live(minutes=1)
+        slot.logo_position = "somewhere-new"
+
+        await slot.cue()
+
+        assert "PLAY 1-100 stills/screenbug_live" in caspar.commands
+        assert not any(c.startswith("MIXER 1-100 FILL") for c in caspar.commands)
