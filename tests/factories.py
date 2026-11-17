@@ -46,7 +46,9 @@ def make_scheduleitem(item_id, video_id, start_time, end_time, live_stream_id=No
         grant=None,
         is_live=live_stream_id is not None,
         live_source=(
-            ScheduleitemLiveSource(id=1, stream_id=live_stream_id) if live_stream_id else None
+            ScheduleitemLiveSource(id=1, stream_id=live_stream_id, logo_position="top-right")
+            if live_stream_id
+            else None
         ),
     )
 
@@ -113,6 +115,7 @@ def make_video(video_id, framerate=25000, name="Test Video", **files):
         framerate=framerate,
         created_time=datetime(2026, 1, 1, tzinfo=UTC),
         updated_time=datetime(2026, 1, 1, tzinfo=UTC),
+        live_airings=[],
     )
 
 

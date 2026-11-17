@@ -85,6 +85,9 @@ class CasparPlayer:
                 await asyncio.sleep(CONNECT_RETRY_INTERVAL)
         logger.warning(f"Connected to CasparCG at {CASPAR_HOST}")
         await self.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG}")
+        # A restart in the middle of a live source that moved the bug must
+        # not leave it moved.
+        await self.issue(f"MIXER {CHANNELBUG_LAYER} FILL 0 0 1 1")
         await self._query_framerate()
         self._heartbeat = asyncio.create_task(self._keep_checking())
 

@@ -14,6 +14,7 @@ from playout_lib.config import (
     CHANNELBUG,
     CHANNELBUG_LAYER,
     CHANNELBUG_LIVE,
+    CHANNELBUG_OFFSETS,
     LIVE_INPUT_URL,
     LIVE_LAYER,
     LIVE_METRICS_URL,
@@ -147,10 +148,14 @@ class LiveTransmission(PlannedItem):
     hiding it again without touching the filler.
     """
 
-    def __init__(self, stream_id, layer, start_time, end_time):
+    def __init__(self, stream_id, layer, start_time, end_time, logo_position="top-right"):
         super().__init__(layer, start_time, end_time)
         self.stream_id = str(stream_id)
+        # Where the bug sits while the source is on air, clear of the feed's
+        # own graphics; see CHANNELBUG_OFFSETS.
+        self.logo_position = logo_position
         self._started_at = None
+        self._bug_moved = False
         # A position of the source seen just before the slot, so it can be
         # judged flowing, and shown, right at the start time.
         self._seen_position = None
@@ -218,8 +223,23 @@ class LiveTransmission(PlannedItem):
         await current_player.issue(f"MIXER {self.layer} VOLUME 0")
         await current_player.issue(f"MIXER {LIVE_LAYER} VOLUME 1.0000")
         await current_player.issue(f"MIXER {LIVE_LAYER} OPACITY 1")
-        # The bug says DIREKTE only while the live picture is what airs.
+        # The bug says DIREKTE only while the live picture is what airs, and
+        # moves out of the way of the feed's own graphics only then.
+        await self._place_bug(self.logo_position)
         await current_player.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG_LIVE}")
+
+    async def _place_bug(self, position):
+        """Move the bug layer to position, if it is not the usual top right."""
+        from .caspar_player import current_player
+
+        if position not in CHANNELBUG_OFFSETS:
+            logger.warning(f"Unknown logo position {position!r}; the bug stays top right")
+            position = "top-right"
+        if position == "top-right" and not self._bug_moved:
+            return
+        x, y = CHANNELBUG_OFFSETS[position]
+        await current_player.issue(f"MIXER {CHANNELBUG_LAYER} FILL {x:.6f} {y:.6f} 1 1")
+        self._bug_moved = position != "top-right"
 
     async def _hide(self):
         """Cut back to the filler under the live layer."""
@@ -228,6 +248,7 @@ class LiveTransmission(PlannedItem):
         await current_player.issue(f"MIXER {LIVE_LAYER} OPACITY 0")
         await current_player.issue(f"MIXER {LIVE_LAYER} VOLUME 0")
         await current_player.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG}")
+        await self._place_bug("top-right")
         # The contribution is not loudness measured, nor is the filler, so
         # both play at their own level.
         await current_player.issue(f"MIXER {self.layer} VOLUME 1.0000")
@@ -329,6 +350,7 @@ class LiveTransmission(PlannedItem):
 
         try:
             await current_player.issue(f"PLAY {CHANNELBUG_LAYER} {CHANNELBUG}")
+            await self._place_bug("top-right")
             await current_player.issue(f"CLEAR {LIVE_LAYER}")
             await current_player.issue(f"MIXER {LIVE_LAYER} CLEAR")
             await current_player.issue(f"MIXER {self.layer} VOLUME 1.0000")
