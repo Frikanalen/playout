@@ -203,5 +203,5 @@ def test_the_next_load_comes_at_the_poll_or_just_after_midnight():
     from zoneinfo import ZoneInfo
 
     oslo = ZoneInfo("Europe/Oslo")
-    assert scheduler.seconds_until_next_load(datetime(2026, 10, 31, 20, 0, tzinfo=oslo)) == 900
-    assert scheduler.seconds_until_next_load(datetime(2026, 10, 31, 23, 58, tzinfo=oslo)) == 125
+    assert scheduler.seconds_until_next_load(datetime(2026, 10, 31, 20, 0, tzinfo=oslo)) == 60
+    assert scheduler.seconds_until_next_load(datetime(2026, 10, 31, 23, 59, 30, tzinfo=oslo)) == 35

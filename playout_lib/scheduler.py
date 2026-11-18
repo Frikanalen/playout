@@ -18,9 +18,11 @@ from .config import API_URL
 from .events import listen_for_changes
 from .items import PlannedItem, localtime
 
-# The fallback for when the event stream itself is down. A dropped stream
-# needs no poll: every reconnect announces itself and triggers a reload.
-POLL_INTERVAL = timedelta(minutes=15)
+# The fallback for when the event stream misses a change. A dropped stream
+# announces itself on reconnect, but on 17 Nov 2026 a live one went quiet
+# after a database failover and a cut waited for this poll. A reload with
+# nothing changed leaves the air alone, so poll often.
+POLL_INTERVAL = timedelta(minutes=1)
 # Loads cover "today", and nothing announces a new day, so reload just after
 # midnight to pick up the next day's schedule.
 AFTER_MIDNIGHT = timedelta(seconds=5)
