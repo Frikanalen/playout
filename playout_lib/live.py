@@ -407,6 +407,10 @@ class LiveTransmission(PlannedItem):
             await self._start()
         await self._completion()
 
+    def layers(self) -> set[str]:
+        """The programme layer, where the filler loops, and the live layer."""
+        return {self.layer, LIVE_LAYER}
+
     def __repr__(self):
         time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
         return f"[{time_range} Live: {self.stream_id}]"

@@ -14,9 +14,11 @@ from datetime import timedelta
 from loguru import logger
 
 from .api import load_schedule
+from .caspar_player import CasparConnectionLost, current_player
 from .config import API_URL
 from .events import listen_for_changes
 from .items import PlannedItem, localtime
+from .stale_layers import clear_stale_layers
 
 # The fallback for when the event stream misses a change. A dropped stream
 # announces itself on reconnect, but on 17 Nov 2026 a live one went quiet
@@ -29,6 +31,12 @@ AFTER_MIDNIGHT = timedelta(seconds=5)
 # A booking often lands as a couple of commits in quick succession (the
 # schedule item, then its live transmission): wait for the rest of them.
 SETTLE_SECONDS = 0.5
+# After the first load, how long to give the items on air to cue before
+# clearing what a previous playout left on the other layers.
+STALE_LAYER_DELAY = 10.0
+# Items starting this soon count as in use: a live source starts hidden 15 s
+# ahead (live.PREROLL) and a video is loaded 5 s ahead.
+IN_USE_AHEAD = timedelta(seconds=60)
 
 
 def seconds_until_next_load(now) -> float:
@@ -138,6 +146,32 @@ class Scheduler:
             if key not in self.tasks:
                 self._start(item)
 
+    def layers_in_use(self, now=None) -> set[str]:
+        """The layers of the items on air, or about to be prepared."""
+        now = now or localtime()
+        in_use = set()
+        for item, task in self.tasks.values():
+            if task.done() or item.already_done():
+                continue
+            if item.start_time - IN_USE_AHEAD <= now:
+                in_use |= item.layers()
+        return in_use
+
+    async def clear_stale_layers(self, player=None):
+        """Clear what a previous playout left on layers nothing here uses."""
+        try:
+            return await clear_stale_layers(player or current_player, self.layers_in_use())
+        except CasparConnectionLost:
+            return []  # main() restarts playout, which tries again
+        except Exception:
+            # Leaving a stale layer is better than taking playout down.
+            logger.exception("Could not check for layers left by a previous playout")
+            return []
+
+    async def _clear_stale_layers_later(self):
+        await asyncio.sleep(STALE_LAYER_DELAY)
+        await self.clear_stale_layers()
+
     def changed(self):
         """Ask for the schedule to be fetched again now."""
         self._changed.set()
@@ -146,6 +180,7 @@ class Scheduler:
         """Main scheduler loop: reload and reconcile on every change."""
         listener = asyncio.create_task(self._listen(self.changed))
         self.changed()
+        sweep = None
         try:
             while True:
                 try:
@@ -163,5 +198,9 @@ class Scheduler:
                     logger.exception("Failed to load the schedule, keeping the current one")
                     continue
                 await self.reconcile(schedule)
+                if sweep is None:
+                    sweep = asyncio.create_task(self._clear_stale_layers_later())
         finally:
             listener.cancel()
+            if sweep is not None:
+                sweep.cancel()

@@ -105,6 +105,18 @@ source on air. Without `LIVE_METRICS_URL` it falls back to the `INFO` clock,
 which only notices a producer that ends. Without `LIVE_INPUT_URL` the whole
 slot is covered with filler. The password is redacted from the command log.
 
+### After a restart
+
+A restarted playout (a deploy, a pod moved to another node, the watchdog's
+re-exec) only knows the items that should be on air now. Ten seconds after
+the first schedule load, once those have cued, it reads `INFO 1` and clears
+(`CLEAR` and `MIXER ... CLEAR`) every layer playout owns that holds
+something none of them uses: say, a live slot's source on `1-55` and filler
+on `1-50` left running under the next gap graphic. Items starting within a
+minute count as in use, so a live source started ahead of its slot stays.
+The channel bug (`1-100`) is never cleared. It doesn't clear on connect,
+which would blank the running programme for a moment on every restart.
+
 ### Refreshing the API schema and regenerating the client
 
 The repo keeps a checked-in OpenAPI snapshot in `schema.yaml`. Two scripts manage schema updates and client generation:

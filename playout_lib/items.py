@@ -40,6 +40,10 @@ class Item:
 
         await current_player.issue(f"CLEAR {self.layer}")
 
+    def layers(self) -> set[str]:
+        """Every layer this item may put something on (see stale_layers)."""
+        return {self.layer}
+
     def __repr__(self) -> str:
         return "[Item]"
 
@@ -132,6 +136,10 @@ class Graphic(PlannedItem):
         can't stop each other's music at the handover.
         """
         return f"{self.layer}2"
+
+    def layers(self) -> set[str]:
+        """The graphic's layer and its template and music sub-layers."""
+        return {self.layer, f"{self.layer}1", self.music_layer}
 
     async def _start_music(self, preloaded):
         """Loop the filler music, with the filler reel's own sound muted."""

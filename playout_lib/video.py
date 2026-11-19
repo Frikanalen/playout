@@ -279,6 +279,10 @@ class PrerecordedVideo(PlannedItem):
 
         await current_player.issue(f"MIXER {self.layer} VOLUME {volume:.4f}")
 
+    def layers(self) -> set[str]:
+        """The programme layer, and the notice's in case the file is missing."""
+        return {self.layer, NOTICE_LAYER, f"{NOTICE_LAYER}1", f"{NOTICE_LAYER}2"}
+
     def __repr__(self):
         time_range = f"{self.start_time.strftime('%H:%M')}-{self.end_time.strftime('%H:%M')}"
         title = "Video"
