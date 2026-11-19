@@ -1,5 +1,12 @@
 # Changelog
 
+## [2.8.1](https://github.com/Frikanalen/playout/compare/v2.8.0...v2.8.1) (2026-11-18)
+
+
+### Bug Fixes
+
+* **scheduler:** reload the schedule every minute, not every 15 ([#47](https://github.com/Frikanalen/playout/issues/47)) ([6adfb76](https://github.com/Frikanalen/playout/commit/6adfb76d2fc5655a5c6da7200f41ec45bfc641d7))
+
 ## [2.8.0](https://github.com/Frikanalen/playout/compare/v2.7.0...v2.8.0) (2026-11-17)
 
 
